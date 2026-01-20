@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Trial Class - Brain Academy</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#306998',   /* Python Blue */
+                        secondary: '#FFD43B', /* Python Yellow */
+                        accent: '#FDB913',    /* Brain Academy Yellow */
+                        dark: '#0f172a',      /* Slate 900 */
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#306998', 
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Outfit', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-page: #f8fafc;
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --brand-primary: #306998;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Abstract Floating Shapes */
+        .bg-shapes {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(48, 105, 152, 0.1), rgba(255, 212, 59, 0.05));
+            border-radius: 50%;
+            backdrop-filter: blur(80px);
+        }
+
+        .s1 { width: 600px; height: 600px; top: -100px; left: -100px; animation: float 10s ease-in-out infinite; }
+        .s2 { width: 400px; height: 400px; bottom: 10%; right: -50px; animation: float 14s ease-in-out infinite reverse; background: linear-gradient(135deg, rgba(253, 185, 19, 0.1), rgba(253, 185, 19, 0.05)); }
+        .s3 { width: 200px; height: 200px; top: 20%; right: 20%; animation: float 12s ease-in-out infinite 2s; }
+
+        @keyframes float { 0% { transform: translate(0, 0); } 50% { transform: translate(20px, -20px); } 100% { transform: translate(0, 0); } }
+
+        /* Card Style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 40px -10px rgba(48, 105, 152, 0.15);
+            backdrop-filter: blur(12px);
+        }
+
+        /* Typography */
+        h1, h2, h3 { color: var(--text-main); }
+        .text-accent { color: #FDB913 !important; }
+        .text-primary { color: #306998 !important; }
+
+        /* Quiz Options */
+        .quiz-option {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: var(--text-main);
+            border-radius: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 0 #cbd5e1;
+            cursor: pointer;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--brand-primary);
+            background: #f0f9ff;
+            transform: translateY(-2px);
+        }
+        
+        .quiz-option.correct {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #064e3b;
+        }
+        
+        .quiz-option.wrong {
+            background: #fff1f2;
+            border-color: #f43f5e;
+            color: #881337;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: auto;
+        }
+        
+        kbd {
+            background: #1e293b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Slide Logic */
+        .slide {
+            display: none;
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            padding: 2rem 5rem;
+            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body>
+    
+    <!-- Background -->
+    <div class="bg-shapes">
+        <div class="shape s1"></div>
+        <div class="shape s2"></div>
+        <div class="shape s3"></div>
+    </div>
+
+    <!-- Nav Bar -->
+    <div class="fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-t border-slate-200 flex items-center justify-between px-6 z-40">
+        <div class="flex items-center gap-4">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Python Trial Class</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="prevSlide()" class="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-chevron-left"></i></button>
+            <span class="font-mono text-sm font-bold text-slate-400"><span id="slideCounter" class="text-primary">1</span>/<span id="totalSlidesDisplay">25</span></span>
+            <button onclick="nextSlide()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-primary transition shadow-lg"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+    
+    <div class="fixed bottom-16 left-0 h-1 bg-slate-200 w-full z-40">
+        <div id="progressBar" class="h-full bg-primary transition-all duration-500 w-[0%]"></div>
+    </div>
+
+    <!-- Logos -->
+    <div class="fixed top-0 left-0 right-0 p-6 flex justify-between items-start z-30 pointer-events-none">
+        <div class="bg-white/90 backdrop-blur shadow-sm border border-slate-200 px-4 py-2 rounded-full flex gap-4 items-center pointer-events-auto">
+             <img src="https://images2.imgbox.com/51/6a/xhLlGQcZ_o.png" alt="Ruangguru Coding" class="h-8 w-auto">
+             <div class="h-4 w-px bg-slate-300"></div>
+             <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/aaa89051-611b-4da4-b131-fadde91ccb11.png" alt="Brain Academy" class="h-12 w-auto">
+        </div>
+    </div>
+
+    <!-- ==================== SLIDES ==================== -->
+
+    <!-- SLIDE 1: Welcome -->
+    <div class="slide active" id="slide1">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 z-10 w-full px-6">
+            <div class="flex-1 text-center md:text-left">
+                <div class="inline-block px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-bold mb-6 tracking-widest border border-blue-100">
+                    BRAIN ACADEMY • CODING
+                </div>
+                <h1 class="text-6xl md:text-8xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
+                    PYTHON<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">PROGRAMMING</span>
+                </h1>
+                <p class="text-2xl text-slate-500 font-light mb-8 max-w-lg">
+                    The Language of AI, Data, and The Future. 🚀
+                </p>
+            </div>
+            <div class="flex-1 relative animate-float flex justify-center">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" 
+                     class="w-64 h-64 drop-shadow-2xl" alt="Python Logo">
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Rules -->
+    <div class="slide" id="slide2">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-8 text-primary">Aturan Main</h2>
+            <div class="grid grid-cols-1 gap-6">
+                <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-6">
+                    <div class="text-5xl">👀</div>
+                    <div class="text-left">
+                        <h3 class="text-2xl font-bold text-slate-800">Fokus</h3>
+                        <p class="text-slate-500">Perhatikan instruksi Kakak.</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-6">
+                    <div class="text-5xl">🧠</div>
+                    <div class="text-left">
+                        <h3 class="text-2xl font-bold text-slate-800">Think!</h3>
+                        <p class="text-slate-500">Coba jawab pertanyaan dalam hati.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Teacher Intro -->
+    <div class="slide" id="slide3">
+        <div class="glass-card p-10 max-w-4xl w-full text-center flex flex-col items-center">
+            <h2 class="text-4xl font-bold mb-6">Halo, Agen Masa Depan!</h2>
+            <div id="teacher-name-container" class="mb-6">
+                <div id="teacher-input-group" class="flex gap-2 items-center justify-center">
+                    <h3 class="text-2xl text-slate-600 font-semibold">Nama Kakak:</h3>
+                    <input type="text" id="teacher-input" placeholder="Isi Nama" class="bg-slate-100 border border-slate-300 rounded px-3 py-1 text-slate-800 text-xl">
+                    <button onclick="saveTeacherName()" class="bg-primary hover:bg-sky-600 text-white px-4 py-1 rounded font-bold transition">OK</button>
+                </div>
+                <div id="teacher-display-group" class="hidden flex items-center justify-center gap-3">
+                    <h3 class="text-2xl text-primary font-semibold">Kakak <span id="teacher-name-display"></span></h3>
+                </div>
+            </div>
+            <p class="text-xl text-slate-500 max-w-lg">
+                "Hari ini kita akan belajar bahasa yang digunakan oleh Google, NASA, dan Netflix!"
+            </p>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Hook - What can Python do? -->
+    <div class="slide" id="slide4">
+        <h2 class="text-4xl font-bold mb-10 text-center">Kenapa Belajar Python?</h2>
+        <div class="grid grid-cols-3 gap-6 max-w-6xl w-full">
+            <div class="glass-card p-8 text-center hover:-translate-y-2 transition duration-300">
+                <div class="text-6xl mb-4">🤖</div>
+                <h3 class="text-2xl font-bold text-primary mb-2">AI & Robot</h3>
+                <p class="text-sm text-slate-500">Otak di balik kecerdasan buatan.</p>
+            </div>
+            <div class="glass-card p-8 text-center hover:-translate-y-2 transition duration-300">
+                <div class="text-6xl mb-4">📊</div>
+                <h3 class="text-2xl font-bold text-secondary mb-2">Data Science</h3>
+                <p class="text-sm text-slate-500">Menganalisis data di seluruh dunia.</p>
+            </div>
+            <div class="glass-card p-8 text-center hover:-translate-y-2 transition duration-300">
+                <div class="text-6xl mb-4">🌐</div>
+                <h3 class="text-2xl font-bold text-green-600 mb-2">Web Apps</h3>
+                <p class="text-sm text-slate-500">Membuat aplikasi populer.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: Concept -->
+    <div class="slide" id="slide5">
+        <div class="glass-card p-12 max-w-5xl w-full flex items-center gap-12">
+            <div class="flex-1 text-right">
+                <h2 class="text-6xl font-black text-slate-800 mb-2">CODING</h2>
+                <div class="h-1 w-32 bg-primary ml-auto rounded-full"></div>
+            </div>
+            <div class="text-6xl">=</div>
+            <div class="text-left flex-1">
+                 <p class="text-3xl font-light leading-relaxed">
+                    Memberi <span class="text-primary font-bold">instruksi</span> kepada komputer.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SLIDE: ONECOMPILER -->
+    <div class="slide" id="slide6">
+        <div class="glass-card p-10 max-w-4xl text-center">
+             <div class="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold mb-4">PREPARATION</div>
+            <h2 class="text-4xl font-bold mb-6">Siapkan Alat Perang! ⚔️</h2>
+            <p class="text-xl mb-8">Kita akan coding langsung. Buka tab baru di browser-mu.</p>
+            
+            <div class="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-xl inline-block mb-8">
+                <a href="https://onecompiler.com/python" target="_blank" class="flex flex-col items-center group">
+                    <img src="https://play-lh.googleusercontent.com/J2AsAmkERwVdShhU8Bbn2_xN5ou5QVmlo4zyl4JoZd5WM23n3tCUcynJXjwy-06rmW4" alt="OneCompiler Logo" class="h-16 mb-4 group-hover:scale-110 transition">
+                    <span class="text-2xl font-bold text-primary group-hover:underline">onecompiler.com/python</span>
+                </a>
+            </div>
+            <p class="text-slate-500">Klik link di atas atau ketik manual.</p>
+        </div>
+    </div>
+
+    <!-- TOPIC 1: PRINT -->
+    <div class="slide" id="slide7">
+        <div class="glass-card p-10 max-w-4xl text-center">
+            <div class="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold mb-4">TOPIC 1: OUTPUT</div>
+            <h2 class="text-4xl font-bold mb-6">Print Function 🖨️</h2>
+            <p class="text-xl mb-6">Bagaimana cara menyuruh komputer bicara?</p>
+            
+            <div class="bg-slate-900 text-left p-6 rounded-xl font-mono text-lg shadow-2xl mb-6 border border-slate-700">
+                <span class="text-blue-400">print</span>(<span class="text-yellow-300">"Halo Dunia!"</span>)
+            </div>
+            
+            <p class="text-slate-500 text-sm">Apapun yang ada di dalam tanda kutip "..." akan muncul di layar.</p>
+        </div>
+    </div>
+
+    <!-- QUIZ PRINT -->
+    <div class="slide" id="slide8">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <span class="text-primary tracking-widest font-bold text-sm mb-4 block">QUIZ TIME</span>
+            <h2 class="text-3xl font-bold mb-8">Mana kode yang BENAR?</h2>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-4 font-mono text-lg">
+                    print("Selamat Pagi")
+                </button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-mono text-lg">
+                    print(Selamat Pagi)
+                </button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-mono text-lg">
+                    Print("Selamat Pagi")
+                </button>
+            </div>
+            <p id="quiz-feedback-7" class="mt-6 text-xl font-bold h-8"></p>
+        </div>
+    </div>
+
+    <!-- TOPIC 2: VARIABLES -->
+    <div class="slide" id="slide9">
+        <div class="glass-card p-10 max-w-5xl text-center">
+            <div class="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold mb-4">TOPIC 2: STORAGE</div>
+            <h2 class="text-4xl font-bold mb-6">Variable 📦</h2>
+            <p class="text-xl mb-8">Variable itu seperti <span class="font-bold text-primary">KARDUS</span> dengan Label.</p>
+            
+            <div class="flex justify-center items-center gap-12 font-mono text-2xl">
+                <!-- Code Side -->
+                <div class="bg-slate-900 p-6 rounded-xl text-white shadow-xl">
+                    <div class="mb-2">nama = <span class="text-yellow-300">"Budi"</span></div>
+                    <div>umur = <span class="text-blue-400">10</span></div>
+                </div>
+                
+                <div class="text-4xl">➡️</div>
+                
+                <!-- Visual Side -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="w-24 h-24 bg-yellow-100 border-4 border-slate-800 flex items-center justify-center text-slate-800 font-bold rounded-lg relative">
+                            "Budi"
+                            <span class="absolute -top-3 bg-slate-800 text-white text-xs px-2 py-1 rounded">nama</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-24 h-24 bg-blue-100 border-4 border-slate-800 flex items-center justify-center text-slate-800 font-bold rounded-lg relative">
+                            10
+                            <span class="absolute -top-3 bg-slate-800 text-white text-xs px-2 py-1 rounded">umur</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ VARIABLE -->
+    <div class="slide" id="slide10">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-6">Tebak Isi Kardus!</h2>
+            <div class="bg-slate-900 p-4 rounded-lg mb-8 inline-block text-left font-mono text-white text-lg">
+                skor = 100<br>
+                bonus = 50<br>
+                total = skor + bonus
+            </div>
+            <p class="mb-6 text-xl">Berapa isi variable <strong>total</strong>?</p>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold text-xl">100</button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-4 font-bold text-xl">150</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold text-xl">10050</button>
+            </div>
+            <p id="quiz-feedback-9" class="mt-6 text-xl font-bold h-8 text-primary"></p>
+        </div>
+    </div>
+
+    <!-- TOPIC 3: DICTIONARY -->
+    <div class="slide" id="slide11">
+        <div class="glass-card p-10 max-w-5xl text-center">
+            <div class="inline-block px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold mb-4">TOPIC 3: DATA STRUCTURE</div>
+            <h2 class="text-4xl font-bold mb-6">Dictionary 📖</h2>
+            <p class="text-xl mb-8">Menyimpan banyak data dengan kata kunci (Key & Value).</p>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+                <div class="bg-slate-900 p-6 rounded-xl text-white font-mono text-left text-sm md:text-base">
+                    <span class="text-purple-400">hero</span> = {<br>
+                        &nbsp;&nbsp;<span class="text-green-400">"name"</span>: <span class="text-yellow-300">"Iron Man"</span>,<br>
+                        &nbsp;&nbsp;<span class="text-green-400">"color"</span>: <span class="text-yellow-300">"Red"</span>,<br>
+                        &nbsp;&nbsp;<span class="text-green-400">"power"</span>: <span class="text-blue-400">9000</span><br>
+                    }
+                </div>
+                <div class="text-left text-slate-600">
+                    <p class="mb-2">🔑 <strong>Key</strong>: Kata kuncinya (name, color)</p>
+                    <p>💎 <strong>Value</strong>: Isinya (Iron Man, Red)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ DICTIONARY -->
+    <div class="slide" id="slide12">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-6">Akses Data</h2>
+            <div class="bg-slate-900 p-4 rounded-lg mb-6 inline-block text-left font-mono text-white">
+                menu = {"Bakso": 15000, "Mie": 10000}
+            </div>
+            <p class="mb-8 font-mono text-xl bg-white/50 p-2 rounded">print( menu["Bakso"] )</p>
+            <p class="mb-6">Apa yang akan muncul?</p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold">10000</button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-4 font-bold">15000</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold">Bakso</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold">Error</button>
+            </div>
+            <p id="quiz-feedback-11" class="mt-6 text-xl font-bold h-8 text-primary"></p>
+        </div>
+    </div>
+
+    <!-- TOPIC 4: INPUT -->
+    <div class="slide" id="slide13">
+        <div class="glass-card p-10 max-w-4xl text-center">
+            <div class="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold mb-4">TOPIC 4: INTERACTION</div>
+            <h2 class="text-4xl font-bold mb-6">Input 🎤</h2>
+            <p class="text-xl mb-6">Agar program bisa bertanya kepada user.</p>
+            
+            <div class="bg-slate-900 text-left p-6 rounded-xl font-mono text-lg mb-6 relative overflow-hidden">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-slate-500">1</span>
+                    <span class="text-white">nama = </span>
+                    <span class="text-blue-400">input</span>(<span class="text-yellow-300">"Siapa namamu? "</span>)
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-500">2</span>
+                    <span class="text-blue-400">print</span>(<span class="text-yellow-300">"Halo "</span> + nama)
+                </div>
+            </div>
+            
+            <!-- Simulation -->
+            <div class="bg-black p-4 rounded-lg font-mono text-green-400 text-sm border-2 border-slate-700 w-full max-w-md mx-auto text-left">
+                > Siapa namamu? <span id="sim-input-text" class="animate-pulse">_</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ INPUT -->
+    <div class="slide" id="slide14">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-8">Tanya Jawab</h2>
+            <p class="mb-6">Function apa yang dipakai untuk mengambil data dari keyboard user?</p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-mono font-bold">print()</button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-4 font-mono font-bold">input()</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-mono font-bold">scan()</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-mono font-bold">ask()</button>
+            </div>
+            <p id="quiz-feedback-13" class="mt-6 text-xl font-bold h-8 text-primary"></p>
+        </div>
+    </div>
+
+    <!-- TOPIC 5: LOOP -->
+    <div class="slide" id="slide15">
+        <div class="glass-card p-10 max-w-4xl text-center">
+            <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-4">TOPIC 5: REPETITION</div>
+            <h2 class="text-4xl font-bold mb-6">Loop (Perulangan) 🔄</h2>
+            <p class="text-xl mb-6">Supaya kita tidak capek menulis kode yang sama berulang kali.</p>
+            
+            <div class="flex gap-8 justify-center text-left font-mono">
+                <div class="bg-red-50 p-4 rounded border border-red-200 opacity-50">
+                    <p class="text-red-800 text-xs mb-2 text-center font-sans font-bold">BAD WAY ❌</p>
+                    print("Lari")<br>
+                    print("Lari")<br>
+                    print("Lari")<br>
+                    print("Lari")<br>
+                    print("Lari")
+                </div>
+                <div class="bg-green-50 p-4 rounded border border-green-200">
+                    <p class="text-green-800 text-xs mb-2 text-center font-sans font-bold">SMART WAY ✅</p>
+                    <span class="text-purple-600">for</span> i <span class="text-purple-600">in</span> <span class="text-blue-600">range</span>(5):<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;print("Lari")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ LOOP -->
+    <div class="slide" id="slide16">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-6">Hitung Putaran</h2>
+            <div class="bg-slate-900 p-4 rounded-lg mb-6 inline-block text-left font-mono text-white text-lg">
+                for i in range(3):<br>
+                &nbsp;&nbsp;print("Jump!")
+            </div>
+            <p class="mb-6">Berapa kali kata "Jump!" akan muncul?</p>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold text-xl">1</button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-4 font-bold text-xl">3</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 font-bold text-xl">10</button>
+            </div>
+            <p id="quiz-feedback-15" class="mt-6 text-xl font-bold h-8 text-primary"></p>
+        </div>
+    </div>
+
+    <!-- PROJECT BRIEF - PASSWORD MAKER -->
+    <div class="slide" id="slide17">
+        <div class="text-center">
+            <h2 class="text-2xl text-accent font-bold mb-4 tracking-[0.5em] uppercase">FINAL MISSION</h2>
+            <h1 class="text-5xl font-black mb-6 leading-tight text-white drop-shadow-md">
+                BETTER PASSWORD<br>MAKER 🔐
+            </h1>
+            <p class="text-xl text-slate-500 max-w-2xl mx-auto mb-10">
+                Password "rahasia" itu gampang ditebak! Yuk kita buat program untuk mengubah kata biasa menjadi password super kuat.
+            </p>
+             <div class="flex justify-center gap-8 items-center">
+                <div class="bg-red-100 px-6 py-3 rounded-lg text-red-800 font-bold line-through opacity-70">
+                    password
+                </div>
+                <div class="text-4xl">➡️</div>
+                <div class="bg-green-100 px-6 py-3 rounded-lg text-green-800 font-bold border-2 border-green-500 shadow-lg">
+                    p@$$w0rd
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IFRAME: PASSWORD MONSTER -->
+    <div class="slide" id="slide18">
+         <div class="w-full h-full flex flex-col items-center justify-center">
+             <div class="glass-card p-4 w-full h-[90vh] flex flex-col">
+                 <div class="flex justify-between items-center mb-4 px-4">
+                     <h2 class="text-2xl font-bold">Seberapa Kuat Passwordmu?</h2>
+                     <p class="text-sm text-slate-500">Coba ketik 'password' atau nama hewan peliharaanmu.</p>
+                 </div>
+                 <iframe src="https://www.passwordmonster.com/" class="w-full flex-1 rounded-xl border border-slate-200" title="Password Monster"></iframe>
+             </div>
+         </div>
+    </div>
+
+    <!-- PROJECT CONCEPT: THE LOGIC -->
+    <div class="slide" id="slide19">
+        <div class="glass-card p-10 max-w-4xl w-full text-center">
+             <h2 class="text-3xl font-bold mb-8">Rahasia Password Kuat</h2>
+             <p class="text-xl mb-8">Kita akan menggunakan <strong>Dictionary</strong> untuk mengubah huruf menjadi simbol.</p>
+             
+             <div class="grid grid-cols-3 gap-6 mb-8 text-2xl font-bold font-mono">
+                 <div class="bg-white p-4 rounded shadow border-b-4 border-blue-500">
+                     'a' ➡️ '@'
+                 </div>
+                 <div class="bg-white p-4 rounded shadow border-b-4 border-blue-500">
+                     's' ➡️ '$'
+                 </div>
+                 <div class="bg-white p-4 rounded shadow border-b-4 border-blue-500">
+                     'o' ➡️ '0'
+                 </div>
+             </div>
+             
+             <p>Dan kita akan menggunakan <strong>Loop</strong> untuk mengecek setiap huruf.</p>
+        </div>
+    </div>
+
+    <!-- PROJECT STEP 1: SETUP -->
+    <div class="slide" id="slide20">
+        <div class="glass-card p-8 max-w-5xl w-full">
+            <h2 class="text-3xl font-bold mb-4">Step 1: Setup Dictionary & Input</h2>
+            <p class="mb-4">Buat kamus simbol dan minta user memasukkan kata.</p>
+            
+            <div class="bg-slate-900 p-6 rounded-lg font-mono text-sm md:text-base text-white overflow-x-auto">
+                <span class="text-gray-500"># 1. Kamus Simbol</span><br>
+                kamus = {<br>
+                &nbsp;&nbsp;<span class="text-yellow-300">"a"</span>: <span class="text-yellow-300">"@"</span>,<br>
+                &nbsp;&nbsp;<span class="text-yellow-300">"s"</span>: <span class="text-yellow-300">"$"</span>,<br>
+                &nbsp;&nbsp;<span class="text-yellow-300">"i"</span>: <span class="text-yellow-300">"1"</span>,<br>
+                &nbsp;&nbsp;<span class="text-yellow-300">"o"</span>: <span class="text-yellow-300">"0"</span><br>
+                }<br><br>
+                <span class="text-gray-500"># 2. Input Password</span><br>
+                print(<span class="text-yellow-300">"--- PASSWORD MAKER ---"</span>)<br>
+                password = input(<span class="text-yellow-300">"Masukkan kata: "</span>)
+            </div>
+        </div>
+    </div>
+
+    <!-- PROJECT STEP 2: LOOP -->
+    <div class="slide" id="slide21">
+        <div class="glass-card p-8 max-w-5xl w-full">
+            <h2 class="text-3xl font-bold mb-4">Step 2: Loop & Replace</h2>
+            <p class="mb-4">Kita cek satu-satu isi dictionary. Kalau ketemu hurufnya, ganti!</p>
+            
+            <div class="bg-slate-900 p-6 rounded-lg font-mono text-sm md:text-base text-white overflow-x-auto">
+                <span class="text-gray-500"># ...kode sebelumnya...</span><br><br>
+                <span class="text-gray-500"># 3. Loop & Replace</span><br>
+                <span class="text-purple-400">for</span> huruf_lama, huruf_baru <span class="text-purple-400">in</span> kamus.items():<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;password = password.replace(huruf_lama, huruf_baru)<br>
+                <br>
+                <span class="text-gray-500"># 4. Output Hasil</span><br>
+                print(<span class="text-yellow-300">"Password Kuat: "</span> + password)
+            </div>
+            
+             <p class="mt-4 text-sm text-slate-500">Note: <code>.replace()</code> itu cara cepat Python untuk mengganti tulisan.</p>
+        </div>
+    </div>
+
+    <!-- SIMULATOR REVEAL -->
+    <div class="slide" id="slide22">
+        <div class="glass-card p-4 max-w-4xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-4">RESULT</h2>
+            <div class="bg-black text-green-400 font-mono text-left p-6 rounded-xl border-4 border-slate-600 shadow-2xl h-80 overflow-y-auto">
+                > --- PASSWORD MAKER ---<br>
+                > Masukkan kata: <span class="text-white">basoka</span><br>
+                > Password Kuat: b@$0k@<br>
+                <span class="animate-pulse">_</span>
+            </div>
+             <div class="mt-8">
+                <p class="text-xl text-primary font-bold">Sekarang saatnya kamu coba di OneCompiler!</p>
+                <p>Ketik kodenya, klik Run, dan lihat hasilnya.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLOSING -->
+    <div class="slide" id="slide23">
+        <div class="text-center">
+            <h1 class="text-6xl font-black mb-6 text-primary">MISSION COMPLETED!</h1>
+            <p class="text-2xl text-slate-500 mb-10">Kamu sudah berhasil membuat program Python pertamamu.</p>
+            
+            <div class="glass-card p-8 inline-block">
+                <h3 class="font-bold text-xl mb-4">Apa yang sudah kita pelajari?</h3>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full font-bold">Print</span>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full font-bold">Variable</span>
+                    <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full font-bold">Dictionary</span>
+                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full font-bold">Input</span>
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full font-bold">Loop</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COURSES & CTA -->
+    <div class="slide" id="slide24">
+        <div class="max-w-4xl mx-auto w-full flex flex-col items-center gap-8 px-6 text-center z-10">
+            <!-- Promo Image -->
+            <img src="https://roboguru-forum-cdn.ruangguru.com/image/ac921ee5-2120-43d3-baeb-4c50011cf681.jpeg" 
+                 alt="Promo Kalananti" 
+                 class="w-full rounded-3xl shadow-2xl border-4 border-white transform transition hover:scale-[1.02] duration-500">
+            
+            <!-- CTA Button -->
+            <div class="group relative inline-block w-full max-w-md" onclick="window.open('https://wa.link/mp6tvp', '_blank')">
+                 <div class="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                 <button class="relative w-full flex items-center justify-center gap-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-xl py-4 px-8 rounded-full shadow-xl transition transform hover:-translate-y-1 active:scale-95">
+                     <i class="fa-brands fa-whatsapp text-3xl"></i>
+                     <span>DAFTAR TRIAL CLASS</span>
+                 </button>
+            </div>
+        </div>
+        
+        <!-- Background Elements -->
+        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+    </div>
+
+    <script>
+        // Slideshow Logic
+        let currentSlide = 1;
+        const totalSlides = 24; // Adjusted total
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const totalSlidesDisplay = document.getElementById('totalSlidesDisplay');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+             totalSlidesDisplay.innerText = totalSlides;
+             showSlide(currentSlide);
+        });
+
+        function showSlide(n) {
+            // Hide all
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            
+            // Show new
+            const slide = document.getElementById('slide' + n);
+            if(slide) {
+                slide.classList.add('active');
+                
+                // Update Progress
+                const progress = ((n - 1) / (totalSlides - 1)) * 100;
+                progressBar.style.width = `${progress}%`;
+                slideCounter.innerText = n;
+                
+                currentSlide = n;
+            }
+            
+            // Teacher input Focus
+            if(n === 3) {
+                 setTimeout(() => {
+                    const savedName = localStorage.getItem('teacherName');
+                    if(savedName) {
+                        displayTeacherName(savedName);
+                    }
+                 }, 100);
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Quiz Logic
+        function checkQuiz(btn, isCorrect) {
+            const parent = btn.parentElement;
+            const feedbackText = parent.nextElementSibling; // The p tag below grid
+            
+            // Reset state
+            parent.querySelectorAll('.quiz-option').forEach(b => {
+                b.classList.remove('correct', 'wrong');
+                b.style.opacity = '0.5';
+            });
+
+            btn.style.opacity = '1';
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                feedbackText.innerText = "⭐ BENAR! Great Job!";
+                feedbackText.className = "mt-6 text-xl font-bold h-8 text-green-600";
+            } else {
+                btn.classList.add('wrong');
+                feedbackText.innerText = "❌ Kurang Tepat. Coba Lagi!";
+                feedbackText.className = "mt-6 text-xl font-bold h-8 text-red-500";
+            }
+        }
+
+        // Teacher Name Logic
+        function saveTeacherName() {
+            const input = document.getElementById('teacher-input');
+            const name = input.value.trim();
+            if(name) {
+                localStorage.setItem('teacherName', name);
+                displayTeacherName(name);
+            }
+        }
+
+        function displayTeacherName(name) {
+            document.getElementById('teacher-input-group').classList.add('hidden');
+            document.getElementById('teacher-display-group').classList.remove('hidden');
+            document.getElementById('teacher-name-display').innerText = name;
+        }
+
+    </script>
+</body>
+</html>

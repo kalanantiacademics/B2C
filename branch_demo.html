@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCL Demo Coordination</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                        heading: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        bprimary: '#2BB6E3', /* Cyan/Blue */
+                        bsecondary: '#E6F7FA',
+                        btext: '#0f172a',
+                        baccent: '#F9DA67', /* Soft Yellow */
+                        bpink: '#F5B0CB',
+                        bpurple: '#a78bfa',
+                        bgreen: '#4CBF56',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 24px 24px;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* 16:9 Container Logic with Responsive Scaling & Scrolling */
+        .presentation-wrapper {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .slide-container {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border: 6px solid #0f172a;
+            border-radius: 20px;
+            box-shadow: 12px 12px 0 #0f172a;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Default Layout: Desktop (16:9 Aspect Ratio Focus) */
+        @media (min-width: 1025px) {
+            .slide-container {
+                max-width: calc(100vh * 16 / 9);
+                height: calc(100vw * 9 / 16);
+                max-height: 100%;
+            }
+        }
+
+        /* Mobile Layout: Let Container Stretch and Scroll */
+        @media (max-width: 1024px) {
+            .presentation-wrapper {
+                padding: 12px;
+            }
+            .slide-container {
+                border-width: 4px;
+                box-shadow: 6px 6px 0 #0f172a;
+                border-radius: 12px;
+            }
+        }
+
+        .slides-track {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Slide Content Flow & Overflow */
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Enable vertical scroll for overflowing content */
+            overflow-x: hidden;
+        }
+
+        /* Hide Scrollbar for Slides globally but keep functionality */
+        .slide::-webkit-scrollbar {
+            width: 8px;
+        }
+        .slide::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .slide {
+                padding: 80px 20px 80px 20px; /* Space for absolute headers and footers */
+                display: block; /* Disable flex-center so it flows down naturally */
+            }
+            /* Stack grid columns on mobile */
+            .grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            .grid-cols-12 > div {
+                grid-column: span 12 / span 12 !important;
+                transform: none !important;
+                margin-bottom: 16px;
+            }
+        }
+
+        /* Neo-brutalist Base Classes */
+        .n-box {
+            border: 4px solid #0f172a;
+            border-radius: 12px;
+            box-shadow: 6px 6px 0 #0f172a;
+            background: white;
+            padding: 1.5rem;
+        }
+        
+        .n-badge {
+            display: inline-block;
+            border: 3px solid #0f172a;
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 #0f172a;
+            padding: 4px 12px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+        }
+
+        .title-highlight {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .title-highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: -4px;
+            right: -4px;
+            height: 40%;
+            background: var(--tw-color-baccent);
+            z-index: -1;
+            transform: rotate(-1deg);
+        }
+
+        /* Decorative Elements */
+        .deco-circle {
+            position: absolute;
+            border: 4px solid #0f172a;
+            border-radius: 50%;
+        }
+        .deco-star {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #fde047;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            border: 3px solid #0f172a;
+        }
+
+        /* Nav Buttons */
+        .nav-btn {
+            background: white;
+            border: 4px solid #0f172a;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #0f172a;
+            transition: all 0.1s ease;
+        }
+        .nav-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #0f172a;
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 4px 4px 0 #0f172a;
+        }
+
+        /* Typography sizing for slides to scale well */
+        h1 { font-size: clamp(2rem, 5vw, 4.5rem); line-height: 1.1; }
+        h2 { font-size: clamp(1.5rem, 3.5vw, 3rem); line-height: 1.2; }
+        h3 { font-size: clamp(1.2rem, 2.2vw, 1.8rem); line-height: 1.3; }
+        p, li { font-size: clamp(1rem, 1.6vw, 1.35rem); line-height: 1.6; }
+        
+        .custom-scroll::-webkit-scrollbar { display: block; width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="presentation-wrapper">
+    <div class="slide-container" id="deck">
+        
+        <!-- Header / Logos (Persistent) -->
+        <div class="absolute top-4 right-4 md:top-6 md:right-8 flex gap-2 md:gap-4 z-40 items-center">
+            <!-- RGC Logo -->
+            <div class="bg-white border-2 border-btext rounded-lg md:rounded-xl shadow-[2px_2px_0_#0f172a] md:shadow-[4px_4px_0_#0f172a] p-1 md:p-2 flex items-center justify-center transform rotate-2 md:h-[50px] h-8">
+                <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/94907efd-30d9-49af-8e62-aa4aee51ad33.png" alt="Ruangguru" class="h-4 md:h-6 w-auto object-contain">
+            </div>
+            <!-- Kalananti Logo -->
+            <div class="bg-white border-2 border-btext rounded-lg md:rounded-xl shadow-[2px_2px_0_#0f172a] md:shadow-[4px_4px_0_#0f172a] px-2 md:px-3 py-1 md:py-2 flex items-center justify-center transform -rotate-2 md:h-[50px] h-8">
+                <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/545c0426-169c-406f-8775-93afcacef50a.png" alt="Kalananti" class="h-3 md:h-5 w-auto object-contain">
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-slate-200 z-50">
+            <div id="progress" class="h-full bg-bprimary transition-all duration-300 w-0"></div>
+        </div>
+
+        <div class="slides-track" id="track">
+            
+            <!-- SLIDE 1: COVER -->
+            <div class="slide bg-bsecondary justify-center items-center text-center">
+                <div class="deco-circle w-32 h-32 border-bpink bg-bpink/20 -top-10 -left-10 z-0"></div>
+                <div class="deco-circle w-48 h-48 border-baccent bg-baccent/20 bottom-10 -right-10 z-0"></div>
+                
+                <div class="n-box bg-white max-w-4xl w-full z-10 p-12 text-center transform -rotate-1">
+                    <div class="inline-block px-4 py-1 bg-bprimary text-white font-bold rounded-full mb-6 text-xl mx-auto uppercase tracking-widest border-2 border-btext">CONFIDENTIAL INTERNAL BRIEF</div>
+                    <h1 class="font-heading font-black text-btext mb-6">
+                        <span class="title-highlight" style="--tw-color-baccent: #F9DA67;">Coordination Brief:<br>SCL Demo Class</span>
+                    </h1>
+                    <p class="text-slate-600 font-bold mb-4">Golden Madrid (Python/Roblox) & Citra Raya (Scratch)</p>
+                    <div class="w-24 h-2 bg-btext mx-auto mt-6 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- SLIDE 2: KONTEKS SCL -->
+            <div class="slide bg-white justify-center">
+                <div class="absolute right-0 top-0 w-64 h-full bg-blue-50 -z-10 border-l-4 border-btext transform skew-x-6 translate-x-12"></div>
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="n-badge bg-btext text-white text-2xl px-6 py-2">Konteks</div>
+                    <h2 class="font-heading font-bold text-btext">Kenapa Pakai Metode SCL?</h2>
+                </div>
+                
+                <div class="flex flex-col gap-4 h-full justify-center">
+                    <div class="n-box bg-red-50 flex gap-4 items-start flex-row transform rotate-1">
+                        <div class="text-4xl shrink-0 mt-1">🤔</div>
+                        <div>
+                            <h3 class="font-bold text-btext mb-1 text-rose-600">Masalah Belajar Reguler Saat Ini</h3>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><b>Tunggu Rombel:</b> Anak baru daftar harus <i>nunggu</i> Kuota/Rombel baru terkumpul dulu supaya kelas bisa mulai.</li>
+                                <li><b>Pace Disamaratakan:</b> Kecepatan dan level pemahaman tiap anak berbeda, tapi dipaksa maju bersamaan.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="text-center font-bold text-btext flex justify-center py-1">
+                        <div class="bg-baccent w-10 h-10 rounded-full border-4 border-btext flex items-center justify-center text-lg shadow-[2px_2px_0_#0f172a]">⬇️</div>
+                    </div>
+
+                    <div class="n-box bg-green-50 flex gap-4 items-start flex-row transform -rotate-1 border-l-[12px] border-bprimary">
+                        <div class="text-4xl shrink-0 mt-1">💡</div>
+                        <div>
+                            <h3 class="font-bold text-btext mb-1 text-teal-700">Solusi: Student-Centered Learning (SCL)</h3>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><b>Mulai Kapan Aja:</b> Anak bisa langsung gabung kelas reguler yang sudah berjalan! Gak perlu lagi nunggu <i>rombel</i> baru kumpul.</li>
+                                <li><b>Pace Personal:</b> Belajar disesuaikan kecepatan masing-masing. Yang bingung bisa ngulang pelan-pelan, yang paham bisa <i>gas</i> terus ke tingkat selanjutnya.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 3: AGENDA 1 P1 -->
+            <div class="slide bg-white justify-center">
+                <div class="absolute right-0 top-0 w-64 h-full bg-baccent/10 -z-10 border-l-4 border-btext transform -skew-x-6 translate-x-12"></div>
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="n-badge bg-bprimary text-white text-2xl px-6 py-2">Agenda 1</div>
+                    <h2 class="font-heading font-bold text-btext">Penjelasan Singkat SCL (Bagian 1)</h2>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-8 h-full">
+                    <div class="n-box bg-blue-50 flex flex-col justify-center">
+                        <h3 class="font-bold text-btext mb-4 flex items-center gap-3">
+                            <span class="text-3xl">🎯</span> Tujuan Utama SCL Demo
+                        </h3>
+                        <p class="text-btext">Hari <strong class="text-bprimary">Senin depan (di Golden Madrid)</strong> dan <strong class="text-bprimary">Kamis (di Citra Raya)</strong> tim HQ akan melakukan demo metode pembelajaran SCL (Student-Centered Learning), langsung <b>menggantikan waktu belajar di kelas reguler mereka</b>.</p>
+                        <div class="mt-4 p-4 bg-white border-2 border-btext rounded-lg border-dashed">
+                            <i>💡 Penjelasan Tambahan: Fokus utama kita adalah mengujicobakan bagaimana anak bisa mandiri di kelas dengan metode ini tanpa mengganggu jam operasional cabang lain.</i>
+                        </div>
+                    </div>
+
+                    <div class="n-box bg-purple-50 flex flex-col justify-center transform rotate-1">
+                        <h3 class="font-bold text-btext mb-4 flex items-center gap-3">
+                            <span class="text-3xl">🧩</span> Metode Belajar (SCL)
+                        </h3>
+                        <p class="text-btext">Nanti pengajar dari HQ <b>tidak akan menjelaskan materi secara ceramah massal</b>. Siswa belajar secara mandiri menggunakan modul cetak dan <i>personal interactive slide</i>.</p>
+                        <p class="text-btext mt-3">Pengajar cukup memfasilitasi <i>basic</i>-nya, selanjutnya anak bebas mengeksplorasi langkah sesuai modul.</p>
+                        <div class="mt-4 p-4 bg-bpurple text-white border-2 border-btext rounded-lg font-bold">
+                            <i>💡 Penjelasan Tambahan: Anak menjadi figur sentral (Action-Oriented), di mana guru bertindak sebagai mentor, bukan sekadar penceramah.</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 3: AGENDA 1 P2 -->
+            <div class="slide bg-white justify-center">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="n-badge bg-bprimary text-white text-2xl px-6 py-2">Agenda 1</div>
+                    <h2 class="font-heading font-bold text-btext">Detail Sistem & Peran (Bagian 2)</h2>
+                </div>
+                
+                <div class="flex flex-col gap-6">
+                    <div class="n-box bg-green-50 flex gap-6 items-center flex-row">
+                        <div class="text-5xl shrink-0">🚀</div>
+                        <div>
+                            <h3 class="font-bold text-btext mb-2">Keunggulan Metode SCL</h3>
+                            <p><b>Penyesuaian Pace Anak:</b> Kalau ada anak yang masih bingung, ia bisa mengulang terus pengerjaan modul di blok tersebut sampai betul-betul paham. <b>Anak yang cepat paham?</b> Bisa langsung melesat ke bab/objektif selanjutnya tanpa harus menunggu temannya!</p>
+                        </div>
+                    </div>
+
+                    <div class="n-box bg-orange-50 flex gap-6 items-center flex-row transform -rotate-1">
+                        <div class="text-5xl shrink-0">🎮</div>
+                        <div>
+                            <h3 class="font-bold text-btext mb-2">Aktivitas Kelas Interaktif</h3>
+                            <p>Sebagai selingan (ice breaking) kelas agar anak tidak pusing/bosan, di waktu jeda akan diadakan sesi <b>Unplugged Games</b> yang seru dan dipandu oleh HQ.</p>
+                        </div>
+                    </div>
+
+                    <div class="n-box bg-red-50 flex gap-6 items-center flex-row border-l-[12px] border-bpink">
+                        <div class="text-5xl shrink-0">👩‍🏫</div>
+                        <div>
+                            <h3 class="font-bold text-btext mb-2 text-rose-600">Peran Guru Reguler (Sangat Penting!)</h3>
+                            <p>Karena 100% demo dipegang HQ, <b>Guru reguler: TIDAK PERLU HADIR, TIDAK MEMANTAU, dan TIDAK MEMEGANG PANDUAN MENGAJAR!</b> Semuanya sudah di-handle penuh.</p>
+                            <p class="text-sm mt-2 font-bold text-rose-700"><i>💡 Penjelasan: Hal ini memberikan para guru reguler waktu jeda untuk fokus ke evaluasi lainnya atau stand-by untuk tugas cabang yang mendesak.</i></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 4: AGENDA 2 -->
+            <div class="slide bg-slate-100 justify-center">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="n-badge bg-rose-500 text-white text-2xl px-6 py-2">Agenda 2</div>
+                    <h2 class="font-heading font-bold text-btext">Action Item: Cabang Golden Madrid</h2>
+                </div>
+                <div class="mb-4">
+                    <span class="n-badge bg-white text-xl">🗓️ Senin - Demo Roblox</span>
+                </div>
+                
+                <div class="grid grid-cols-12 gap-6 h-full mt-4">
+                    <div class="col-span-5 n-box bg-white flex flex-col">
+                        <h3 class="font-bold text-btext mb-4 border-b-4 border-slate-200 pb-2">Konteks Kelas</h3>
+                        <p class="text-btext text-lg">Anak-anak di cabang ini sebenarnya adalah peserta <b>kelas Python</b>, tetapi saat demonstrasi nanti, platform yang kita gunakan adalah <b>Roblox</b>.</p>
+                    </div>
+
+                    <div class="col-span-7 n-box bg-baccent flex flex-col justify-center transform rotate-1 shadow-[8px_8px_0_#0f172a]">
+                        <h3 class="font-bold text-btext mb-3 flex items-center gap-2">
+                            <span class="bg-white p-2 border-2 border-btext rounded-full shrink-0">🚨</span>
+                            Permintaan Urgent ke SA (ASAP)
+                        </h3>
+                        <p class="bg-white p-4 border-2 border-btext rounded-lg text-lg mb-4 font-bold italic">
+                            "Minta tolong SA untuk segera menanyakan ke orang tua: Apakah anak sudah pernah main atau pernah pakai Roblox / Roblox Studio sebelumnya?"
+                        </p>
+                        <h3 class="font-bold text-btext mb-2 mt-2">Tujuan Pendataan:</h3>
+                        <ul class="list-disc pl-6 text-btext">
+                            <li>Menentukan pembagian modul secara akurat.</li>
+                            <li><b>Belum pernah main:</b> Akan diberikan Modul Sesi 1.</li>
+                            <li><b>Sudah pernah main:</b> Bisa lompat mengerjakan Modul Sesi 2 atau 3.</li>
+                        </ul>
+                        <p class="mt-4 text-sm font-bold bg-white/50 p-2 rounded border border-btext">
+                            <i>💡 Penjelasan: Mencegah anak yang pro kebosanan karena mengulang dasar (WASD dll), dan anak pemula kebingungan dikasih modul pro.</i>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 5: AGENDA 3 -->
+            <div class="slide bg-slate-100 justify-center">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="n-badge bg-amber-500 text-white text-2xl px-6 py-2">Agenda 3</div>
+                    <h2 class="font-heading font-bold text-btext">Action Item: Cabang Citra Raya</h2>
+                </div>
+                <div class="mb-4">
+                    <span class="n-badge bg-white text-xl">🗓️ Kamis - Demo Scratch</span>
+                </div>
+                
+                <div class="grid grid-cols-12 gap-6 h-full mt-4">
+                    <div class="col-span-5 n-box bg-white flex flex-col">
+                        <h3 class="font-bold text-btext mb-4 border-b-4 border-slate-200 pb-2">Konteks Kelas</h3>
+                        <p class="text-btext text-lg">Sebelumnya, progress belajar anak-anak di kelas Scratch ini "disamaratakan". Nanti pas demo, kita akan buat <b>personalisasi</b>: pembelajaran sesuai level pemahaman masing-masing individu.</p>
+                    </div>
+
+                    <div class="col-span-7 n-box bg-cyan-200 flex flex-col justify-center transform -rotate-1 shadow-[8px_8px_0_#0f172a]">
+                        <h3 class="font-bold text-btext mb-3 flex items-center gap-2">
+                            <span class="bg-white p-2 border-2 border-btext rounded-full shrink-0">👩‍🏫</span>
+                            Permintaan ke Guru (ASAP)
+                        </h3>
+                        <p class="bg-white p-4 border-2 border-btext rounded-lg text-lg mb-4 font-bold">
+                            Minta tolong guru kelas menginformasikan secara spesifik: <b>Setiap anak saat ini masih kurang paham di pertemuan ke-berapa?</b>
+                        </p>
+                        <h3 class="font-bold text-btext mb-2 mt-2">Tujuan Pendataan (Logika Cabang):</h3>
+                        <ul class="list-disc pl-6 text-btext mb-2">
+                            <li>Misal: Anak kurang di Sesi 2 → Demo mulai dari Modul Sesi 2.</li>
+                            <li>Anak di kelas yang sama yang sudah paham Sesi 2 → Lanjut ke level/modul yang berbeda.</li>
+                        </ul>
+                        <p class="mt-2 text-sm font-bold bg-white/60 p-2 rounded border border-btext">
+                            <i>💡 Penjelasan: SA (Student Advisor) wajib bantu pantau agar data progress dari Guru ini terkumpul lengkap. Tanpa data ini, SCL tidak bisa jalan!</i>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 6: DRAFT BC WA -->
+            <div class="slide bg-blue-50 justify-center">
+                <div class="flex items-center md:items-start flex-col md:flex-row gap-4 mb-4">
+                    <div class="n-badge bg-bprimary text-white text-xl md:text-2xl px-6 py-2">Draf BC WhatsApp</div>
+                    <h2 class="font-heading font-bold text-btext">Template Pengumuman Orang Tua</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-6 h-auto md:h-[75%] mt-2">
+                    <!-- Draft Golden Madrid -->
+                    <div class="n-box bg-white flex flex-col h-[50vh] md:h-full relative overflow-visible border-rose-500 pb-16 md:pb-16 mt-4 md:mt-0">
+                        <div class="absolute -top-4 -right-4 bg-rose-500 text-white font-bold px-4 py-1 rounded-full border-2 border-btext transform rotate-3 z-10 shadow-[2px_2px_0_#0f172a] text-sm md:text-base">Golden Madrid (Roblox)</div>
+                        <div class="overflow-y-auto pr-3 custom-scroll text-sm flex-grow whitespace-pre-wrap leading-relaxed text-btext h-full">Selamat pagi/siang Ayah/Bunda <b>[Nama Orang Tua]</b> , semoga selalu dalam keadaan sehat.
+
+Kami dari Ruangguru Coding cabang Golden Madrid ingin menginformasikan kabar gembira! Pada hari Senin depan, kami akan mengadakan Sesi Kelas Spesial untuk mendemonstrasikan metode pembelajaran baru kami yang lebih interaktif.
+
+Sebagai informasi, kelas spesial ini sifatnya tambahan dan di luar paket 12 sesi belajar reguler (tidak akan memotong kuota sesi anak). Keuntungan utama dari kelas ini adalah <b>[Nama Anak]</b> dapat belajar dan mengeksplorasi materi sesuai dengan kecepatan pemahamannya masing-masing.
+
+Kabar gembira lainnya, di kelas spesial nanti anak-anak akan berkesempatan mengeksplorasi pembuatan game menggunakan <b>Roblox Studio!</b> Menariknya, di sini anak-anak tidak hanya belajar desain 3D, tapi juga mempraktikkan textual coding menggunakan bahasa pemrograman LUA. Ayah/Bunda tidak perlu khawatir karena <i>bahasa LUA ini sangat mirip dengan Python</i> yang selama ini mereka pelajari, sehingga anak-anak justru akan semakin memperkaya skill coding mereka tanpa merasa kebingungan.
+
+<span class="bg-rose-100 font-bold block p-2 rounded border border-rose-300">Nah, agar sesi ini bisa berjalan maksimal dan modul yang kami siapkan benar-benar pas untuk <b>[Nama Anak]</b> , kami mohon bantuannya untuk mengonfirmasi satu hal:
+Apakah <b>[Nama Anak]</b> sebelumnya sudah pernah mencoba bermain Roblox atau menggunakan Roblox Studio?</span>
+
+Mohon kesediaan Ayah/Bunda untuk membalas pesan ini ya. Terima kasih banyak atas dukungan Ayah/Bunda terhadap proses belajar <b>[Nama Anak]</b>!</div>
+                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)]">
+                            <button class="w-full bg-slate-100 hover:bg-slate-200 border-2 border-btext rounded-lg py-2 font-bold transition-all text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0_#0f172a] active:shadow-none active:translate-y-1" onclick="navigator.clipboard.writeText('Selamat pagi/siang Ayah/Bunda [Nama Orang Tua] , semoga selalu dalam keadaan sehat.\n\nKami dari Ruangguru Coding cabang Golden Madrid ingin menginformasikan kabar gembira! Pada hari Senin depan, kami akan mengadakan Sesi Kelas Spesial untuk mendemonstrasikan metode pembelajaran baru kami yang lebih interaktif.\n\nSebagai informasi, kelas spesial ini sifatnya tambahan dan di luar paket 12 sesi belajar reguler (tidak akan memotong kuota sesi anak). Keuntungan utama dari kelas ini adalah [Nama Anak] dapat belajar dan mengeksplorasi materi sesuai dengan kecepatan pemahamannya masing-masing.\n\nKabar gembira lainnya, di kelas spesial nanti anak-anak akan berkesempatan mengeksplorasi pembuatan game menggunakan Roblox Studio! Menariknya, di sini anak-anak tidak hanya belajar desain 3D, tapi juga mempraktikkan textual coding menggunakan bahasa pemrograman LUA. Ayah/Bunda tidak perlu khawatir karena bahasa LUA ini sangat mirip dengan Python yang selama ini mereka pelajari, sehingga anak-anak justru akan semakin memperkaya skill coding mereka tanpa merasa kebingungan.\n\nNah, agar sesi ini bisa berjalan maksimal dan modul yang kami siapkan benar-benar pas untuk [Nama Anak] , kami mohon bantuannya untuk mengonfirmasi satu hal:\nApakah [Nama Anak] sebelumnya sudah pernah mencoba bermain Roblox atau menggunakan Roblox Studio?\n\nMohon kesediaan Ayah/Bunda untuk membalas pesan ini ya. Terima kasih banyak atas dukungan Ayah/Bunda terhadap proses belajar [Nama Anak]!'); alert('Draft teks Golden Madrid berhasil disalin ke clipboard!')">
+                                📋 Copy Full Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Draft Citra Raya -->
+                    <div class="n-box bg-white flex flex-col h-[50vh] md:h-full relative overflow-visible border-amber-500 pb-16 mt-4 md:mt-0 mb-20 md:mb-0">
+                        <div class="absolute -top-4 -right-4 bg-amber-500 text-white font-bold px-4 py-1 rounded-full border-2 border-btext transform -rotate-2 z-10 shadow-[2px_2px_0_#0f172a] text-sm md:text-base">Citra Raya (Scratch)</div>
+                        <div class="overflow-y-auto pr-3 custom-scroll text-sm flex-grow whitespace-pre-wrap leading-relaxed text-btext h-full">Selamat pagi/siang Ayah/Bunda <b>[Nama Orang Tua]</b>, semoga selalu dalam keadaan sehat.
+
+Kami dari Ruangguru Coding cabang Citra Raya ingin menyampaikan kabar gembira! Pada hari Kamis depan, kami akan mengadakan Sesi Kelas Spesial untuk mendemonstrasikan metode pembelajaran baru kami.
+
+Sesi ini sangat istimewa karena di luar paket 12 sesi belajar reguler (tidak akan memotong kuota sesi anak). Pada kelas ini, <b>[Nama Anak]</b> berkesempatan penuh untuk mengulang dan memperkuat pemahaman pada materi-materi yang mungkin sebelumnya dirasa masih sulit atau terlewat.
+
+<span class="bg-amber-100 font-bold block p-2 rounded border border-amber-300">Agar sesi pengayaan ini bisa maksimal dan sesuai kebutuhan <b>[Nama Anak]</b>, kami mohon informasinya:
+Kira-kira, apakah ada materi di sesi/pertemuan Scratch sebelumnya yang <b>[Nama Anak]</b> masih rasa bingung dan ingin diulang kembali? Mohon kesediaan Ayah/Bunda untuk menginformasikan ke kami ya, agar guru dapat menyiapkan modul yang paling pas. Terima kasih banyak atas dukungan Ayah/Bunda!</span></div>
+                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)]">
+                            <button class="w-full bg-slate-100 hover:bg-slate-200 border-2 border-btext rounded-lg py-2 font-bold transition-all text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0_#0f172a] active:shadow-none active:translate-y-1" onclick="navigator.clipboard.writeText('Selamat pagi/siang Ayah/Bunda [Nama Orang Tua], semoga selalu dalam keadaan sehat.\n\nKami dari Ruangguru Coding cabang Citra Raya ingin menyampaikan kabar gembira! Pada hari Kamis depan, kami akan mengadakan Sesi Kelas Spesial untuk mendemonstrasikan metode pembelajaran baru kami.\n\nSesi ini sangat istimewa karena di luar paket 12 sesi belajar reguler (tidak akan memotong kuota sesi anak). Pada kelas ini, [Nama Anak] berkesempatan penuh untuk mengulang dan memperkuat pemahaman pada materi-materi yang mungkin sebelumnya dirasa masih sulit atau terlewat.\n\nAgar sesi pengayaan ini bisa maksimal dan sesuai kebutuhan [Nama Anak], kami mohon informasinya:\nKira-kira, apakah ada materi di sesi/pertemuan Scratch sebelumnya yang [Nama Anak] masih rasa bingung dan ingin diulang kembali? Mohon kesediaan Ayah/Bunda untuk menginformasikan ke kami ya, agar guru dapat menyiapkan modul yang paling pas. Terima kasih banyak atas dukungan Ayah/Bunda!'); alert('Draft teks Citra Raya berhasil disalin ke clipboard!')">
+                                📋 Copy Full Text
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <style>
+                    .custom-scroll::-webkit-scrollbar { display: block; width: 6px; }
+                    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+                </style>
+            </div>
+
+            <!-- SLIDE 7: AGENDA 4 -->
+            <div class="slide bg-white justify-center">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="n-badge bg-emerald-500 text-white text-2xl px-6 py-2">Agenda 4</div>
+                    <h2 class="font-heading font-bold text-btext">Koordinasi Modul (Deadline & Logistik)</h2>
+                </div>
+                
+                <div class="flex flex-col gap-8 h-full">
+                    <div class="n-box relative bg-rose-50 border-rose-900 border-l-[16px] overflow-hidden">
+                        <div class="absolute -right-10 -top-10 opacity-10 text-9xl">⏰</div>
+                        <h3 class="font-bold text-rose-900 mb-2">1. Deadline Konfirmasi (ASAP)</h3>
+                        <p class="text-lg">Kumpulan data <b>(Pengalaman Roblox di GM & Progress Scratch di CR)</b> sangat menentukan varian modul apa yang dipakai oleh tiap anak. Konfirmasi SA dan Guru ditunggu secepatnya.</p>
+                        <p class="mt-3 text-sm font-bold opacity-80 italic">Penjelasan: Tanpa data spesifik ini, kita tidak tahu modul Sesi berapa yang harus di-print untuk masing-masing anak.</p>
+                    </div>
+
+                    <div class="n-box relative bg-white border-l-[16px] border-bprimary overflow-hidden">
+                        <h3 class="font-bold text-btext mb-2">2. Cetak Modul (Logistik)</h3>
+                        <ul class="list-disc pl-6 text-lg space-y-2">
+                            <li>Jika data FIX (Paling cepat Sabtu / Minggu ini), minta tolong kepada <b>pihak cabang</b> untuk mengeksekusi print modul.</li>
+                            <li><b>Syarat:</b> Pastikan jadwal sesi anak-anak sudah terkonfirmasi mantap 100%.</li>
+                            <li><b>Contingency Plan:</b> Kalau cabang ada kendala (misal print rusak / padat), infokan secepatnya ke HQ. Tim HQ yang akan backup print dan bawakan modulnya!</li>
+                        </ul>
+                        <p class="mt-4 p-3 bg-bsecondary border-2 border-btext rounded font-bold text-sm">
+                            💡 Penjelasan Akhir: Komunikasi dua arah sangat dibutuhkan. Cabang tidak usah ragu minta bantuan HQ demi kelancaran kelas anak!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 7: CLOSING -->
+            <div class="slide bg-btext text-white justify-center items-center text-center">
+                <div class="deco-star" style="top: 20%; left: 20%; transform: scale(1.5) rotate(15deg);"></div>
+                <div class="deco-star" style="bottom: 25%; right: 20%; transform: scale(2) rotate(-25deg); background: #F5B0CB;"></div>
+                
+                <div class="n-box bg-btext border-white border-[6px] max-w-3xl w-full z-10 p-16 text-center shadow-[12px_12px_0_#2BB6E3]">
+                    <h1 class="font-heading font-black text-white mb-6 text-5xl">
+                        Semoga Meeting Berjalan Lancar! 🚀
+                    </h1>
+                    <p class="text-slate-300 text-xl mb-8 leading-relaxed">
+                        Gunakan urutan slide ini agar SA dan Guru langsung tau, paham secara konkret, dan <b>actionable</b> mengetahui tugas mereka masing-masing.
+                    </p>
+                    <div class="flex justify-center gap-4">
+                        <span class="n-badge bg-white text-btext">Let's Do This!</span>
+                        <span class="n-badge bg-bprimary text-white border-white border-[3px]">Q&A Session</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Controls UI -->
+        <div class="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-4 md:gap-6 z-50 bg-white/50 backdrop-blur-md p-2 rounded-2xl border-2 border-btext">
+            <button id="prevBtn" class="nav-btn group" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 md:w-8 md:h-8 text-btext group-hover:-translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="bg-white border-4 border-btext rounded-xl shadow-[4px_4px_0_#0f172a] px-4 md:px-6 py-1 md:py-2 flex items-center justify-center font-bold text-lg md:text-xl min-w-[100px] md:min-w-[120px]">
+                <span id="counter">1 / 9</span>
+            </div>
+            <button id="nextBtn" class="nav-btn group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 md:w-8 md:h-8 text-btext group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    const track = document.getElementById('track');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+
+    function updateSlide() {
+        // Move track
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+        
+        // Update counter
+        counter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        
+        // Update progress bar
+        const progressPercentage = ((currentSlide) / (totalSlides - 1)) * 100;
+        progress.style.width = `${progressPercentage}%`;
+
+        // Update buttons state
+        if (currentSlide === 0) {
+            prevBtn.disabled = true;
+        } else {
+            prevBtn.disabled = false;
+        }
+
+        if (currentSlide === totalSlides - 1) {
+            nextBtn.disabled = true;
+        } else {
+            nextBtn.disabled = false;
+        }
+    }
+
+    prevBtn.addEventListener('click', () => {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateSlide();
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        if (currentSlide < totalSlides - 1) {
+            currentSlide++;
+            updateSlide();
+        }
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        } else if (e.key === 'ArrowLeft') {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+    });
+
+    // Initialize
+    updateSlide();
+</script>
+
+</body>
+</html>

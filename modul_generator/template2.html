@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Aktivitas Roblox Studio</title>
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        corePlugins: { preflight: true },
+        theme: {
+          extend: {
+            colors: {
+              'kalananti-green': '#A2CC3A',
+              'kalananti-darkgreen': '#70A11F',
+              'kalananti-yellow': '#F9C846',
+              'kalananti-orange': '#F07D49',
+              'kalananti-blue': '#4CAAE4',
+              'kalananti-navy': '#264A7F',
+              'kalananti-purple': '#8E6CBD',
+              'kalananti-pink': '#F48E9B'
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        :root {
+            /* Landscape / Spread Mode A4 (297 x 210) */
+            --page-width: 297mm;
+            --page-height: 210mm;
+        }
+
+        body {
+            background-color: #E2E8F0;
+            font-family: 'Nunito', sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        h1, h2, h3, h4, h5, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* MASTER SPREAD CONTAINER (2 Halaman A4 disatukan Landscape) */
+        .spread-page {
+            width: var(--page-width);
+            height: var(--page-height); 
+            margin: 40px auto;
+            background: #FDFDF8;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Membelah kiri Kanan */
+            page-break-after: always;
+            break-after: page;
+        }
+
+        /* Garis pelipitan tengah buku */
+        .spread-page::after {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 50%;
+            width: 4px;
+            background: linear-gradient(to right, rgba(0,0,0,0.02), rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.02));
+            transform: translateX(-50%);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .page-side {
+            padding: 15mm 15mm;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ---------------------------------
+           HALAMAN 1 (SAMPUL & OBJECTIVES)
+        --------------------------------- */
+        .page-1-header {
+            background-color: #A2CC3A;
+            background-image: radial-gradient(#FDFDF8 1.5px, transparent 1.5px);
+            background-size: 15px 15px;
+            padding: 30px;
+            border-bottom-right-radius: 60px;
+            position: relative;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 5px 15px rgba(112, 161, 31, 0.4);
+            margin: -15mm -15mm 20px -15mm; /* Tarik sampe mentok ujung kertas */
+        }
+        
+        .page-number {
+             position: absolute;
+             bottom: 15px;
+             left: 15px;
+             background-color: #A2CC3A;
+             color: white;
+             width: 40px;
+             height: 40px;
+             border-radius: 50%;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-family: 'Fredoka', sans-serif;
+             font-weight: bold;
+             font-size: 18px;
+             z-index: 50;
+        }
+        .page-number.right {
+             left: auto;
+             right: 15px;
+        }
+        
+        .side-title {
+             position: absolute;
+             bottom: 25px;
+             left: 65px;
+             font-size: 11px;
+             color: #4a5568;
+             font-weight: 800;
+             letter-spacing: 1px;
+             transform-origin: left bottom;
+             white-space: nowrap;
+        }
+        .side-title.right {
+             left: auto;
+             right: 65px;
+        }
+
+        /* ---------------------------------
+           LIST STYLING - GAYA BUKU ANAK
+        --------------------------------- */
+        .list-objective {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 5px;
+        }
+        .list-objective > li {
+            position: relative;
+            padding-left: 1.8rem;
+            margin-bottom: 0.8rem;
+            color: #2D3748;
+            font-size: 11pt;
+            font-weight: 600;
+        }
+        .list-objective > li::before {
+            content: "➔";
+            color: #A2CC3A;
+            position: absolute;
+            left: 0;
+            font-weight: 900;
+            font-size: 13pt;
+        }
+
+        /* TEKS MATERI (Membaca) */
+        .text-reading {
+            font-size: 11pt;
+            color: #2D3748;
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        /* KOTAK AKTIVITAS (Activity/Challenge) = Gambar 2 */
+        .activity-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid #FDFDF8;
+            position: relative;
+            margin-top: 35px;
+            margin-bottom: 15px;
+        }
+        .activity-label {
+            position: absolute;
+            top: -20px;
+            left: -10px;
+            background-color: #F07D49;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14pt;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+        
+        /* Gambar Screenshot Code / Objek */
+        .shot-card {
+           background-color: #F9C846; /* Kuning block scratch styling */
+           padding: 5px;
+           border-radius: 8px;
+           margin-bottom: 15px;
+           box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+        .shot-card img {
+            width: 100%;
+            display: block;
+            border-radius: 4px;
+        }
+        
+        /* EXTRA CHALLENGE / FYK */
+        .challenge-card {
+            background-color: #E6FFFA; /* Teal sangat muda */
+            border: 3px solid #38B2AC; /* Teal */
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            box-shadow: 3px 3px 0 #38B2AC;
+        }
+        .challenge-label {
+            position: absolute;
+            top: -18px;
+            right: 20px;
+            background-color: #38B2AC;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: bold;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 12pt;
+        }
+
+        /* THINK AGAIN! (Kamus Coder) -> Bentuk Balon/Awan Kata */
+        .think-bubble {
+            background-color: #FDFDF8;
+            border: 3px solid #8E6CBD; /* Ungu */
+            border-radius: 20px;
+            padding: 15px;
+            color: #2D3748;
+            position: relative;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            box-shadow: 3px 3px 0 #8E6CBD;
+        }
+        .think-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 30px;
+            background-color: #FDFDF8;
+            width: 20px; height: 20px;
+            border-bottom: 3px solid #8E6CBD;
+            border-right: 3px solid #8E6CBD;
+            border-bottom-right-radius: 5px;
+            transform: rotate(45deg);
+        }
+        
+        .think-title {
+            position: absolute;
+            top: -15px; left: 15px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 13pt;
+            font-weight: 900;
+            background: white;
+            color: #8E6CBD;
+            padding: 4px 15px;
+            border-radius: 20px;
+            box-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+        }
+
+        /* ASYMMETRICAL STRIPES / ORNAMENT */
+        .top-stripe-bg {
+            background-color: #A2CC3A;
+            background-image: radial-gradient(#FDFDF8 1.5px, transparent 1.5px);
+            background-size: 15px 15px;
+            height: 30px;
+            margin: -15mm -15mm 20px -15mm; /* Full width edge to edge */
+        }
+        .top-stripe-blue {
+            background-color: #4CAAE4;
+            height: 30px;
+            margin: -15mm -15mm 20px -15mm;
+        }
+
+        /* GAMBAR KONTEN MATERI UTAMA */
+        .material-img {
+            width: 95%;
+            margin: 15px auto;
+            border: 4px solid white;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            display: block;
+        }
+
+        /* ========================
+           PRINT SETTINGS ONLY
+        ======================== */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            /* Memaksa kertas Landscape di Chrome */
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+            .spread-page {
+                width: 100vw; height: 100vh; margin: 0; padding: 0;
+                box-shadow: none; border: none; page-break-after: always;
+                border-radius: 0;
+            }
+            .no-print { display: none !important; }
+            /* Chrome Print Background Flags */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Tools (No Print) -->
+    <div class="no-print bg-white p-5 shadow-lg rounded-xl flex justify-between items-center max-w-4xl mx-auto my-5 border-l-8 border-kalananti-yellow">
+        <div>
+            <h2 class="font-display text-2xl font-bold text-gray-800">📚 Buku Saku (Spread) <span class="text-sm rounded bg-gray-200 px-2 text-gray-500">v2</span></h2>
+            <p class="text-gray-500 font-bold text-sm">Mode A4 Landscape Kiri-Kanan (Simulasi Buku Anak Terbuka)</p>
+        </div>
+        <div class="flex gap-3 relative">
+            <select id="moduleSelector" class="border-2 border-kalananti-navy rounded-lg p-2 font-bold cursor-pointer text-sm">
+                <option value="">Memuat data...</option>
+            </select>
+            <button onclick="window.print()" class="bg-kalananti-orange hover:bg-orange-600 text-white font-black py-2 px-6 rounded-lg uppercase shadow-[0_3px_0_#d05d2b] active:translate-y-1 active:shadow-none transition flex gap-2 items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
+                </svg>
+                PDF Landscape
+            </button>
+        </div>
+    </div>
+
+    <!-- Area Inject Halaman-Halaman -->
+    <div id="book-area">
+        <div id="loading" class="text-center font-bold text-2xl text-kalananti-blue mt-32 animate-pulse font-display flex flex-col items-center">
+            <span class="text-5xl mb-4">🚀</span>
+            Merakit Buku Ajaibmu... <br> <span class="text-base text-gray-500">Mohon tunggu sebentar</span>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwvNSa3hUMNqhNOINDeG3cPUdlQM-dGfl-dDX5WejhESjHRALipqhwJ_-3HXOJehtWbWw/exec'; 
+        const CSV_EXPORT_URL = 'https://docs.google.com/spreadsheets/d/1nGihCZS3S9moNY2dt7GIzmBESIQ72Jh5J7d90nhZvX0/gviz/tq?tqx=out:csv&sheet=B2C_RobloxStudio_Modul';
+
+        let moduleData = [];
+
+        async function fetchData() {
+            try {
+                if (WEB_APP_URL && WEB_APP_URL.trim() !== '') {
+                    const response = await fetch(WEB_APP_URL, { redirect: "follow" });
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.indexOf("text/html") !== -1) throw new Error("Google Login Error");
+                    
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+
+                    if (data.length > 0 && (data[0].col_0 === "Level" || data[0].col_0 === "Session" || Object.values(data[0]).includes("Level"))) {
+                       const headers = Object.values(data[0]);
+                       const keys = Object.keys(data[0]);
+                       let formattedData = [];
+                       for (let i = 1; i < data.length; i++) {
+                           let rw = data[i];
+                           let newObj = {};
+                           keys.forEach((k, idx) => {
+                               let headerName = headers[idx] ? headers[idx].toString().trim() : k;
+                               newObj[headerName] = rw[k];
+                           });
+                           formattedData.push(newObj);
+                       }
+                       moduleData = formattedData;
+                    } else {
+                       moduleData = data;
+                    }
+                    renderMenu();
+                } else {
+                    const response = await fetch(CSV_EXPORT_URL);
+                    const text = await response.text();
+                    Papa.parse(text, {
+                        header: true, skipEmptyLines: true,
+                        complete: function(results) {
+                            moduleData = results.data;
+                            renderMenu();
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error Load: " + e.message);
+            }
+        }
+
+        function renderMenu() {
+            const sel = document.getElementById('moduleSelector');
+            sel.innerHTML = '';
+            
+            let levels = {};
+            moduleData.forEach(row => {
+                if(!row.Level) return;
+                if (!levels[row.Level]) levels[row.Level] = [];
+                if (!levels[row.Level].includes(row.Session)) levels[row.Level].push(row.Session);
+            });
+
+            for (let level in levels) {
+                let optgroup = document.createElement('optgroup');
+                optgroup.label = 'Level ' + level;
+                levels[level].forEach(session => {
+                    let opt = document.createElement('option');
+                    opt.value = level + '|' + session;
+                    opt.textContent = `Level ${level} - Session ${session}`;
+                    optgroup.appendChild(opt);
+                });
+                sel.appendChild(optgroup);
+            }
+            
+            sel.addEventListener('change', (e) => {
+                let parts = e.target.value.split('|');
+                generateBook(parts[0], parts[1]);
+            });
+
+            if (moduleData.length > 0) {
+                sel.value = moduleData[0].Level + '|' + moduleData[0].Session;
+                generateBook(moduleData[0].Level, moduleData[0].Session);
+            }
+        }
+
+        // --- SISTEM PAGINATION SPREAD/MANUAL --- //
+        // 1 Spread = 2 Hal (Kiri dan Kanan). Lebar Total: A4 Landscape.
+
+        function generateBook(level, session) {
+            document.getElementById('loading').classList.add('hidden');
+            const row = moduleData.find(r => r.Level == level && r.Session == session);
+            if (!row) return;
+
+            const bookArea = document.getElementById('book-area');
+            bookArea.innerHTML = ''; 
+
+            let spreadHTMLs = [];
+            let currentSpreadIdx = 1;
+            let currentSide = 'left'; // 'left' atau 'right'
+
+            function appendToSpread(htmlCode) {
+                let containerId = `spread-${currentSpreadIdx}-${currentSide}`;
+                let container = document.getElementById(containerId);
+                
+                // Kalau Spread Belum Ada, Bikin Spread Baru (2 Kolom)
+                if (!container) {
+                    let newSpread = `
+                    <div class="spread-page" id="spread-box-${currentSpreadIdx}">
+                        <div class="page-side" id="spread-${currentSpreadIdx}-left">
+                            <div class="page-number">${(currentSpreadIdx*2)-1}</div>
+                            <div class="side-title">Modul Roblox L${row.Level}S${row.Session}</div>
+                        </div>
+                        <div class="page-side" id="spread-${currentSpreadIdx}-right">
+                            <div class="page-number right">${(currentSpreadIdx*2)}</div>
+                            <div class="side-title right text-right">Edukasi Kalananti</div>
+                        </div>
+                    </div>`;
+                    bookArea.insertAdjacentHTML('beforeend', newSpread);
+                    container = document.getElementById(containerId);
+                    
+                    // Kalau halaman genap/bukan spread 1, tambahin top stripe default
+                    if(currentSpreadIdx > 1) {
+                         document.getElementById(`spread-${currentSpreadIdx}-left`).innerHTML += '<div class="top-stripe-bg"></div>';
+                         document.getElementById(`spread-${currentSpreadIdx}-right`).innerHTML += '<div class="top-stripe-blue"></div>';
+                    }
+                }
+                
+                // Cek Ketinggian (Simulasi kasar batasan isi Halaman 210mm)
+                // Jika dirasa sudah lebih dari 4 blok besar div per halaman, maksa ganti side
+                let currentItemCount = container.children.length;
+                let itemWeightLimit = 5; 
+                if(currentItemCount > itemWeightLimit) {
+                    if(currentSide === 'left') {
+                        currentSide = 'right';
+                    } else {
+                        currentSpreadIdx++;
+                        currentSide = 'left';
+                    }
+                    appendToSpread(htmlCode); // Rekursi inject ke wadah baru yg bener
+                } else {
+                    container.insertAdjacentHTML('beforeend', htmlCode);
+                }
+            }
+
+            // [1] BLOK PERTAMA (HEADER COVER SPREAD 1 LEFT)
+            let headerObj = `
+                <div class="page-1-header">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-white text-kalananti-green w-16 h-16 flex-shrink-0 rounded-full flex items-center justify-center font-display font-black text-3xl border-4 border-kalananti-yellow">
+                            ${row.Level}.${row.Session}
+                        </div>
+                        <div>
+                            <h1 class="font-display font-black text-[2rem] leading-none drop-shadow-md mb-2">Roblox<br>Studio Play</h1>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="font-display text-[1.4rem] text-kalananti-green font-bold mb-1">In this lesson</h3>
+                <p class="font-bold text-gray-700 text-[11pt] m-0">You will learn:</p>
+                ${formatObjectives(row.objectives)}
+            `;
+            appendToSpread(headerObj);
+
+            // [2] CONTENT MATERI
+            let materialsItems = parseMaterialsBlocks(row.materials, row);
+            materialsItems.forEach(block => {
+                appendToSpread(block);
+            });
+
+            // [3] BLOK AKTIVITAS (Challenge & Check)
+            if(currentSide==='left' && document.getElementById(`spread-${currentSpreadIdx}-${currentSide}`).children.length > 3){
+                 currentSide='right';
+            }
+            
+            let mustDoHtml = `
+            <div class="activity-card mt-8">
+                <div class="activity-label flex items-center gap-1">
+                    <span class="text-xl">🏃</span> <span>MUST DO</span>
+                </div>
+                <div class="mt-4 text-[11pt] text-gray-700">${formatCheck(row.must_do)}</div>
+            </div>`;
+            appendToSpread(mustDoHtml);
+
+            let shouldDoHtml = `
+            <div class="challenge-card mt-8">
+                <div class="challenge-label flex gap-2"><span>⭐</span> EXTRA CHALLENGE</div>
+                <div class="text-[11pt] text-gray-800 font-medium">${formatCheck(row.should_do)}</div>
+            </div>`;
+            appendToSpread(shouldDoHtml);
+
+            let aspireHtml = `
+            <div class="challenge-card mt-8 !border-kalananti-yellow" style="box-shadow: 3px 3px 0 #F9C846">
+                <div class="challenge-label !bg-kalananti-yellow !text-orange-800">🚀 ASPIRE TO DO</div>
+                <div class="text-[11pt] text-gray-800 font-medium">${formatCheck(row.aspire_to_do)}</div>
+            </div>`;
+            appendToSpread(aspireHtml);
+
+            // [4] QUIZ
+            // Kita paksakan kuis di halaman (sisi) terpisah aja biar rapi jadi full 1 sisi
+            currentSide = (currentSide === 'left') ? 'right' : 'left';
+            if(currentSide === 'left') currentSpreadIdx++;
+            
+            let quizHTML = `
+            <div class="bg-gray-50 p-6 rounded-xl mt-4 border-[3px] border-kalananti-blue relative mt-10">
+                <div class="absolute -top-6 left-5 bg-kalananti-blue text-white font-display text-2xl font-black rounded-lg px-4 py-1 shadow-sm">
+                    Mini Quiz 🤔
+                </div>
+                
+                <h4 class="font-bold text-lg mb-2 mt-4 text-kalananti-navy line-clamp-1 border-b pb-1">Pertanyaan</h4>
+                ${formatNum(row.quiz_questions)}
+
+                <h4 class="font-bold text-lg mb-2 mt-6 text-kalananti-navy line-clamp-1 border-b pb-1">Opsi Jawaban</h4>
+                ${formatLettered(row.quiz_options)}
+            </div>
+            `;
+            appendToSpread(quizHTML);
+        }
+
+        // ====== TOOL FORMATTING ====== //
+        function formatObjectives(text) {
+             if (!text) return '';
+             let lines = text.split('\n');
+             let out = '<ul class="list-objective">';
+             for (let line of lines) {
+                 line = line.trim();
+                 let cleanLine = line.replace(/^[•\-\*]\s*/, '').trim();
+                 if (cleanLine) out += `<li>${cleanLine}</li>`;
+             }
+             return out + '</ul>';
+        }
+
+        function formatCheck(text) {
+             if (!text) return '';
+             let lines = text.split('\n');
+             let out = '<ul class="list-none p-0 m-0 space-y-2">';
+             for (let line of lines) {
+                 line = line.trim();
+                 let cleanLine = line.replace(/^[•\-\*]\s*/, '').replace(/\[.*\]\s*/, '').trim();
+                 if (cleanLine) out += `<li class="flex items-start"><span class="mr-2 text-kalananti-orange font-bold text-lg leading-none">☑</span> <span class="leading-snug">${cleanLine}</span></li>`;
+             }
+             return out + '</ul>';
+        }
+
+        function formatNum(text) {
+             if (!text) return '';
+             let lines = text.split('\n');
+             let out = '<div class="space-y-2">';
+             for (let line of lines) {
+                 line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                 out += `<p class="text-[10.5pt] leading-snug m-0">${line.trim()}</p>`;
+             }
+             return out + '</div>';
+        }
+
+        function formatLettered(text) {
+             if (!text) return '';
+             let lines = text.split('\n');
+             let out = '<div class="space-y-2">';
+             for (let line of lines) {
+                 line = line.trim();
+                 let numToken = line.match(/^\d+\./) ? line.match(/^\d+\./)[0] : '';
+                 let theRest = line.replace(/^\d+\.\s*/, '').trim();
+                 if (theRest) {
+                     let formattedRest = theRest.replace(/([A-Z])\./g, '<br><span class="inline-block bg-white border border-gray-300 shadow-sm text-kalananti-blue font-bold px-2 rounded-full text-sm mr-1.5 mt-1.5">$1</span>');
+                     out += `<p class="text-[10pt] leading-relaxed m-0"><span class="font-bold text-white bg-kalananti-orange rounded px-1.5 py-0.5 text-xs mr-1 shadow-[0_2px_0_#d05d2b]">${numToken.replace('.','')}</span> ${formattedRest}</p>`;
+                 }
+             }
+             return out + '</div>';
+        }
+
+        function parseMaterialsBlocks(text, row) {
+            if (!text) return [];
+            let lines = text.split('\n');
+            let blocks = [];
+            let currentText = '';
+
+            let pushText = () => {
+                if(currentText.trim()) {
+                    if(/^Tahap \d+:/i.test(currentText.trim())) {
+                        let title = currentText.replace(/^Tahap \d+:/i, '').trim();
+                        let num = currentText.match(/\d+/)[0];
+                        blocks.push(`<div class="activity-card bg-kalananti-pink/10 border-kalananti-pink/30 mt-8 !mb-2 !shadow-none">
+                            <div class="activity-label !bg-kalananti-pink text-white text-sm -top-4 -left-4">Tahap ${num}</div>
+                            <h4 class="font-display font-bold text-lg text-kalananti-navy m-0">${title}</h4>
+                        </div>`);
+                    } else {
+                        currentText = currentText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        if(currentText.startsWith('•')) {
+                             blocks.push(`<ul class="list-objective"><li>${currentText.substring(1)}</li></ul>`);
+                        } else {
+                             blocks.push(`<p class="text-reading">${currentText}</p>`);
+                        }
+                    }
+                    currentText = '';
+                }
+            };
+
+            for(let line of lines) {
+                line = line.trim();
+                if(!line) continue;
+
+                if (/^https?:\/\/[^\s]+$/.test(line) && (line.includes('image') || line.match(/\.(jpeg|jpg|png|gif|webp)(\?|#|$)/i))) {
+                    pushText();
+                    blocks.push(`<div class="shot-card" style="transform: rotate(${(Math.random()*2)-1}deg)">
+                                    <img src="${line}">
+                                 </div>`);
+                    continue;
+                }
+
+                let kcMatch = line.match(/^kc(\d+)\*$/i);
+                let fykMatch = line.match(/^fyk(\d+)\*$/i);
+                
+                if (kcMatch) {
+                    pushText();
+                    let kcDataMatch = row.kamus_coder.match(new RegExp('kc' + kcMatch[1] + ':\\s*([\\s\\S]*?)(?=(?:kc|fyk)\\d+:|$)', 'i'));
+                    if(kcDataMatch) {
+                        blocks.push(`
+                        <div class="think-bubble mt-4">
+                            <span class="think-title">Tutor says...</span>
+                            <div class="text-[10pt] font-semibold">${formatObjectives(kcDataMatch[1])}</div>
+                        </div>`);
+                    }
+                } else if (fykMatch) {
+                    pushText();
+                    let fykDataMatch = row.for_your_knowledge.match(new RegExp('fyk' + fykMatch[1] + ':\\s*([\\s\\S]*?)(?=(?:kc|fyk)\\d+:|$)', 'i'));
+                    if(fykDataMatch) {
+                        blocks.push(`
+                        <div class="think-bubble mt-4 !border-kalananti-orange !bg-orange-50 font-bold" style="box-shadow: 3px 3px 0 #F07D49">
+                            <span class="think-title !bg-kalananti-orange !text-white">Did You Know?</span>
+                            <div class="text-[10pt]">${fykDataMatch[1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>
+                        </div>`);
+                    }
+                } else {
+                    currentText += (currentText ? ' ' : '') + line;
+                    if(line.endsWith('.') || line.endsWith('?') || line.endsWith('!')) pushText();
+                }
+            }
+            pushText();
+
+            return blocks;
+        }
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>

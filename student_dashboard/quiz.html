@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Kalananti - Planet Suede</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                    colors: {
+                        'kalananti-blue': '#265E9B',
+                        'kalananti-blue-dark': '#1A4576',
+                        'kalananti-yellow': '#F9C013',
+                        'ruangguru-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F4F9FF;
+            background-image: radial-gradient(at 0% 0%, rgba(38, 94, 155, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(51, 157, 157, 0.05) 0px, transparent 50%);
+            color: #265E9B;
+            overflow: hidden;
+        }
+        .card-shadow {
+            box-shadow: 0 20px 40px -10px rgba(38, 94, 155, 0.1);
+        }
+        .btn-3d-yellow {
+            box-shadow: 0 6px 0px 0px #D9A40A;
+            transition: all 0.1s ease;
+        }
+        .btn-3d-yellow:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px 0px #D9A40A;
+        }
+        .option-card {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .option-card:hover:not(.selected) {
+            transform: translateY(-4px);
+            background-color: #f0f7ff;
+            border-color: #265E9B;
+        }
+        .option-card.selected {
+            background-color: #265E9B;
+            border-color: #265E9B;
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(38, 94, 155, 0.2);
+        }
+        .q-number-btn {
+            transition: all 0.2s ease;
+        }
+        .q-number-btn.active {
+            background-color: #265E9B;
+            color: white;
+            box-shadow: 0 4px 10px rgba(38, 94, 155, 0.3);
+        }
+        .q-number-btn.answered:not(.active) {
+            background-color: #e0f2f1;
+            color: #339D9D;
+            border-color: #339D9D;
+        }
+        .slide-content-enter {
+            animation: fadeInScale 0.4s ease-out forwards;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans">
+
+    <!-- Top Navigation -->
+    <nav class="w-full bg-white/90 border-b border-blue-50 px-6 py-4 flex justify-between items-center shadow-sm z-50">
+        <div class="flex items-center gap-6">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" class="h-8 md:h-10">
+            <div class="h-8 w-[2px] bg-gray-100 hidden md:block"></div>
+            <div class="hidden md:flex flex-col">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Petualangan Kodemu</p>
+                <h2 class="font-black text-kalananti-blue text-sm">Planet Suede <span class="text-gray-300 mx-2">/</span> Sesi 2</h2>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 bg-white p-1 pr-4 rounded-full border border-gray-100 shadow-inner">
+            <div class="w-10 h-10 rounded-full border-2 border-kalananti-yellow overflow-hidden">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+            </div>
+            <span class="font-bold text-sm text-kalananti-blue">Ananda Cahaya</span>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex overflow-hidden p-4 md:p-8 gap-6">
+        
+        <!-- Main Quiz Content Area (Kiri) -->
+        <main class="flex-[2] flex flex-col gap-6 relative">
+            <div class="flex-1 bg-white rounded-[3rem] card-shadow border border-white flex flex-col relative overflow-hidden group">
+                <!-- BG Decoration -->
+                <div class="absolute top-10 right-10 opacity-[0.05] pointer-events-none">
+                    <svg width="150" height="150" viewBox="0 0 24 24" fill="#265E9B"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
+                </div>
+
+                <!-- Content Area -->
+                <div id="quiz-content" class="flex-1 p-12 flex flex-col slide-content-enter overflow-y-auto">
+                    <!-- Dinamis oleh JS -->
+                </div>
+
+                <!-- Navigation Bottom Bar -->
+                <div class="px-12 py-8 border-t border-gray-50 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+                    <button id="prev-btn" onclick="navigateQuestion(-1)" class="px-8 py-3 rounded-2xl border-2 border-blue-100 text-kalananti-blue font-black flex items-center gap-2 hover:bg-blue-50 transition-all disabled:opacity-30 disabled:pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        Sebelumnya
+                    </button>
+                    
+                    <div id="progress-text" class="text-gray-400 font-bold tracking-widest text-sm uppercase">Soal 1 dari 5</div>
+
+                    <button id="next-btn" onclick="navigateQuestion(1)" class="px-8 py-3 rounded-2xl bg-kalananti-blue text-white font-black flex items-center gap-2 hover:bg-kalananti-blue-dark shadow-lg transition-all">
+                        Selanjutnya
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar Quiz (Kanan) -->
+        <aside class="flex-1 hidden lg:flex flex-col gap-6 max-w-sm">
+            <div class="bg-white rounded-[2.5rem] p-10 card-shadow border border-white h-full flex flex-col">
+                <div class="flex flex-col items-center text-center mb-10">
+                    <div class="w-20 h-20 bg-yellow-50 rounded-3xl flex items-center justify-center text-kalananti-yellow text-4xl mb-4 shadow-inner">
+                        🧩
+                    </div>
+                    <h2 class="text-3xl font-black text-kalananti-blue-dark uppercase">Quiz</h2>
+                    <p class="text-gray-400 font-bold text-xs tracking-widest mt-1">SESI 2 - PLANET SUEDE</p>
+                </div>
+
+                <div class="flex-1">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Navigasi Soal:</p>
+                    <div id="question-grid" class="grid grid-cols-4 gap-3">
+                        <!-- Dinamis oleh JS -->
+                    </div>
+                </div>
+
+                <!-- Submit Button Area -->
+                <div class="mt-8">
+                    <button onclick="submitQuiz()" class="w-full btn-3d-yellow bg-kalananti-yellow text-kalananti-blue-dark font-black py-5 px-6 rounded-3xl text-xl flex items-center justify-center gap-3">
+                        <span>SUBMIT</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 5 7 7-7 7"/><path d="M5 12h14"/></svg>
+                    </button>
+                    <p class="text-center text-[10px] text-gray-400 font-bold mt-4">Periksa kembali jawabanmu sebelum mengirim!</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Result View (Hidden by Default) -->
+    <div id="result-view" class="fixed inset-0 bg-kalananti-blue/90 backdrop-blur-md z-[100] hidden items-center justify-center p-6">
+        <div class="bg-white rounded-[4rem] p-12 max-w-lg w-full text-center slide-content-enter shadow-2xl relative overflow-hidden">
+            <!-- Confetti Decor -->
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-kalananti-yellow/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-ruangguru-green/20 rounded-full blur-3xl"></div>
+
+            <div class="w-32 h-32 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+                <span class="text-6xl">🏆</span>
+                <div class="absolute -top-2 -right-2 bg-kalananti-yellow text-white w-10 h-10 rounded-full flex items-center justify-center font-black border-4 border-white shadow-lg">!</div>
+            </div>
+            
+            <h2 class="text-4xl font-black text-kalananti-blue-dark mb-2">Misi Selesai!</h2>
+            <p class="text-gray-500 font-bold text-lg mb-8">Wah, kamu hebat sekali Penjelajah Kode!</p>
+            
+            <div class="bg-blue-50 rounded-3xl p-6 mb-10 border-2 border-dashed border-blue-100">
+                <p class="text-gray-400 font-bold text-sm uppercase tracking-widest mb-1">Skor Kamu:</p>
+                <h3 id="final-score" class="text-5xl font-black text-kalananti-blue">80 <span class="text-2xl text-gray-300">/ 100</span></h3>
+            </div>
+
+            <button onclick="window.location.href='dashboard.html'" class="w-full btn-3d-yellow bg-kalananti-yellow text-kalananti-blue-dark font-black py-5 rounded-[2rem] text-xl">
+                KEMBALI KE BERANDA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                question: "Manakah blok yang digunakan untuk memulai sebuah program di Scratch?",
+                options: [
+                    { key: "A", text: "Move 10 Steps", isCorrect: false },
+                    { key: "B", text: "When Green Flag Clicked", isCorrect: true },
+                    { key: "C", text: "Say Hello for 2 Seconds", isCorrect: false }
+                ]
+            },
+            {
+                id: 2,
+                question: "Warna apa yang melambangkan kategori blok 'Gerakan' (Motion)?",
+                options: [
+                    { key: "A", text: "Biru", isCorrect: true },
+                    { key: "B", text: "Kuning", isCorrect: false },
+                    { key: "C", text: "Hijau", isCorrect: false }
+                ]
+            },
+            {
+                id: 3,
+                question: "Apa yang terjadi jika kita menggunakan blok 'Move 10 Steps'?",
+                options: [
+                    { key: "A", text: "Sprite akan menghilang", isCorrect: false },
+                    { key: "B", text: "Sprite akan bersuara", isCorrect: false },
+                    { key: "C", text: "Sprite akan maju ke depan", isCorrect: true }
+                ]
+            },
+            {
+                id: 4,
+                question: "Guna dari tombol Merah di pojok kanan atas layar Scratch adalah...",
+                options: [
+                    { key: "A", text: "Memulai program", isCorrect: false },
+                    { key: "B", text: "Menghentikan program", isCorrect: true },
+                    { key: "C", text: "Menghapus program", isCorrect: false }
+                ]
+            },
+            {
+                id: 5,
+                question: "Jika kita ingin membuat ikan berenang terus-menerus, kita butuh blok...",
+                options: [
+                    { key: "A", text: "Forever", isCorrect: true },
+                    { key: "B", text: "Wait 1 Second", isCorrect: false },
+                    { key: "C", text: "Turn 15 Degrees", isCorrect: false }
+                ]
+            }
+        ];
+
+        let currentQuestionIdx = 0;
+        let selectedAnswers = {}; // { questionId: optionKey }
+
+        function renderQuestion() {
+            const container = document.getElementById('quiz-content');
+            const q = questions[currentQuestionIdx];
+            
+            // Animation reset
+            container.classList.remove('slide-content-enter');
+            void container.offsetWidth;
+            container.classList.add('slide-content-enter');
+
+            container.innerHTML = `
+                <div class="mb-10">
+                    <div class="inline-flex items-center gap-2 bg-blue-50 text-kalananti-blue px-5 py-2 rounded-2xl font-black text-sm mb-6 border border-blue-100 uppercase tracking-widest">
+                        Soal Nomor ${q.id}
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-black text-kalananti-blue-dark leading-tight">
+                        ${q.question}
+                    </h2>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-4 max-w-3xl">
+                    ${q.options.map(opt => `
+                        <div onclick="selectOption('${opt.key}')" 
+                             class="option-card p-6 rounded-[2rem] border-4 flex items-center gap-6 ${selectedAnswers[q.id] === opt.key ? 'selected' : 'border-gray-50 bg-white'}">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border-2 ${selectedAnswers[q.id] === opt.key ? 'bg-white/20 border-white' : 'bg-blue-50 border-blue-100 text-kalananti-blue'}">
+                                ${opt.key}
+                            </div>
+                            <p class="text-xl font-bold">${opt.text}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            updateNavigation();
+        }
+
+        function updateNavigation() {
+            // Update buttons
+            document.getElementById('prev-btn').disabled = currentQuestionIdx === 0;
+            const nextBtn = document.getElementById('next-btn');
+            if (currentQuestionIdx === questions.length - 1) {
+                nextBtn.innerHTML = 'Review <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m2 12 5 5L22 4"/></svg>';
+                nextBtn.classList.replace('bg-kalananti-blue', 'bg-ruangguru-green');
+            } else {
+                nextBtn.innerHTML = 'Selanjutnya <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+                nextBtn.classList.replace('bg-ruangguru-green', 'bg-kalananti-blue');
+            }
+
+            // Update Progress Text
+            document.getElementById('progress-text').innerText = `Soal ${currentQuestionIdx + 1} dari ${questions.length}`;
+
+            // Update Sidebar Grid
+            const grid = document.getElementById('question-grid');
+            grid.innerHTML = questions.map((q, i) => `
+                <button onclick="goToQuestion(${i})" 
+                        class="q-number-btn w-full aspect-square rounded-2xl font-black text-lg border-2 ${i === currentQuestionIdx ? 'active' : (selectedAnswers[q.id] ? 'answered' : 'border-gray-100 text-gray-300')}">
+                    ${q.id}
+                </button>
+            `).join('');
+        }
+
+        function selectOption(key) {
+            selectedAnswers[questions[currentQuestionIdx].id] = key;
+            renderQuestion();
+        }
+
+        function navigateQuestion(dir) {
+            currentQuestionIdx += dir;
+            if (currentQuestionIdx < 0) currentQuestionIdx = 0;
+            if (currentQuestionIdx >= questions.length) currentQuestionIdx = questions.length - 1;
+            renderQuestion();
+        }
+
+        function goToQuestion(idx) {
+            currentQuestionIdx = idx;
+            renderQuestion();
+        }
+
+        function submitQuiz() {
+            const total = questions.length;
+            let correctCount = 0;
+            
+            questions.forEach(q => {
+                const userAns = selectedAnswers[q.id];
+                const correctOpt = q.options.find(o => o.isCorrect).key;
+                if (userAns === correctOpt) correctCount++;
+            });
+
+            const score = (correctCount / total) * 100;
+            document.getElementById('final-score').innerHTML = `${score} <span class="text-2xl text-gray-300">/ 100</span>`;
+            document.getElementById('result-view').classList.replace('hidden', 'flex');
+        }
+
+        // Init
+        renderQuestion();
+    </script>
+</body>
+</html>

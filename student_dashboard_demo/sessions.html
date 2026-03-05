@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Materi Kalananti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+                    colors: {
+                        'kalananti-blue': '#265E9B',
+                        'kalananti-blue-dark': '#1A4576',
+                        'kalananti-yellow': '#F9C013',
+                        'ruangguru-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F4F9FF;
+            background-image: radial-gradient(at 0% 0%, rgba(38, 94, 155, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(51, 157, 157, 0.05) 0px, transparent 50%);
+            color: #265E9B;
+            overflow: hidden;
+        }
+        .card-shadow { box-shadow: 0 20px 40px -10px rgba(38, 94, 155, 0.1); }
+        .session-card { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .session-card:hover:not(.locked) {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(38, 94, 155, 0.2);
+        }
+        .locked { opacity: 0.6; filter: grayscale(0.5); cursor: not-allowed; }
+        .btn-3d-blue { box-shadow: 0 6px 0px 0px #1A4576; transition: all 0.1s ease; }
+        .btn-3d-blue:active { transform: translateY(4px); box-shadow: 0 2px 0px 0px #1A4576; }
+        .btn-3d-yellow { box-shadow: 0 6px 0px 0px #D9A40A; transition: all 0.1s ease; }
+        .btn-3d-yellow:active { transform: translateY(4px); box-shadow: 0 2px 0px 0px #D9A40A; }
+        .slide-up-enter { animation: slideUp 0.5s ease-out forwards; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .skeleton { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; background: linear-gradient(90deg, #e8f0fe 25%, #d0e1ff 50%, #e8f0fe 75%); background-size: 200% 100%; }
+        @keyframes pulse {
+            0%, 100% { background-position: 200% 0; }
+            50% { background-position: 0% 0; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans">
+
+    <!-- Top Navigation -->
+    <nav class="w-full bg-white/90 border-b border-blue-50 px-6 py-4 flex justify-between items-center shadow-sm z-50">
+        <div class="flex items-center gap-6">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" onclick="window.location.href='dashboard.html'" class="h-8 md:h-10 cursor-pointer hover:scale-105 transition-transform">
+            <div class="h-8 w-[2px] bg-gray-100 hidden md:block"></div>
+            <div class="hidden md:flex flex-col">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Daftar Materi</p>
+                <h2 id="nav-course-title" class="font-black text-kalananti-blue text-sm">Roblox Studio <span class="text-gray-300 mx-2">/</span> Semua Sesi</h2>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 bg-white p-1 pr-4 rounded-full border border-gray-100 shadow-inner">
+            <div class="w-10 h-10 rounded-full border-2 border-kalananti-yellow overflow-hidden">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+            </div>
+            <span class="font-bold text-sm text-kalananti-blue">Demo</span>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex overflow-hidden p-4 md:p-8 gap-6">
+        
+        <!-- Main Grid Area -->
+        <main class="flex-[3] flex flex-col gap-6 relative overflow-y-auto pr-4">
+            <header class="mb-4">
+                <h1 class="text-4xl font-black text-kalananti-blue-dark">Pilih Sesi Belajarmu! 🚀</h1>
+                <p class="text-gray-500 font-bold mt-1">Kamu bisa mengulang materi yang sudah kamu selesaikan sebelumnya.</p>
+            </header>
+
+            <!-- Loading State -->
+            <div id="loading-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+                <div class="skeleton h-40 rounded-[2.5rem]"></div>
+            </div>
+
+            <!-- Cards Grid (filled by JS) -->
+            <div id="sessions-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-10 slide-up-enter hidden"></div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden flex-col items-center justify-center py-20 text-center gap-4">
+                <span class="text-5xl">😵</span>
+                <h3 class="text-2xl font-black text-kalananti-blue-dark">Gagal Memuat Data</h3>
+                <p class="text-gray-400 font-bold">Cek koneksi internet kamu dan coba lagi.</p>
+                <button onclick="loadSessions()" class="mt-4 btn-3d-blue bg-kalananti-blue text-white font-black px-8 py-4 rounded-2xl">Coba Lagi</button>
+            </div>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="flex-1 hidden lg:flex flex-col gap-6 max-w-sm">
+            <div class="bg-white rounded-[2.5rem] p-8 card-shadow border border-white h-full flex flex-col">
+                <div class="flex flex-col items-center text-center mb-8">
+                    <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-kalananti-blue mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </div>
+                    <h2 class="text-xl font-black text-kalananti-blue-dark leading-tight">Hari ini akan ngapain:</h2>
+                </div>
+
+                <div class="space-y-4 flex-1">
+                    <div class="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
+                        <div class="font-black text-kalananti-blue">a.)</div>
+                        <p class="font-bold text-sm text-kalananti-blue-dark">Pilih sesi dan pelajari materinya.</p>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 rounded-2xl bg-white border border-gray-100">
+                        <div class="font-black text-gray-400">b.)</div>
+                        <p class="font-bold text-sm text-gray-500">Mengerjakan tantangan di Must Do.</p>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 rounded-2xl bg-white border border-gray-100">
+                        <div class="font-black text-gray-400">c.)</div>
+                        <p class="font-bold text-sm text-gray-500">Menyelesaikan kuis di akhir sesi.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-4">
+                    <button onclick="window.location.href='materials.html'" class="w-full btn-3d-yellow bg-kalananti-yellow text-kalananti-blue-dark font-black py-5 px-6 rounded-[2rem] text-sm flex items-center justify-between group">
+                        <span class="text-left leading-tight">Lanjutkan Sesi Aktif</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform flex-shrink-0 ml-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </button>
+                    <button onclick="window.location.href='dashboard.html'" class="w-full btn-3d-blue bg-kalananti-blue text-white font-black py-5 px-6 rounded-[2rem] text-sm flex items-center justify-between group">
+                        <span>Kembali ke Dashboard</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform flex-shrink-0 ml-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const WEB_APP_BASE = 'https://script.google.com/macros/s/AKfycbwvNSa3hUMNqhNOINDeG3cPUdlQM-dGfl-dDX5WejhESjHRALipqhwJ_-3HXOJehtWbWw/exec';
+        const MAX_LESSONS = 8;
+
+        // Course config (mirrored from dashboard)
+        const COURSES = {
+            roblox: {
+                sheet: 'B2C_RobloxStudio_Modul', label: 'Roblox Studio', emoji: '🎮',
+                desc: [
+                    'Mengenal Roblox Studio dan membuat jalur Obby sederhana.',
+                    'Menggunakan Plugin F3X, 3D Text, dan GapFill untuk mempercantik game.',
+                    'Membuat pemandangan terra menggunakan Terrain Tools.',
+                    'Menciptakan efek pencahayaan dramatis dengan Lighting Tools.',
+                    'Membuat sistem Teams dan Checkpoint tanpa coding!',
+                    'Merancang rintangan dan mempublikasikan game ke Roblox.',
+                    'Membuat pintu berengsel dengan Hinge Constraint dan Weld.',
+                    'Pintu otomatis dengan Spring Constraint dan Kincir Angin.',
+                ]
+            },
+            scratch: {
+                sheet: 'B2C_Scratch_Modul', label: 'Scratch', emoji: '🐱',
+                desc: [
+                    'Mengenal Scratch dan antarmuka editor.',
+                    'Sprite, Kostum dan Gerakan dasar.',
+                    'Variabel dan Kondisi if-then.',
+                    'Loop, Animasi dan Efek.',
+                    'Suara dan Efek visual.',
+                    'Proyek Game Sederhana.',
+                    'Interaksi dan Event handling.',
+                    'Publikasi dan Berbagi Proyek.',
+                ]
+            }
+        };
+
+        const selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+        const courseData = COURSES[selectedCourse] || COURSES.roblox;
+
+        // Update nav title
+        const navTitle = document.getElementById('nav-course-title');
+        if (navTitle) navTitle.innerHTML = `${courseData.emoji} ${courseData.label} <span class="text-gray-300 mx-2">/</span> Semua Sesi`;
+
+        async function loadSessions() {
+            document.getElementById('loading-grid').classList.remove('hidden');
+            document.getElementById('sessions-grid').classList.add('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+
+            try {
+                const apiUrl = WEB_APP_BASE + '?sheet=' + courseData.sheet;
+                const res = await fetch(apiUrl);
+                const rawData = await res.json();
+
+                const lessons = rawData
+                    .filter(row => row.col_1 && typeof row.col_1 === 'number' && row.col_1 >= 1 && row.col_1 <= MAX_LESSONS)
+                    .slice(0, MAX_LESSONS);
+
+                renderSessions(lessons);
+            } catch (e) {
+                console.error('Error loading sessions:', e);
+                document.getElementById('loading-grid').classList.add('hidden');
+                document.getElementById('error-state').classList.remove('hidden');
+                document.getElementById('error-state').classList.add('flex');
+            }
+        }
+
+        function renderSessions(lessons) {
+            document.getElementById('loading-grid').classList.add('hidden');
+            const grid = document.getElementById('sessions-grid');
+            grid.innerHTML = '';
+
+            // Semua sesi TERBUKA untuk demo - dimulai dari sesi 1
+            lessons.forEach((lesson, idx) => {
+                const sessionNum = lesson.col_1;
+                const desc = courseData.desc[idx] || (lesson.col_2 || '').split('\n')[0].replace(/^•\s*/, '').trim();
+
+                // Sesi 1 sebagai "Mulai Dari Sini", sisanya "Tersedia"
+                const isFirst = sessionNum === 1;
+                const card = isFirst
+                    ? `<div class="session-card bg-white p-6 rounded-[2.5rem] card-shadow border-4 border-kalananti-blue cursor-pointer relative overflow-hidden group" onclick="goToLesson(${sessionNum})">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-[10px] font-black bg-blue-100 text-kalananti-blue px-3 py-1 rounded-full tracking-widest uppercase">▶ Mulai Dari Sini!</span>
+                            <div class="text-kalananti-blue animate-pulse">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-black text-kalananti-blue-dark mb-2">Sesi ${sessionNum}</h3>
+                        <p class="text-sm text-gray-500 font-black leading-relaxed">${desc}</p>
+                    </div>`
+                    : `<div class="session-card bg-white p-6 rounded-[2.5rem] card-shadow border-2 border-transparent hover:border-kalananti-blue cursor-pointer relative overflow-hidden group" onclick="goToLesson(${sessionNum})">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-[10px] font-black bg-blue-50 text-kalananti-blue px-3 py-1 rounded-full tracking-widest uppercase">📖 Tersedia</span>
+                            <div class="text-kalananti-blue group-hover:translate-x-1 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-black text-kalananti-blue-dark mb-2">Sesi ${sessionNum}</h3>
+                        <p class="text-sm text-gray-400 font-bold leading-relaxed">${desc}</p>
+                    </div>`;
+
+                grid.innerHTML += card;
+            });
+
+            grid.classList.remove('hidden');
+        }
+
+        function goToLesson(sessionNum) {
+            localStorage.setItem('activeLesson', sessionNum);
+            window.location.href = 'materials.html';
+        }
+
+        // Init
+        loadSessions();
+    </script>
+</body>
+</html>

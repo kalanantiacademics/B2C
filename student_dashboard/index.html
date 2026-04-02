@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Kalananti – Mission Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-yellow': '#F9C013',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'light');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.95);
+            --card-b: rgba(180,215,255,0.85);
+            --text: #1a4576;
+            --stars: 0.12;
+            --input-bg: rgba(255,255,255,0.9);
+            --input-b: rgba(38,94,155,0.15);
+            --input-t: #1a4576;
+        }
+
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.85);
+            --card-b: rgba(140,190,255,0.22);
+            --text: #ddeeff;
+            --stars: 0.45;
+            --input-bg: rgba(6,14,30,0.6);
+            --input-b: rgba(140,190,255,0.22);
+            --input-t: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -20;
+            opacity: var(--stars);
+            background-image:
+                radial-gradient(circle at 14% 24%, rgba(255,255,255,0.9) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 78% 68%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 56% 38%, rgba(255,255,255,0.60) 0 1px, transparent 1.4px);
+            background-size: 250px 250px, 320px 320px, 210px 210px;
+            animation: starDrift 200s linear infinite;
+        }
+        @keyframes starDrift { to { transform: translate3d(-120px, 70px, 0); } }
+
+        /* Background elements */
+        .edge-planet { position: absolute; opacity: 0.60; pointer-events: none; z-index: -10; }
+        .char-float { position: absolute; pointer-events: none; opacity: 0.8; z-index: 5; animation: floatY 6s ease-in-out infinite; }
+        @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        /* LOGIN CARD */
+        .planet-card {
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 32px 64px -24px rgba(0,0,0,0.2);
+        }
+        html[data-theme="dark"] .planet-card {
+            box-shadow: 0 32px 64px -24px rgba(0,0,0,0.9);
+        }
+
+        /* Input */
+        .k-input {
+            background: var(--input-bg);
+            border: 2px solid var(--input-b);
+            color: var(--input-t);
+            transition: all 0.2s;
+        }
+        .k-input:focus {
+            outline: none;
+            border-color: #F9C013;
+            box-shadow: 0 0 16px rgba(249,192,19,0.25);
+        }
+        select.k-input {
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%238aadd8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+        }
+        select.k-input option { color: #000; background: #fff; }
+
+        /* Btn 3D */
+        .btn-3d {
+            box-shadow: 0 6px 0 #B28400, 0 16px 28px -8px rgba(249,192,19,0.3);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #B28400, 0 6px 12px -6px rgba(249,192,19,0.2);
+        }
+
+        .mission-text { color: #ffffff; }
+        .grad-text {
+            background: linear-gradient(90deg, #F9C013, #FF9D00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Status Modal Redesign */
+        .status-modal { position: fixed; inset: 0; background: rgba(2, 6, 12, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .status-modal.active { opacity: 1; pointer-events: auto; }
+        .status-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 3.5rem; padding: 4rem 3rem; width: 92%; max-width: 440px; text-align: center; transform: translateY(40px) scale(0.9); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+        .status-modal.active .status-box { transform: translateY(0) scale(1); }
+        .status-box::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.1), transparent 70%); pointer-events: none; }
+        .status-icon { width: 90px; height: 90px; border-radius: 2.2rem; display: flex; align-items: center; justify-content: center; font-size: 3.2rem; margin: 0 auto 1.8rem; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 20px currentColor); animation: bounce 3s ease-in-out infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(5deg); } }
+        .status-success { color: #4ADE80; border: 3px solid rgba(74, 222, 128, 0.4); box-shadow: 0 0 30px rgba(74, 222, 128, 0.2); }
+        .status-error { color: #F87171; border: 3px solid rgba(248, 113, 113, 0.4); box-shadow: 0 0 30px rgba(248, 113, 113, 0.2); }
+        .status-warning { color: #F9C013; border: 3px solid rgba(249, 192, 19, 0.4); box-shadow: 0 0 30px rgba(249, 192, 19, 0.2); }
+        .status-btn { position: relative; width: 100%; padding-top: 1.25rem; padding-bottom: 1.25rem; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.15em; color: #5A3F00; background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%); border-radius: 1.5rem; transition: all 0.2s; box-shadow: 0 6px 0 #B28400, 0 15px 30px -5px rgba(249, 192, 19, 0.4); border: none; cursor: pointer; }
+        .status-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #B28400, 0 20px 40px -10px rgba(249, 192, 19, 0.5); }
+        .status-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #B28400, 0 5px 10px -2px rgba(249, 192, 19, 0.3); }
+    </style>
+</head>
+<body class="p-5">
+
+    <!-- Background Orbs and Planets -->
+    <div class="fixed -top-32 -left-24 w-[42rem] h-[42rem] rounded-full" style="background:rgba(82,188,255,0.1); filter:blur(130px);"></div>
+    <div class="fixed -bottom-32 -right-24 w-[38rem] h-[38rem] rounded-full" style="background:rgba(249,192,19,0.1); filter:blur(120px);"></div>
+
+    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png" class="edge-planet" style="top:10%; left:-5%; width:25vw" alt="">
+    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png" class="edge-planet" style="bottom:-5%; right:-5%; width:30vw" alt="">
+    
+    <!-- Floating character -->
+    <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Rocket" class="char-float w-32 md:w-44" style="top:5%; right:15%; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5))" alt="Robot">
+    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" class="absolute top-8 left-8 h-10 w-auto z-10">
+
+    <!-- LOGIN CARD -->
+    <div class="planet-card rounded-[2.5rem] p-8 md:p-10 max-w-[420px] w-full mx-auto relative z-10 animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)_both]">
+        
+        <!-- STEP 1: CLASS CODE -->
+        <div id="step-1">
+            <h2 class="font-display font-black text-3xl mb-2 mission-text">Welcome, <span class="grad-text">Explorer!</span> 🚀</h2>
+            <p class="text-sm var(--muted) mb-8" style="color:#8aadd8">Masukkan <b class="text-white">Kode Kelas</b> untuk masuk ke stasiun ruang angkasa Kalananti.</p>
+            
+            <div class="mb-6">
+                <input type="text" id="class-code" 
+                       class="k-input w-full px-5 py-4 rounded-2xl text-lg font-black tracking-widest uppercase text-center placeholder:normal-case placeholder:font-medium placeholder:tracking-normal placeholder:text-blue-200/40" 
+                       placeholder="Contoh: RBLX1" autocomplete="off">
+            </div>
+
+            <button onclick="cekKodeKelas()" id="btn-cek" class="btn-3d w-full select-none bg-gradient-to-b from-[#F9C013] to-[#E5AB00] text-[#5A3F00] font-black py-4 rounded-2xl text-lg tracking-wide uppercase">
+                Cari Kelasku 🔍
+            </button>
+
+            <!-- Loading & Error -->
+            <p id="msg-loading" class="hidden text-center mt-5 text-sm font-bold text-k-yellow animate-pulse">Memindai Galaksi...</p>
+            <p id="msg-error" class="hidden text-center mt-5 text-sm font-bold text-red-400 bg-red-500/10 py-2 rounded-xl"></p>
+        </div>
+
+        <!-- STEP 2: SELECT NAME -->
+        <div id="step-2" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display font-black text-2xl mission-text">Kelas <span id="display-class" class="grad-text">--</span></h2>
+                <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-green-500/30">Ditemukan</span>
+            </div>
+            
+            <p class="text-sm var(--muted) mb-6" style="color:#8aadd8">Pilih namamu dari daftar kapten di bawah ini.</p>
+            
+            <div class="mb-6">
+                <select id="student-name" class="k-input w-full px-5 py-4 rounded-2xl text-base font-bold text-white cursor-pointer">
+                    <!-- Loaded dynamically -->
+                </select>
+            </div>
+
+            <button onclick="login()" class="btn-3d w-full select-none bg-gradient-to-b from-[#4ADE80] to-[#22C55E] text-[#0A3D18] font-black py-4 rounded-2xl text-lg tracking-wide uppercase shadow-[0_6px_0_#16A34A,0_16px_28px_-8px_rgba(34,197,94,0.3)] hover:translate-y-0 active:translate-y-[6px] active:shadow-[0_0_0_#16A34A,0_6px_12px_-6px_rgba(34,197,94,0.2)]">
+                Menuju Dashboard 🚀
+            </button>
+            
+            <button onclick="resetLangkah()" class="w-full mt-4 py-2 text-sm font-bold text-blue-300 hover:text-white transition-colors">
+                ← Kembali, ketik ulang kode
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="status-modal" class="status-modal">
+        <div class="status-box">
+            <div id="status-icon" class="status-icon">🚀</div>
+            <h3 id="status-title" class="font-display font-black text-3xl mb-4 tracking-tight uppercase" style="background: linear-gradient(90deg, #F9C013, #FF9D00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Status Misi</h3>
+            <p id="status-message" class="text-lg leading-relaxed mb-10 font-bold" style="color:#ddeeff">Pesan status di sini...</p>
+            <button onclick="document.getElementById('status-modal').classList.remove('active')" class="status-btn px-10 py-5">SIAP, KAPTEN! 🛰️</button>
+        </div>
+    </div>
+
+    <script>
+        // MASUKAN URL WEB APP GOOGLE APPS SCRIPT DI SINI! (Hasil Deploy code-student.gs)
+        const LOGIN_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec'; 
+
+        // Fungsi cek kode
+        async function cekKodeKelas() {
+            const input = document.getElementById('class-code');
+            const btn = document.getElementById('btn-cek');
+            const msgError = document.getElementById('msg-error');
+            const msgLoading = document.getElementById('msg-loading');
+            const code = input.value.trim().toUpperCase();
+
+            if (!code) {
+                tampilError("Waduh, isi kodenya dulu ya kapten!");
+                return;
+            }
+
+            // Ubah state UI
+            input.disabled = true;
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            msgError.classList.add('hidden');
+            msgLoading.classList.remove('hidden');
+
+            try {
+                // Fetch to backend
+                // Warning: Jika URL belum diganti, fetch akan gagal. Kita buat Mock fallback untuk mempermudah tes
+                let data = {};
+                
+                if (LOGIN_WEB_APP_URL.includes('YOURAPPID')) {
+                    console.warn("WEB_APP_URL belum diganti dengan yang asli. MENGGUNAKAN MODE OFFLINE/MOCK DEMO.");
+                    await new Promise(r => setTimeout(r, 1000)); // Simulasi delay
+                    
+                    if (code === 'ADMIN001') {
+                        data = { success: true, isAdmin: true };
+                    } else if (code === 'RBLX1' || code === 'SCR1') {
+                        data = { 
+                            success: true, isAdmin: false, className: code, 
+                            students: code === 'RBLX1' ? ['Alex', 'Budi', 'Citra'] : ['Diana', 'Eka', 'Fikri'] 
+                        };
+                    } else {
+                        data = { success: false, message: 'Kode Kelas "' + code + '" tidak ditemukan.' };
+                    }
+                } else {
+                    const res = await fetch(`${LOGIN_WEB_APP_URL}?action=getStudents&code=${encodeURIComponent(code)}`);
+                    data = await res.json();
+                }
+
+                if (data.success) {
+                    if (data.isAdmin) {
+                        // Bypass Admin -> Dashboard
+                        simpanLogin('ADMIN001', 'Admin');
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        // Tampilkan Step 2
+                        document.getElementById('display-class').textContent = data.className;
+                        
+                        const select = document.getElementById('student-name');
+                        select.innerHTML = '<option value="" disabled selected>-- Pilih Nama Kapten --</option>';
+                        
+                        data.students.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = opt.textContent = s;
+                            select.appendChild(opt);
+                        });
+
+                        document.getElementById('step-1').classList.add('hidden');
+                        document.getElementById('step-2').classList.remove('hidden');
+                    }
+                } else {
+                    tampilError(data.message || 'Gagal memanggil pangkalan angkasa!');
+                }
+
+            } catch (err) {
+                console.error(err);
+                tampilError('Gagal memverifikasi. Mungkin koneksi terputus atau URL Web App salah.');
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                msgLoading.classList.add('hidden');
+            }
+        }
+
+        function tampilError(pesan) {
+            const err = document.getElementById('msg-error');
+            err.textContent = pesan;
+            err.classList.remove('hidden');
+            // Shake animasi css
+            document.querySelector('.planet-card').animate([ {transform: 'translateX(-5px)'}, {transform: 'translateX(5px)'}, {transform: 'translateX(0)'} ], { duration: 300 });
+        }
+
+        function resetLangkah() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').classList.remove('hidden');
+            document.getElementById('class-code').value = '';
+            document.getElementById('msg-error').classList.add('hidden');
+        }
+
+        function showStatusPopup(type, title, message) {
+            const modal = document.getElementById('status-modal');
+            const icon = document.getElementById('status-icon');
+            const titleEl = document.getElementById('status-title');
+            const msgEl = document.getElementById('status-message');
+            
+            icon.className = 'status-icon ' + (type === 'success' ? 'status-success' : (type === 'error' ? 'status-error' : 'status-warning'));
+            icon.innerText = type === 'success' ? '✅' : (type === 'error' ? '❌' : '🛸');
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            modal.classList.add('active');
+        }
+
+        function login() {
+            const select = document.getElementById('student-name');
+            const student = select.value;
+            const className = document.getElementById('display-class').textContent;
+
+            if (!student) {
+                showStatusPopup('warning', 'EITS! TUNGGU DULU! 🛑', 'Pilih namamu dulu sebelum berangkat terbang ya Captain! Biar Kakak tahu siapa yang mau jalan! 👨‍🚀');
+                return;
+            }
+
+            simpanLogin(className, student);
+            window.location.href = 'dashboard.html';
+        }
+
+        function simpanLogin(kelas, nama) {
+            localStorage.setItem('studentName', nama);
+            localStorage.setItem('className', kelas);
+            localStorage.setItem('classCode', kelas);
+            // Default Session = 1 ketika baru pertama kali login
+            if (!localStorage.getItem('currentSession')) {
+                localStorage.setItem('currentSession', '1'); 
+            }
+            if (kelas === 'ADMIN001') {
+                localStorage.setItem('isAdmin', 'true');
+            }
+            
+            // Auto select course kalau namanya scratch atau rblx
+            if (kelas.includes('SCR')) {
+                localStorage.setItem('selectedCourse', 'scratch');
+            } else if (kelas.includes('RBLX') || kelas.includes('ROB')) {
+                localStorage.setItem('selectedCourse', 'roblox');
+            }
+        }
+
+        // Add Enter key event listener to the input
+        document.getElementById('class-code').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                cekKodeKelas();
+            }
+        });
+    </script>
+</body>
+</html>

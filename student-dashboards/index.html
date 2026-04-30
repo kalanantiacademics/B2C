@@ -39,6 +39,8 @@
             --card: rgba(255,255,255,0.95);
             --card-b: rgba(180,215,255,0.85);
             --text: #1a4576;
+            --text-muted: #5e7fa6;
+            --text-inv: #ffffff;
             --stars: 0.12;
             --input-bg: rgba(255,255,255,0.9);
             --input-b: rgba(38,94,155,0.15);
@@ -54,6 +56,8 @@
             --card: rgba(14,30,60,0.85);
             --card-b: rgba(140,190,255,0.22);
             --text: #ddeeff;
+            --text-muted: #8aadd8;
+            --text-inv: #ffffff;
             --stars: 0.45;
             --input-bg: rgba(6,14,30,0.6);
             --input-b: rgba(140,190,255,0.22);
@@ -136,7 +140,7 @@
             box-shadow: 0 0 0 #B28400, 0 6px 12px -6px rgba(249,192,19,0.2);
         }
 
-        .mission-text { color: #ffffff; }
+        .mission-text { color: var(--text); }
         .grad-text {
             background: linear-gradient(90deg, #F9C013, #FF9D00);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
@@ -177,7 +181,7 @@
         <!-- STEP 1: CLASS CODE -->
         <div id="step-1">
             <h2 class="font-display font-black text-3xl mb-2 mission-text">Welcome, <span class="grad-text">Explorer!</span> 🚀</h2>
-            <p class="text-sm var(--muted) mb-8" style="color:#8aadd8">Masukkan <b class="text-white">Kode Kelas</b> untuk masuk ke stasiun ruang angkasa Kalananti.</p>
+            <p class="text-sm mb-8 opacity-70" style="color: var(--text-muted)">Masukkan <b class="font-black" style="color: var(--text)">Kode Kelas</b> untuk masuk ke stasiun ruang angkasa Kalananti.</p>
             
             <div class="mb-6">
                 <input type="text" id="class-code" 
@@ -201,10 +205,10 @@
                 <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-green-500/30">Ditemukan</span>
             </div>
             
-            <p class="text-sm var(--muted) mb-6" style="color:#8aadd8">Pilih namamu dari daftar kapten di bawah ini.</p>
+            <p class="text-sm mb-6 opacity-70" style="color: var(--text-muted)">Pilih namamu dari daftar kapten di bawah ini.</p>
             
             <div class="mb-6">
-                <select id="student-name" class="k-input w-full px-5 py-4 rounded-2xl text-base font-bold text-white cursor-pointer">
+                <select id="student-name" class="k-input w-full px-5 py-4 rounded-2xl text-base font-bold cursor-pointer">
                     <!-- Loaded dynamically -->
                 </select>
             </div>
@@ -224,7 +228,7 @@
         <div class="status-box">
             <div id="status-icon" class="status-icon">🚀</div>
             <h3 id="status-title" class="font-display font-black text-3xl mb-4 tracking-tight uppercase" style="background: linear-gradient(90deg, #F9C013, #FF9D00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Status Misi</h3>
-            <p id="status-message" class="text-lg leading-relaxed mb-10 font-bold" style="color:#ddeeff">Pesan status di sini...</p>
+            <p id="status-message" class="text-lg leading-relaxed mb-10 font-bold" style="color: var(--text-inv)">Pesan status di sini...</p>
             <button onclick="document.getElementById('status-modal').classList.remove('active')" class="status-btn px-10 py-5">SIAP, KAPTEN! 🛰️</button>
         </div>
     </div>

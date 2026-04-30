@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan SCL - Teacher Dashboard Kalananti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'light');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.94);
+            --card-b: rgba(180,215,255,0.85);
+            --nav: rgba(255,255,255,0.92);
+            --nav-b: rgba(180,215,255,0.90);
+            --text: #1a4576;
+            --text-heading: #265E9B;
+            --muted: #4d7daf;
+            --stars: 0.12;
+            --chip-b: #cde0f8;
+        }
+        
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.82);
+            --card-b: rgba(140,190,255,0.22);
+            --nav: rgba(6,14,30,0.90);
+            --nav-b: rgba(120,170,255,0.22);
+            --text: #ddeeff;
+            --text-heading: #f9c013;
+            --muted: #8aadd8;
+            --stars: 0.45;
+            --chip-b: rgba(140,190,255,0.28);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                radial-gradient(circle at 50% 105%, rgba(51,157,157,0.14), transparent 34%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden; /* For slides */
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: -20;
+            opacity: var(--stars);
+            background-image:
+                radial-gradient(circle at 14% 24%, rgba(255,255,255,0.9) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 78% 68%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 56% 38%, rgba(255,255,255,0.60) 0 1px, transparent 1.4px),
+                radial-gradient(circle at 30% 82%, rgba(255,255,255,0.50) 0 1px, transparent 1.3px),
+                radial-gradient(circle at 90% 45%, rgba(255,255,255,0.55) 0 1px, transparent 1.4px),
+                radial-gradient(circle at 42% 14%, rgba(255,255,255,0.45) 0 1px, transparent 1.2px);
+            background-size: 250px 250px, 320px 320px, 210px 210px, 290px 290px, 180px 180px, 260px 260px;
+            animation: starDrift 200s linear infinite;
+        }
+        @keyframes starDrift { to { transform: translate3d(-120px, 70px, 0); } }
+
+        /* ── Decorative Assets ── */
+        .edge-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: -10;
+            overflow: hidden;
+        }
+        .edge-planet {
+            position: absolute; margin: 0;
+            pointer-events: none; display: block;
+            opacity: 0.60;
+        }
+        .edge-left  { left: 0; transform-origin: left center; }
+        .edge-right { right: 0; transform-origin: right center; }
+        .char-float {
+            position: absolute; margin: 0;
+            pointer-events: none; opacity: 0.55;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0) rotate(-1deg); }
+            50%      { transform: translateY(-18px) rotate(2deg); }
+        }
+
+        /* Navigation Top */
+        nav.topnav {
+            background: var(--nav);
+            border-bottom: 1px solid var(--nav-b);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+        }
+
+        /* Slide Component */
+        .slide {
+            display: none;
+            height: 100vh;
+            width: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            padding: 100px 2rem 100px 2rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: slideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Cards */
+        .planet-card {
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+        }
+
+        /* Gradients & Text */
+        .grad-text {
+            background: linear-gradient(90deg, #F9C013, #FF9D00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .heading-text {
+            color: var(--text-heading);
+        }
+
+        /* Controls */
+        .nav-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 2px solid var(--card-b);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--text-heading);
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        .nav-btn:hover {
+            transform: scale(1.1) translateY(-4px);
+            background: #F9C013;
+            color: #fff;
+            border-color: #F9C013;
+        }
+
+        .slide-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--muted);
+            background: var(--card);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            border: 1px solid var(--card-b);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Daftar Isi Menu */
+        .meeting-menu-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: var(--card);
+            border: 2px solid var(--card-b);
+            padding: 0.8rem 1.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--text-heading);
+            z-index: 100;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            backdrop-filter: blur(10px);
+        }
+        .meeting-menu-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        .meeting-dropdown {
+            position: fixed;
+            bottom: 100px;
+            left: 30px;
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            width: 320px;
+            max-height: 60vh;
+            overflow-y: auto;
+            z-index: 99;
+            display: none;
+            padding: 1rem;
+            backdrop-filter: blur(16px);
+        }
+        .meeting-dropdown.show {
+            display: block;
+            animation: fadeInUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .meeting-item {
+            padding: 0.8rem 1rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .meeting-item:hover {
+            background: rgba(249,192,19,0.15);
+            color: var(--text-heading);
+            transform: translateX(4px);
+        }
+        .meeting-section-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        /* Highlight Boxes */
+        .highlight-box {
+            background: rgba(38,94,155,0.05);
+            border: 1px solid rgba(38,94,155,0.2);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+        }
+        html[data-theme="dark"] .highlight-box {
+            background: rgba(255,255,255,0.03);
+            border-color: rgba(255,255,255,0.1);
+        }
+        
+        .alert-box {
+            background: rgba(249,192,19,0.1);
+            border-left: 4px solid #F9C013;
+            border-radius: 0.5rem 1rem 1rem 0.5rem;
+            padding: 1.5rem;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(38,94,155,0.1);
+            color: var(--text-heading);
+            border: 1px solid rgba(38,94,155,0.2);
+        }
+
+        /* Flow Arrow */
+        .flow-arrow {
+            display: block;
+            margin: 1rem auto;
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, var(--muted), var(--text-heading));
+            position: relative;
+        }
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: -4px;
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid var(--text-heading);
+            border-bottom: 2px solid var(--text-heading);
+            transform: rotate(45deg);
+        }
+
+        /* List Styling */
+        .scl-list li {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+        }
+        .scl-list li::before {
+            content: '🚀';
+            position: absolute;
+            left: 0;
+            top: -2px;
+            font-size: 1.2rem;
+        }
+
+        /* ── LAYOUT VISUALIZATION CSS ── */
+        .room-container { width: 100%; height: 350px; background: rgba(38,94,155,0.04); border: 2px dashed rgba(38,94,155,0.2); border-radius: 1rem; position: relative; overflow: hidden; margin-top: 1rem; }
+        html[data-theme="dark"] .room-container { background: rgba(255,255,255,0.02); }
+        .room-center { position: absolute; top: 25%; left: 25%; right: 25%; bottom: 25%; border: 2px dashed #F9C013; background: rgba(249,192,19,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #D9A40A; font-weight: 800; font-size: 1rem; text-align: center; opacity: 0.8; z-index: 1; }
+        .room-desk { position: absolute; width: 68px; height: 38px; background: var(--card); border: 2px solid #265E9B; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #265E9B; box-shadow: 0 4px 6px rgba(0,0,0,0.05); z-index: 10; }
+        .room-chair { position: absolute; width: 22px; height: 22px; background: #F9C013; border-radius: 50%; border: 3px solid #D9A40A; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; text-align: center; font-size: 10px; z-index: 10;}
+        .teacher-desk { border-color: #339D9D; color: #339D9D; background: rgba(51,157,157,0.1);}
+        .teacher-chair { background: #339D9D; border-color: #1a6f6f; color: white; }
+
+        /* Sidang (Bad) */
+        .sb-d1 { top: 40px; left: 80px; }  .sb-c1 { top: 85px; left: 103px; }
+        .sb-d2 { top: 40px; right: 80px; } .sb-c2 { top: 85px; right: 103px; }
+        .sb-d3 { top: 120px; left: 80px; } .sb-c3 { top: 165px; left: 103px; }
+        .sb-d4 { top: 120px; right: 80px; } .sb-c4 { top: 165px; right: 103px; }
+        .sb-d5 { top: 200px; left: 80px; } .sb-c5 { top: 245px; left: 103px; }
+        .sb-d6 { top: 200px; right: 80px; } .sb-c6 { top: 245px; right: 103px; }
+        .sb-td { bottom: 20px; left: 50%; transform: translateX(-50%); width:80px; } .sb-tc { bottom: 65px; left: 50%; transform: translateX(-50%); }
+
+        /* Wall (Bad) */
+        .w-d1 { top: 40px; left: 20px; width: 38px; height: 68px; } .w-c1 { top: 63px; left: 65px; }
+        .w-d2 { top: 140px; left: 20px; width: 38px; height: 68px;} .w-c2 { top: 163px; left: 65px; }
+        .w-d3 { top: 40px; right: 20px; width: 38px; height: 68px;} .w-c3 { top: 63px; right: 65px; }
+        .w-d4 { top: 140px; right: 20px; width: 38px; height: 68px;} .w-c4 { top: 163px; right: 65px; }
+        .w-td { bottom: 20px; left: 50%; transform: translateX(-50%); width:80px;} .w-tc { bottom: 65px; left: 50%; transform: translateX(-50%); }
+
+        /* Circular Best */
+        .b-d1 { top: 50px; left: 50%; transform: translateX(-50%); } .b-c1 { top: 95px; left: 50%; transform: translateX(-50%); }
+        .b-d2 { bottom: 50px; left: 50%; transform: translateX(-50%); } .b-c2 { bottom: 95px; left: 50%; transform: translateX(-50%); }
+        .b-d3 { top: 50%; left: 50px; transform: translateY(-50%) rotate(90deg); } .b-c3 { top: 50%; left: 95px; transform: translateY(-50%); }
+        .b-d4 { top: 50%; right: 50px; transform: translateY(-50%) rotate(90deg); } .b-c4 { top: 50%; right: 95px; transform: translateY(-50%); }
+        .b-td { top: 20px; right: 20px; transform: rotate(-45deg); width: 60px; z-index: 20;} .b-tc { top: 55px; right: 55px; z-index: 20;}
+    </style>
+</head>
+<body>
+
+    <!-- Fixed background assets -->
+    <div class="edge-layer">
+        <!-- Left planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png"
+             class="edge-planet edge-left" style="top:8%; width:min(26vw,190px);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png"
+             class="edge-planet edge-left" style="top:68%; width:min(32vw,250px); transform:translateX(-32%);" alt="">
+        <!-- Right planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png"
+             class="edge-planet edge-right" style="top:26%; width:min(30vw,240px); transform:translateX(32%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png"
+             class="char-float" style="left:9%; top:21%; width:105px; animation:floatY 7s ease-in-out infinite;" alt="">
+    </div>
+
+    <!-- ── NAVIGATION TOP ── -->
+    <nav class="topnav px-5 md:px-8 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png"
+                 alt="Logo Kalananti"
+                 class="h-9 md:h-11 w-auto object-contain cursor-pointer hover:scale-105 transition-transform drop-shadow-sm"
+                 onclick="window.location.href='dashboard.html'">
+        </div>
+        <div>
+            <button onclick="window.location.href='dashboard.html'" class="font-bold text-sm bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full transition-colors flex items-center gap-2" style="color:var(--text)">
+                <span>🔙</span> Kembali ke Dashboard
+            </button>
+        </div>
+    </nav>
+
+    <!-- ── CONTROLS ── -->
+    <button class="meeting-menu-btn" onclick="toggleMenu()">
+        <span>📑</span> Daftar Isi
+    </button>
+
+    <div class="meeting-dropdown" id="tocMenu">
+        <div class="meeting-section-title mt-0">Bab 1: Urgensi & Masalah</div>
+        <div class="meeting-item" onclick="goToSlide(1)">1. Sampul</div>
+        <div class="meeting-item" onclick="goToSlide(2)">2. SCL Journey Map</div>
+        <div class="meeting-item" onclick="goToSlide(3)">3. Tantangan Pengalaman Belajar</div>
+        <div class="meeting-item" onclick="goToSlide(4)">4. Masalah Administratif & Efisiensi</div>
+        <div class="meeting-item" onclick="goToSlide(5)">5. Keterbatasan Ruang & Jadwal</div>
+        <div class="meeting-item" onclick="goToSlide(6)">6. Puncak Masalah (TL;DR)</div>
+
+        <div class="meeting-section-title">Bab 2: Pandangan & Konsep SCL</div>
+        <div class="meeting-item" onclick="goToSlide(7)">7. Solusi Utama: SCL</div>
+        <div class="meeting-item" onclick="goToSlide(8)">8. Apa itu SCL?</div>
+        <div class="meeting-item" onclick="goToSlide(9)">9. Karakteristik SCL</div>
+        <div class="meeting-item" onclick="goToSlide(10)">10. Peran Aktif Guru</div>
+        <div class="meeting-item" onclick="goToSlide(11)">11. Pedagogi: Fasilitator</div>
+        <div class="meeting-item" onclick="goToSlide(12)">12. Bahasa Tubuh Guru</div>
+
+        <div class="meeting-section-title">Bab 3: Tata Ruang & Layout</div>
+        <div class="meeting-item" onclick="goToSlide(13)">13. Prinsip Open Space</div>
+        <div class="meeting-item" onclick="goToSlide(14)">14. Bad Layout 1 (Sidang)</div>
+        <div class="meeting-item" onclick="goToSlide(15)">15. Bad Layout 2 (Dinding)</div>
+        <div class="meeting-item" onclick="goToSlide(16)">16. Best Practice (Melingkar)</div>
+        <div class="meeting-item" onclick="goToSlide(17)">17. Pemanfaatan Center Space</div>
+
+        <div class="meeting-section-title">Bab 4: Timeline Kelas SCL</div>
+        <div class="meeting-item" onclick="goToSlide(18)">18. Ekosistem SCL.</div>
+        <div class="meeting-item" onclick="goToSlide(19)">19. Kelas Multi-Level</div>
+        <div class="meeting-item" onclick="goToSlide(20)">20. SCL Prep / Persiapan</div>
+        <div class="meeting-item" onclick="goToSlide(21)">21. Rundown 60 Menit</div>
+        <div class="meeting-item" onclick="goToSlide(22)">22. [10'] Shared Activity</div>
+        <div class="meeting-item" onclick="goToSlide(23)">23. Kevakuman Late Students</div>
+        <div class="meeting-item" onclick="goToSlide(24)">24. The End Goal (Peer Tutoring)</div>
+        <div class="meeting-item" onclick="goToSlide(25)">25. [45'] Inti KBM SCL</div>
+        <div class="meeting-item" onclick="goToSlide(26)">26. [5'] Closing Sesi</div>
+
+        <div class="meeting-section-title">Bab 5: Ekskavasi Modul SCL</div>
+        <div class="meeting-item" onclick="goToSlide(27)">27. Modul Cetak SCL</div>
+        <div class="meeting-item" onclick="goToSlide(28)">28. Bagian Modul (Materi)</div>
+        <div class="meeting-item" onclick="goToSlide(29)">29. Bagian Modul (Evaluasi)</div>
+        <div class="meeting-item" onclick="goToSlide(31)">31. INS & Modul Fisik</div>
+
+        <div class="meeting-section-title">Bab 6: Strategi Mengajar SCL</div>
+        <div class="meeting-item" onclick="goToSlide(32)">32. The "3 Before Me" Rule</div>
+        <div class="meeting-item" onclick="goToSlide(33)">33. Kasus: Gak Sabaran Tanya</div>
+        <div class="meeting-item" onclick="goToSlide(34)">34. Mengapa Membaca INS?</div>
+        <div class="meeting-item" onclick="goToSlide(35)">35. The Art of Scaffolding</div>
+        <div class="meeting-item" onclick="goToSlide(36)">36. Kasus: "Gak Ngerti, Kak!"</div>
+        <div class="meeting-item" onclick="goToSlide(37)">37. Membangun Peer Tutoring</div>
+        <div class="meeting-item" onclick="goToSlide(38)">38. Kegagalan (Ceramah SCL)</div>
+        <div class="meeting-item" onclick="goToSlide(39)">39. Check for Understanding</div>
+
+        <div class="meeting-section-title">Bab 7: FAQ & Resolusi Lapangan</div>
+        <div class="meeting-item" onclick="goToSlide(40)">40. Anak Terlalu Dominan</div>
+        <div class="meeting-item" onclick="goToSlide(41)">41. Anak Terlalu Pasif</div>
+        <div class="meeting-item" onclick="goToSlide(42)">42. Anak Stuck & Guru Sibuk</div>
+        <div class="meeting-item" onclick="goToSlide(43)">43. FAQ 1: Anak Menolak Baca</div>
+        <div class="meeting-item" onclick="goToSlide(44)">44. FAQ 2: Selesai Merasa Bosan</div>
+        <div class="meeting-item" onclick="goToSlide(45)">45. FAQ 3: Orang Tua Protes</div>
+        <div class="meeting-item" onclick="goToSlide(46)">46. Epilogue: The AHA! Moments</div>
+        <div class="meeting-item" onclick="goToSlide(47)">47. SCL Certified Mentor</div>
+    </div>
+
+    <div class="slide-indicator" id="slideIndicator">1 / 47</div>
+
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">←</button>
+        <button class="nav-btn" onclick="nextSlide()">→</button>
+    </div>
+
+    <!-- ==================== SLIDES START ==================== -->
+
+    <!-- SLIDE 1: Cover -->
+    <div class="slide active" id="slide-1">
+        <div class="planet-card p-12 md:p-16 text-center max-w-4xl w-full">
+            <div class="inline-block px-6 py-2 rounded-full mb-6 font-bold tracking-widest text-sm" style="background: rgba(249,192,19,0.2); color: #D9A40A;">
+                PANDUAN GURU EKSKLUSIF
+            </div>
+            <h1 class="font-display font-black text-5xl md:text-7xl mb-6 leading-tight heading-text">
+                Student Centered <br>
+                <span class="grad-text">Learning (SCL)</span>
+            </h1>
+            <p class="text-xl md:text-2xl mb-8" style="color:var(--muted)">
+                Revolusi Pengalaman Belajar dan Strategi Administratif di Kalananti.
+            </p>
+            <div class="flex justify-center gap-4 mt-8">
+                <span class="text-5xl animate-bounce">🎓</span>
+                <span class="text-5xl animate-bounce" style="animation-delay: 0.2s">🚀</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Journey -->
+    <div class="slide" id="slide-2" style="justify-content: flex-start; padding-top: 90px; padding-bottom: 150px;">
+        <div class="max-w-6xl w-full mx-auto">
+            <span class="badge mb-4 block w-max mx-auto bg-k-blue/10 text-k-blue-d border-k-blue/20">RINGKASAN ALUR SCL</span>
+            <h2 class="font-display font-black text-3xl md:text-4xl mb-6 heading-text text-center">SCL Journey Map</h2>
+            
+            <div class="planet-card p-4 md:p-6 border-t-8 border-t-k-yellow">
+                <!-- Grid Table Header -->
+                <div class="grid grid-cols-3 gap-3 mb-3 text-center font-bold font-display text-sm md:text-lg hidden md:grid">
+                    <div class="bg-blue-100 text-blue-800 py-2 rounded-xl border border-blue-200 shadow-sm">👨‍🎓 Murid (Eksplorator)</div>
+                    <div class="bg-green-100 text-green-800 py-2 rounded-xl border border-green-200 shadow-sm">👩‍🏫 Guru (Fasilitator)</div>
+                    <div class="bg-yellow-100 text-yellow-800 py-2 rounded-xl border border-yellow-200 shadow-sm">👪 Orang Tua (Observer)</div>
+                </div>
+
+                <!-- Timeline Rows -->
+                <div class="space-y-2">
+                    <!-- Row 1 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center bg-white/50 p-3 rounded-xl border hover:bg-white transition-colors">
+                        <div class="p-3 rounded-lg bg-gray-50 text-gray-400 border border-dashed text-center text-sm hidden md:block">Menuju lokasi cabang Kalananti.</div>
+                        <div class="p-3 rounded-lg bg-green-50 border-green-200 border shadow-sm relative">
+                            <span class="absolute -top-3 -left-3 bg-white border font-bold px-2 py-0.5 rounded-full text-[10px] md:text-xs text-green-700 shadow-sm">1. PREP</span>
+                            <p class="font-bold text-green-800 text-sm">Set Room & Modules</p>
+                            <p class="text-xs text-gray-600 mt-1">Meja di-pinggirkan, Center kosong. Cetak Modul Fisik.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-gray-50 text-gray-400 border border-dashed text-center text-sm hidden md:block">Drop anak & menunggu santai.</div>
+                    </div>
+
+                    <!-- Flow Arrow Down -->
+                    <div class="flex justify-center"><div class="flow-arrow" style="height: 20px; margin: 0.25rem auto;"></div></div>
+
+                    <!-- Row 2 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center bg-white/50 p-3 rounded-xl border hover:bg-white transition-colors">
+                        <div class="p-3 rounded-lg bg-blue-50 border-blue-200 border shadow-sm relative">
+                            <span class="absolute -top-3 -left-3 bg-white border font-bold px-2 py-0.5 rounded-full text-[10px] md:text-xs text-blue-700 shadow-sm">2. PEMANASAN</span>
+                            <p class="font-bold text-blue-800 text-sm">Shared Activity (10')</p>
+                            <p class="text-xs text-gray-600 mt-1">Duduk lesehan di Center Space, ice breaking memecah canggung.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-green-50 border-green-200 border shadow-sm">
+                            <p class="font-bold text-green-800 text-sm">Connection Building</p>
+                            <p class="text-xs text-gray-600 mt-1">Nge-game receh bareng kelas, tunggu murid telat tanpa buang jam materi.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-gray-50 text-gray-400 border border-dashed text-center text-sm hidden md:block">Melihat anak tertawa mulai akrab.</div>
+                    </div>
+
+                    <!-- Flow Arrow Down -->
+                    <div class="flex justify-center"><div class="flow-arrow" style="height: 20px; margin: 0.25rem auto;"></div></div>
+
+                    <!-- Row 3 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center bg-white/80 p-3 rounded-xl border border-blue-300 shadow-md">
+                        <div class="p-3 rounded-lg bg-blue-100 border-blue-300 border shadow-sm relative ring-2 ring-blue-400 ring-offset-2">
+                            <span class="absolute -top-3 -left-3 bg-white border font-bold px-2 py-0.5 rounded-full text-[10px] md:text-xs text-blue-900 shadow-sm">3. INTI KBM SCL</span>
+                            <p class="font-bold text-blue-900 text-sm">Own-Paced Learning (45')</p>
+                            <p class="text-xs text-gray-700 mt-1 font-medium">Baca Modul Fisik ➔ Cek Interactive Slide (INS) ➔ Praktik Mandiri.</p>
+                            <div class="mt-2 text-[10px] bg-white p-1 rounded border border-blue-200 text-center text-red-600 font-bold shadow-sm">Mentok? 3-Before-Me (Brain > File > Bantuan Teman)</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-green-100 border-green-300 border shadow-sm">
+                            <p class="font-bold text-green-900 text-sm">Scaffolding & Live Monitor</p>
+                            <p class="text-xs text-gray-700 mt-1">Keliling jongkok eye-level, pantau dashboard. Suntik 'Clue' tipis lalu tinggalkan.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-yellow-50 border-yellow-200 border shadow-sm">
+                            <p class="font-bold text-yellow-800 text-sm">Pelajari Kemandirian</p>
+                            <p class="text-xs text-gray-600 mt-1">Melihat kelas yang tenang & anak saling bantu sesama teman secara aktif.</p>
+                        </div>
+                    </div>
+
+                    <!-- Flow Arrow Down -->
+                    <div class="flex justify-center"><div class="flow-arrow" style="height: 20px; margin: 0.25rem auto;"></div></div>
+
+                    <!-- Row 4 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center bg-white/50 p-3 rounded-xl border hover:bg-white transition-colors">
+                        <div class="p-3 rounded-lg bg-blue-50 border-blue-200 border shadow-sm relative">
+                            <span class="absolute -top-3 -left-3 bg-white border font-bold px-2 py-0.5 rounded-full text-[10px] md:text-xs text-blue-700 shadow-sm">4. CLOSING</span>
+                            <p class="font-bold text-blue-800 text-sm">Show & Tell (5')</p>
+                            <p class="text-xs text-gray-600 mt-1">Pamer project mini ke kelas. Menikmati keberhasilan momen 'AHA!'.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-green-50 border-green-200 border shadow-sm">
+                            <p class="font-bold text-green-800 text-sm">Grading & Leaderboard</p>
+                            <p class="text-xs text-gray-600 mt-1">Isi nilai progress di Teacher Dashboard. Update Poin StarChamps ke layar TV.</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-yellow-100 border-yellow-300 border shadow-sm ring-1 ring-yellow-400">
+                            <p class="font-bold text-yellow-900 text-sm">Post-Class Report</p>
+                            <p class="text-xs text-gray-700 mt-1 font-medium">Bisa lihat report progres via sistem tentang pencapaian problem solving real.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Challenge -->
+    <div class="slide" id="slide-3">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 block text-center">BAB 1: URGENSI</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Tantangan Pengalaman Belajar</h2>
+            
+            <div class="planet-card p-10 flex flex-col md:flex-row gap-8 items-center bg-white">
+                <div class="flex-1 text-center md:text-left">
+                    <h3 class="text-2xl font-bold mb-4">Mengapa model lama kurang efektif?</h3>
+                    <p class="text-lg leading-relaxed mb-4">
+                        <strong class="text-red-500 font-black">Masalah Utama:</strong> Murid kesulitan untuk benar-benar memahami materi secara mendalam.
+                    </p>
+                    <div class="alert-box mb-0 text-left">
+                        <p class="font-medium text-lg">
+                            Hal ini terjadi karena guru <b>harus secara ketat mengikuti jadwal yang kaku</b>, sehingga membatasi pemahaman dan langkah belajar yang dipersonalisasi untuk setiap anak.
+                        </p>
+                    </div>
+                </div>
+                <!-- IMAGE PLACEHOLDER -->
+                <div class="w-full md:w-1/3 flex justify-center mt-6 md:mt-0">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/27e73134-5b1e-4747-9605-fd3ebbdddbf6.png" alt="Masalah Klasik" class="w-full h-auto rounded-xl shadow border-2 border-dashed border-gray-300">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Admin Issue 1 -->
+    <div class="slide" id="slide-4">
+        <div class="max-w-4xl w-full">
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Kendala Administratif (1/2)</h2>
+            
+            <div class="planet-card p-10">
+                <div class="flex items-center gap-4 mb-6 border-b pb-4" style="border-color:var(--card-b)">
+                    <span class="text-4xl">💸</span>
+                    <h3 class="text-3xl font-bold">1. Masalah Efisiensi (Pemborosan Sumber Daya)</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="highlight-box">
+                        <h4 class="font-bold text-xl mb-3 flex items-center gap-2"><span>🛡️</span> Aturan Kaku</h4>
+                        <p>Kita terikat aturan: <em>"Setiap kelas harus terdiri dari murid pada level yang sama."</em></p>
+                    </div>
+                    
+                    <div class="highlight-box">
+                        <h4 class="font-bold text-xl mb-3 flex items-center gap-2 text-yellow-600"><span>⚖️</span> Dilema</h4>
+                        <p>Jika hanya ada 1-2 murid di Level 2 yang tersedia di hari Sabtu, kita <b>terpaksa</b> membuka satu kelas penuh dan menugaskan guru penuh waktu hanya untuk mereka.</p>
+                    </div>
+                </div>
+
+                <div class="alert-box mt-6 bg-red-500/10 border-l-red-500 border-l-4">
+                    <h4 class="font-bold text-xl mb-2 text-red-600">💥 Realitanya:</h4>
+                    <p class="text-lg">Biaya operasional (listrik, gaji guru, sewa) tetap 100%, tetapi utilitas kelas hanya 20%. Ini sangat <b>tidak berkelanjutan (unsustainable)</b> dari perspektif bisnis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: Admin Issue 2 -->
+    <div class="slide" id="slide-5">
+        <div class="max-w-5xl w-full">
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Kendala Administratif (2/2)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Point 2 -->
+                <div class="planet-card p-8">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="text-4xl">🚪</span>
+                        <h3 class="text-2xl font-bold">2. Keterbatasan Ruang <br><span class="text-lg text-gray-500 font-medium">("Borrowed Space" Issue)</span></h3>
+                    </div>
+                    <ul class="space-y-4">
+                        <li class="p-4 bg-white/5 rounded-xl border border-white/10">
+                            <b>Fakta:</b> Ketersediaan ruang di cabang sangat terbatas.
+                        </li>
+                        <li class="p-4 bg-white/5 rounded-xl border border-white/10">
+                            <b>Dilema:</b> Murid Lvl 1, 2, dan 3 ingin belajar bersamaan, tapi hanya ada 1 ruangan kosong.
+                        </li>
+                        <li class="p-4 bg-red-500/10 rounded-xl border border-red-500/20 text-red-700 font-medium">
+                            <b>Realita:</b> Kital menolak atau menunda kelas karena tidak bisa mencampur level anak—padahal secara fisik ruangannya muat.
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Point 3 -->
+                <div class="planet-card p-8">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="text-4xl">🗓️</span>
+                        <h3 class="text-2xl font-bold">3. Jadwal Kaku <br><span class="text-lg text-gray-500 font-medium">(Scheduling Nightmare)</span></h3>
+                    </div>
+                    <ul class="space-y-4">
+                        <li class="p-4 bg-white/5 rounded-xl border border-white/10">
+                            <b>Fakta:</b> Menyinkronkan jadwal guru, ruangan & anak sangat pusing.
+                        </li>
+                        <li class="p-4 bg-white/5 rounded-xl border border-white/10">
+                            <b>Dilema:</b> Kelas baru bisa mulai jika kuota murid level sama terpenuhi.
+                        </li>
+                        <li class="p-4 bg-red-500/10 rounded-xl border border-red-500/20 text-red-700 font-medium">
+                            <b>Realita:</b> Kita kehilangan BANYAK prospek murid karena jadwal tidak fleksibel; mereka bosan menunggu kuota kelas penuh.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: TLDR Problem -->
+    <div class="slide" id="slide-6">
+        <div class="max-w-4xl w-full text-center">
+            <h2 class="font-display font-black text-5xl mb-10 heading-text">Kesimpulan Akar Masalah</h2>
+            
+            <div class="planet-card p-10 text-left mb-10">
+                <ul class="scl-list text-xl font-medium space-y-4">
+                    <li>Jadwal yang kaku membatasi personalisasi pacing belajar anak.</li>
+                    <li>Inisiensi operasional akibat fixed cost untuk grup kecil (20% utilitas).</li>
+                    <li>Keterbatasan ruang memicu penolakan murid karena beda level tak bisa digabung.</li>
+                    <li>Penjadwalan infleksibel membuat potensi prospek murid hilang sia-sia.</li>
+                </ul>
+            </div>
+
+            <div class="alert-box text-center shadow-xl transform scale-105 border-l-0 border-t-8">
+                <h3 class="text-2xl font-black mb-3">Bayangkan Dampaknya! 🌟</h3>
+                <p class="text-xl">Jika kita bisa memecahkan batasan ini:<br>
+                <b>Murid lebih aktif, resource lebih optimal, kapasitas ekspansi luas, & jadwal fleksibel.</b><br>
+                Saatnya merevolusi pengalaman belajar!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: Solution -->
+    <div class="slide" id="slide-7">
+        <div class="planet-card p-12 max-w-4xl w-full text-center border-4" style="border-color:#F9C013">
+            <span class="badge mb-6 inline-block">BAB 2: SOLUSI KITA</span>
+            <div class="flex flex-col md:flex-row items-center gap-8 text-left mt-4 border-t pt-8" style="border-color:var(--card-b)">
+                <div class="flex-1">
+                    <h2 class="font-display font-black text-4xl lg:text-5xl mb-4 heading-text">The Solution:</h2>
+                    <h1 class="font-display font-black text-5xl lg:text-7xl grad-text drop-shadow-md">S C L</h1>
+                    <p class="text-xl lg:text-2xl mt-4 font-bold" style="color:var(--muted)">
+                        (Student Centered Learning)
+                    </p>
+                </div>
+                <!-- IMAGE PLACEHOLDER -->
+                <div class="flex-1 w-full flex justify-center">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e70fa997-c2b1-4670-bf1e-b0a3fb49c50b.png" alt="SCL Hero Image" class="w-full h-auto rounded-xl shadow-lg border-2 border-dashed border-gray-300 bg-white p-2">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: What is SCL -->
+    <div class="slide" id="slide-8">
+        <div class="max-w-4xl w-full">
+            <span class="badge mb-6">DEFINISI</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Apa itu SCL?</h2>
+            
+            <div class="planet-card p-10 mb-6 font-medium text-lg leading-relaxed">
+                <p class="mb-4">
+                    <b>Student Centered Learning</b> adalah pendekatan edukasi yang <span class="bg-yellow-200 text-yellow-900 px-2 rounded">menggeser fokus dari instruksi guru menuju kebutuhan, kemampuan, minat, dan gaya belajar dari murid itu sendiri.</span>
+                </p>
+                <p>
+                    Pendekatan ini menekankan pembelajaran aktif (active learning), di mana murid secara langsung terlibat dalam problem-solving, critical thinking, dan kolaborasi, sehingga mereka <b>mengambil tanggung jawab atas proses pembelajarannya sendiri.</b>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: Characteristics -->
+    <div class="slide" id="slide-9">
+        <div class="max-w-4xl w-full">
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Karakteristik & Hasil SCL</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="planet-card p-8">
+                    <span class="text-4xl mb-4 block">🎯</span>
+                    <h3 class="text-xl font-bold mb-3">Keuntungan Utama</h3>
+                    <p class="text-md">Mendorong pengalaman belajar terpersonalisasi, pemahaman materi lebih dalam, dan memupuk <i>autonomy, motivation, & lifelong learning</i>.</p>
+                </div>
+                
+                <div class="planet-card p-8 bg-blue-50/5">
+                    <span class="text-4xl mb-4 block">🏃</span>
+                    <h3 class="text-xl font-bold mb-3">Pacing Mandiri</h3>
+                    <p class="text-md">Murid dapat <b>belajar di kecepatannya masing-masing (own paced)</b>. Tidak ditahan oleh yang lambat, tidak tertinggal oleh yang cepat.</p>
+                </div>
+
+                <div class="planet-card p-8 md:col-span-2 flex flex-col md:flex-row items-center gap-6">
+                    <div class="text-5xl shrink-0">🤝</div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Eksplorasi & Bantuan Teman Sebaya</h3>
+                        <p class="text-md">Melatih mereka mengeksplorasi masalah mandiri, dan <b>bertanya/diskusikan dengan temannya (peer tutor)</b> terlebih dahulu mencari solusi sebelum bertanya pada guru.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: SCL Kalananti VS others 1 -->
+    <div class="slide" id="slide-10">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6">BAB 3: PERBEDAAN KALANANTI</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Keterlibatan Guru <br> (Kalananti vs Lainnya)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="planet-card p-10 opacity-70 scale-95 transition-transform hover:scale-100 hover:opacity-100">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="text-3xl">🏛️</span> Model Lainnya</h3>
+                    <p class="text-lg">Di model SCL tradisional lainnya, guru seringkali hanya menjadi "pasif" dengan peran sebatas fasilitator santai atau memberi instruksi seragam secara massal.</p>
+                </div>
+                
+                <div class="planet-card p-10 border-4 border-k-yellow transform scale-105 shadow-2xl relative">
+                    <div class="absolute -top-5 -right-5 text-4xl">👑</div>
+                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-2 text-k-yellow-d"><span class="text-3xl">🚀</span> KALANANTI SCL</h3>
+                    <p class="text-lg mb-4">Di Kalananti, guru tetap <b>proaktif terlibat (proactively engaged)</b>!</p>
+                    <p class="text-lg">Bukan sekadar fasilitator diam, melainkan instruktur dedikatif yang menyalurkan panduan personal mendalam yang disesuaikan (tailored) untuk tingkat kemampuan beda-beda tiap anak di ruangan tersebut!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 11: Pedagogi Guru -->
+    <div class="slide" id="slide-11">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto">SUDUT PANDANG</span>
+            <h2 class="font-display font-black text-4xl mb-10 heading-text text-center">Pedagogi: Fasilitator, Bukan Diktator</h2>
+            <div class="planet-card p-10 border-t-8 border-k-yellow">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                    <div class="text-left">
+                        <div class="text-5xl mb-6 font-bold text-gray-400">👨‍🏫 ➔ 🧑‍🎓</div>
+                        <p class="text-xl font-medium mb-6 leading-relaxed">
+                            Paradigma utama SCL adalah berhentinya guru dari menyetir pembelajaran anak.
+                        </p>
+                        <div class="highlight-box mb-6 bg-yellow-50 border-yellow-300">
+                            <p class="text-lg">Tindakan otoriter seperti memegang mouse milik murid, mengetikkan kodenya, atau mendemonstrasikan semuanya di papan tulis <b>DILARANG KERAS</b> di SCL.</p>
+                        </div>
+                        <p class="text-lg text-gray-500 font-bold border-l-4 border-gray-400 pl-4 py-2">Biarkan anak berbuat salah, dan biarkan anak yang memegang kontrol devicenya 100%.</p>
+                    </div>
+                    <!-- IMAGE PLACEHOLDER -->
+                    <div class="flex justify-center w-full">
+                        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/ae1995ed-4b0e-4695-a214-92c84c7db483.png" alt="Teacher as Facilitator" class="w-full h-auto rounded-xl shadow border-2 border-dashed border-gray-300">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 12: Bahasa Tubuh Guru -->
+    <div class="slide" id="slide-12">
+        <div class="max-w-6xl w-full text-center">
+            <span class="badge mb-6 block w-max mx-auto">GEOMETRI INTERAKSI</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text">Bahasa Tubuh Guru SCL</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left items-stretch mb-6">
+                <!-- Kolom A -->
+                <div class="planet-card p-8 border border-red-200 bg-red-50 flex flex-col">
+                    <h3 class="font-bold text-2xl mb-4 text-red-700">❌ Otoriter (Berdiri)</h3>
+                    <p class="text-lg leading-relaxed text-gray-800 mb-6 flex-1">Guru menunduk mengayomi, membayangi (overshadow) layar anak dari belakang sambil tangannya menunjuk-nunjuk layar. Ini membuat murid merasa dikendalikan & gelisah.</p>
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/09a88278-4855-4a74-87ca-538ac8e7c82a.png" alt="Guru Otoriter" class="w-full h-auto rounded-xl shadow-sm border border-red-200 object-cover">
+                </div>
+                <!-- Kolom B -->
+                <div class="planet-card p-8 border-t-4 border-green-500 bg-green-50 shadow-xl flex flex-col">
+                    <h3 class="font-bold text-2xl mb-4 text-green-800">✅ Kolaboratif (Jongkok / Duduk)</h3>
+                    <p class="text-lg leading-relaxed text-gray-800 mb-6 flex-1">Guru harus merendahkan pandangannya agar <b>"Eye-Level"</b> (sejajar secara mata) atau sedikit di pinggir sisi (bersebelahan). Ini memicu rasa dialog partnership (mitra belajar), bukan boss!</p>
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/a921566e-e1da-48c5-a6de-c41e84781460.png" alt="Guru Kolaboratif" class="w-full h-auto rounded-xl shadow-sm border border-green-300 object-cover">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 13: Prinsip Open Space -->
+    <div class="slide" id="slide-13">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6">TATA RUANG SCL</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">Prinsip Open Space</h2>
+            <div class="planet-card p-8 text-left border border-gray-200">
+                <p class="text-xl leading-relaxed font-medium">Dalam SCL, ruang kelas bukan lagi tempat di mana semua mata tertuju ke depan (ke arah guru).<br><br>Ruang kelas harus menjadi <b>Open Space</b> yang dirancang untuk:</p>
+                <ul class="scl-list font-medium space-y-4 text-lg mt-6">
+                    <li><b>Menghilangkan Sekat Otoritas:</b> Guru tidak mendominasi panggung depan.</li>
+                    <li><b>Memudahkan Kolaborasi:</b> Siswa mudah berputar kursi dan membentuk kelompok diskusi kecil tanpa terhalang dinding.</li>
+                    <li><b>Mobilitas Guru Cekatan:</b> Guru bisa bergerak bermanuver (went around) ke setiap sisi meja murid tanpa terhalang.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 14: Bad Layout 1 (Sidang) -->
+    <div class="slide" id="slide-14">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 bg-red-100 text-red-600 border-red-200">KESALAHAN LAYOUT #1</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Layout "Ruang Sidang" (Reguler)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="room-container">
+                    <div class="room-desk teacher-desk sb-td">Teacher</div><div class="room-chair teacher-chair sb-tc"></div>
+                    <div class="room-desk sb-d1">Desk</div> <div class="room-chair sb-c1"></div>
+                    <div class="room-desk sb-d2">Desk</div> <div class="room-chair sb-c2"></div>
+                    <div class="room-desk sb-d3">Desk</div> <div class="room-chair sb-c3"></div>
+                    <div class="room-desk sb-d4">Desk</div> <div class="room-chair sb-c4"></div>
+                    <div class="room-desk sb-d5">Desk</div> <div class="room-chair sb-c5"></div>
+                    <div class="room-desk sb-d6">Desk</div> <div class="room-chair sb-c6"></div>
+                    <div class="absolute inset-0 bg-red-500 bg-opacity-10 pointer-events-none rounded-2xl flex items-center justify-center">
+                        <span class="text-red-600 font-black text-6xl opacity-30 transform -rotate-12">HINDARI</span>
+                    </div>
+                </div>
+                <div class="planet-card p-6 flex flex-col justify-center border-l-8 border-red-500">
+                    <h3 class="font-bold text-2xl mb-4">Mengapa Ini Gagal?</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg">
+                        <li>Semua murid terpaksa menghadap ke satu titik (Teacher).</li>
+                        <li><b>Memicu "Nervousness":</b> Atmosfer kaku, formal, seperti ujian/sidang.</li>
+                        <li><b>Keterbukaan Gagal:</b> Canggung menoleh 180° untuk tanya.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 15: Bad Layout 2 (Dinding) -->
+    <div class="slide" id="slide-15">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 bg-red-100 text-red-600 border-red-200">KESALAHAN LAYOUT #2</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Layout "Menghadap Dinding"</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="room-container">
+                    <div class="room-desk teacher-desk w-td">Teacher</div><div class="room-chair teacher-chair w-tc"></div>
+                    <div class="room-desk w-d1">Desk</div><div class="room-chair w-c1"></div>
+                    <div class="room-desk w-d2">Desk</div><div class="room-chair w-c2"></div>
+                    <div class="room-desk w-d3">Desk</div><div class="room-chair w-c3"></div>
+                    <div class="room-desk w-d4">Desk</div><div class="room-chair w-c4"></div>
+                    <div class="absolute inset-0 bg-red-500 bg-opacity-10 pointer-events-none rounded-2xl flex items-center justify-center">
+                        <span class="text-red-600 font-black text-6xl opacity-30 transform -rotate-12">ANTI-SOSIAL</span>
+                    </div>
+                </div>
+                <div class="planet-card p-6 flex flex-col justify-center border-l-8 border-red-500">
+                    <h3 class="font-bold text-2xl mb-4 text-red-700">Mengapa Ini Buruk?</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg text-gray-700">
+                        <li>Siswa menatap tembok kosong atau sudut mati.</li>
+                        <li><b>Sekat Komunikasi Tingkat Tinggi:</b> Jika butuh bantuan teman, mereka harus memundurkan kursi dan berbalik badan total, yang sangat menguras energi & canggung.</li>
+                        <li>Sangat tertutup bagi Peer-Tutoring spontan.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 16: Best Practice (Melingkar) -->
+    <div class="slide" id="slide-16">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 bg-k-green text-green-900 border-green-300">LAYOUT SCL IDEAL</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Best Practice: "Center Space"</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="room-container border-green-500">
+                    <div class="room-desk teacher-desk b-td">Teacher</div><div class="room-chair teacher-chair b-tc"></div>
+                    <div class="room-desk b-d1">Desk</div> <div class="room-chair b-c1"></div>
+                    <div class="room-desk b-d2">Desk</div> <div class="room-chair b-c2"></div>
+                    <div class="room-desk b-d3">Desk</div> <div class="room-chair b-c3"></div>
+                    <div class="room-desk b-d4">Desk</div> <div class="room-chair b-c4"></div>
+                    <div class="absolute inset-0 bg-green-500 bg-opacity-10 pointer-events-none rounded-2xl flex items-center justify-center">
+                        <span class="text-green-700 font-black text-4xl opacity-50 border-4 border-green-500 border-dashed rounded-full p-4 transform animate-pulse">CENTER SPACE</span>
+                    </div>
+                </div>
+                <div class="planet-card p-6 flex flex-col justify-center border-l-8 border-green-500 bg-green-50">
+                    <h3 class="font-bold text-2xl mb-4 text-green-800">Menghadirkan Keterbukaan</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg text-gray-700">
+                        <li><b>Saling Berhadapan:</b> Meja diposisikan menghadap titik pusat. Anak dapat melihat wajah semua teman sekelasnya.</li>
+                        <li><b>Minta Bantuan Super Cepat:</b> Cukup menoleh ke kanan/kiri tanpa memutar kursi, atau cukup *berbisik* ke anak di seberang meja.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 17: Pemanfaatan Center Space -->
+    <div class="slide" id="slide-17">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6">TATA RUANG SCL</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">Pemanfaatan "Center Space"</h2>
+            <div class="planet-card p-10 text-left border shadow-lg border-blue-200">
+                <p class="text-xl font-medium leading-relaxed mb-6 text-gray-700">Adanya ruang kosong melompong yang luas di tengah lingkaran meja ini bukanlah sesuatu yang tidak disengaja. Di SCL, *Center Space* berfungsi sebagai panggung aktivitas!</p>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg shadow-sm">
+                    <b class="text-blue-800 font-bold mb-2 block">Duduk Lesehan di Bawah:</b>
+                    "Setiap sesi pembukaan, Ice Breaking, dan Show-n-Tell perpisahan, <b>JANGAN</b> biarkan anak duduk tegak kaku di PC masing-masing. Ajak mereka semua berlarian turun dan duduk lesehan melingkar di atas karpet *Center Space* ini. Kedekatan fisik ini mempercepat hancurnya canggung."
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 18: Ekosistem SCL -->
+    <div class="slide" id="slide-18">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6 bg-yellow-100 text-yellow-700 border-yellow-300">PETA KEKUATAN</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">The SCL Ecosystem</h2>
+            <div class="planet-card p-10 relative overflow-hidden text-left bg-gradient-to-r from-blue-50 to-yellow-50">
+                <p class="text-lg leading-relaxed text-gray-800 mb-8 font-medium max-w-2xl text-center mx-auto">SCL di Kalananti sukses hanya jika ketiga elemen raksasa ini saling mendukung tanpa putus:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border shadow-sm text-center transform hover:-translate-y-1 transition-all">
+                        <div class="text-5xl mb-4">📄</div>
+                        <h3 class="font-bold text-xl text-k-blue-d mb-2">Modul Cetak</h3>
+                        <p class="text-sm font-medium text-gray-600">Peta offline berisi instruksi To-Do-List dan bagian Evaluasi (Quiz).</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border shadow-sm text-center shadow-k-yellow/20 transform hover:-translate-y-1 transition-all">
+                        <div class="text-5xl mb-4">💻</div>
+                        <h3 class="font-bold text-xl text-yellow-600 mb-2">Interactive (INS)</h3>
+                        <p class="text-sm font-medium text-gray-600">Portal Mission Control rahasia bagi murid melihat bocoran petunjuk GIF (scaffolding).</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border shadow-sm text-center transform hover:-translate-y-1 transition-all">
+                        <div class="text-5xl mb-4">🖥️</div>
+                        <h3 class="font-bold text-xl text-green-600 mb-2">Teacher Dashboard</h3>
+                        <p class="text-sm font-medium text-gray-600">Papan kontrol guru memantau kemajuan ruang kelas, memberikan grading, dan poin.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 19: Multi Levels -->
+    <div class="slide" id="slide-19">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 block text-center">OPERASIONAL KELAS</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Satu Ruangan, Beda Level</h2>
+            <div class="planet-card p-10 flex flex-col md:flex-row gap-8 items-center bg-white shadow-2xl">
+                <div class="flex-1 text-center md:text-left">
+                    <h3 class="font-black text-3xl mb-4 text-k-blue-d">Dilema Administratif vs Solusi KBM</h3>
+                    <p class="text-lg font-medium leading-relaxed mb-6">Dulu, 1 kelas reguler butuh minimal 4 anak dengan level yang persis sama. Jika ada 2 anak L1 dan 4 anak L2, mereka tidak bisa digabung, mengacaukan operasional.</p>
+                    <div class="alert-box mb-0 text-left">
+                        <b>Solusi SCL:</b> Gabungkan mereka! Dalam kelas SCL, anak Level 1, 2, dan 3 bisa duduk dalam 1 jadwal di ruang yang sama, karena setiap anak fokus dengan Modul Cetaknya yang <i>Own-Paced</i> masing-masing.
+                    </div>
+                </div>
+                <!-- IMAGE PLACEHOLDER -->
+                <div class="w-full md:w-1/3 flex justify-center mt-6 md:mt-0">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e70fa997-c2b1-4670-bf1e-b0a3fb49c50b.png" alt="Multi Level Diagram" class="w-full h-auto rounded-xl shadow-md border-2 border-dashed border-gray-300">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 20: SCL Prep -->
+    <div class="slide" id="slide-20">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6">TIMELINE SCL</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">Class Preparation (Sebelum Kelas)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                <div class="planet-card p-8 border-t-8 border-t-blue-400">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="text-3xl">🖨️</span> Logistik Modul & INS</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg">
+                        <li>Print out Modules fisik sesuai level tiap anak.</li>
+                        <li>Pastikan koneksi internet PC anak stabil.</li>
+                        <li>Siapkan link Dashboard student (INS) di browser anak.</li>
+                    </ul>
+                </div>
+                <div class="planet-card p-8 border-t-8 border-t-yellow-400">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="text-3xl">🪑</span> Setingan Ruang</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg">
+                        <li><b>Pinggirkan meja, sisakan tengah yang melompong!</b></li>
+                        <li>Cek Dashboard Guru di iPad / Laptop milik mentor.</li>
+                        <li>Siapkan materi (jokes) Ice Breaking pembuka.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 21: 60M Rundown -->
+    <div class="slide" id="slide-21">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6">TIMELINE SCL</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Rundown 60 Menit</h2>
+            <div class="flex flex-col md:flex-row gap-8 items-center bg-transparent">
+                <div class="flex flex-col gap-4 max-w-xl flex-1">
+                    <div class="planet-card p-6 border-l-8 border-yellow-400 flex items-center gap-6 transform hover:translate-x-2 transition-all bg-white shadow-sm">
+                        <div class="font-black text-3xl md:text-5xl w-24 md:w-32 text-yellow-500">10'</div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-2xl text-gray-800">Shared Activity (Pemanasan)</h3>
+                            <p class="text-md text-gray-600">Lesehan di Center Space, ice breaking bareng mengaburkan canggung.</p>
+                        </div>
+                    </div>
+                    <div class="planet-card p-6 border-l-8 border-blue-500 flex items-center gap-6 transform hover:translate-x-2 transition-all bg-white shadow-sm">
+                        <div class="font-black text-3xl md:text-5xl w-24 md:w-32 text-blue-500">45'</div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-2xl text-gray-800">Inti KBM SCL</h3>
+                            <p class="text-md text-gray-600">Membuka modul, eksekusi INS, Guru keliling <i>one-by-one</i>.</p>
+                        </div>
+                    </div>
+                    <div class="planet-card p-6 border-l-8 border-green-500 flex items-center gap-6 transform hover:translate-x-2 transition-all bg-white shadow-sm">
+                        <div class="font-black text-3xl md:text-5xl w-24 md:w-32 text-green-500">5'</div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-2xl text-gray-800">Closing Sesi</h3>
+                            <p class="text-md text-gray-600">Grading pencapaian kemajuan, show & tell, Leaderboard!</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- CHART LAYOUT (PIE CHART CSS) -->
+                <div class="w-full md:w-1/3 flex flex-col justify-center items-center mt-6 md:mt-0 relative">
+                    <!-- CSS Native Pie Chart -->
+                    <div class="w-64 h-64 rounded-full shadow-xl border-8 border-white bg-white hover:scale-105 transition-all duration-700 relative overflow-hidden"
+                         style="background: conic-gradient(
+                            #facc15 0deg 60deg,     /* 10 mins (16.6%) = 60 deg -> Yellow (Shared Act) */
+                            #3b82f6 60deg 330deg,   /* 45 mins (75%) = 270 deg -> Blue (KBM SCL) */
+                            #22c55e 330deg 360deg   /* 5 mins (8.3%) = 30 deg -> Green (Closing) */
+                         );">
+                         
+                        <!-- Donut inner hole untuk aksen estetik (Opsional) -->
+                        <div class="absolute inset-0 m-auto w-28 h-28 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+                            <span class="text-3xl font-black text-gray-800">60'</span>
+                            <span class="text-xs font-bold text-gray-400 tracking-widest mt-1">TOTAL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 22: Shared Act -->
+    <div class="slide" id="slide-22">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6">10 MENIT PERTAMA</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">10' Shared Activity</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                <div class="planet-card p-8 border-t-8 border-t-yellow-400">
+                    <h3 class="text-2xl font-bold mb-4 text-yellow-700">Tujuan Kegiatan</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg leading-relaxed">
+                        <li>Mengagrabkan sesama murid lintas level (bonding).</li>
+                        <li>Menghancurkan kecanggungan sosial sedini mungkin.</li>
+                        <li><b>Adaptif:</b> Kegiatannya ngobrol receh, game kecil tebak kata ruang kosong.</li>
+                    </ul>
+                </div>
+                <div class="planet-card p-8 bg-yellow-400/10 border border-yellow-400 flex flex-col justify-center">
+                    <h3 class="font-black text-2xl text-yellow-600 mb-4">Mengatasi Kevakuman</h3>
+                    <p class="text-lg font-medium leading-relaxed">Selain menyatukan murid, ini digunakan untuk mengisi jeda menunggu anak yang datangnya <i>late</i> secara alami, sehingga materi praktikum tidak akan tertinggal.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 23: Late Students Kevakuman -->
+    <div class="slide" id="slide-23">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6">SHARED ACTIVITY EXTENSION</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Kevakuman "Late Students"</h2>
+            <div class="planet-card p-10 text-left border shadow-lg border-gray-200">
+                <p class="text-xl font-medium leading-relaxed mb-6 text-gray-700">Penyakit kelas reguler: Setengah kelas diam garing stres menunggu 1 murid yang kena macet.</p>
+                <div class="highlight-box bg-blue-50 border-blue-400">
+                    <b class="text-2xl text-k-blue-d">Di SCL, Waktu Ini Dipakai Full Bermain!</b><br><br>
+                    Guru menyuruh murid lesehan di <span class="bg-yellow-200 px-2 rounded font-bold">Center Space</span>. Mereka ngobrol santai atau main uno.<br>Saat murid terlambat akhirnya datang terengah-engah, dia langsung menyelip duduk ke lingkaran tanpa merusak KBM sama sekali.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 24: End Goal Peer Tutoring -->
+    <div class="slide" id="slide-24">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 block text-center mx-auto">CORE PURPOSE</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">The End Goal: "Peer Tutoring"</h2>
+            <div class="planet-card p-10 flex flex-col items-center bg-white shadow-2xl border-4 border-k-yellow/50 ring-4 ring-yellow-400/20 transform scale-105">
+                <p class="text-xl font-semibold text-center mb-6 max-w-3xl leading-relaxed text-gray-800 border-b-4 border-yellow-400 pb-4">
+                    Mengapa membangun keakraban (Shared Act) di 10 menit awal itu MUTLAK?
+                </p>
+                <div class="text-left w-full mt-4 space-y-6 text-lg">
+                    <p class="bg-red-50 p-6 rounded-xl border border-red-100 shadow-sm text-red-900">🚨 <b>Masalah Umum:</b> Murid sangat gengsi/enggan meminta bantuan anak di meja sebelahnya karena merasa SKSD <i>(awkward)</i>.</p>
+                    <p class="bg-green-50 p-6 rounded-xl border border-green-200 shadow-lg text-green-900 font-medium">💡 <b>Output SCL:</b> Jika dinding sungkan ini dihancurkan saat nge-game tadi, ketika KBM koding dimulai, mereka asik saja menoleh: <br><br><i>"Eh Jo, loop punya lu jalan gak? Punya gua error nih bantuin dong!"</i> (Jadi Mandiri!).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 25: KBM -->
+    <div class="slide" id="slide-25">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center bg-blue-500 text-white">45 MENIT INTI</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Inti KBM SCL</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="planet-card p-8 border-t-8 border-t-blue-400">
+                    <h3 class="font-black text-2xl mb-4"><span class="text-4xl">🧒</span> Rutinitas Sisi Murid</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg">
+                        <li>Fokus masuk ke bubble / dunianya masing-masing.</li>
+                        <li>Memecahkan misteri kode dari <b>Modul Cetak</b> dan <b>INS Interaktif</b>.</li>
+                        <li>Berteriak/menoleh bertanya ke teman jika <i>stuck</i>.</li>
+                        <li>Submit Task & ngerjain Quiz mandiri.</li>
+                    </ul>
+                </div>
+                <div class="planet-card p-8 border-t-8 border-t-blue-600">
+                    <h3 class="font-black text-2xl mb-4 text-blue-700"><span class="text-4xl">👨‍🏫</span> Manuver Sisi Guru</h3>
+                    <ul class="scl-list font-medium space-y-3 lg:text-lg">
+                        <li>Guru terus <b>moving (mengelilingi)</b> meja tanpa diam di tengah.</li>
+                        <li>Melihat monitor anak bukan membayangi, tapi <b>sejajar</b>.</li>
+                        <li>Memantau Dashboard Guru (Siapa yang task-nya error).</li>
+                        <li>Suntik Clue kecil (Scaffolding), lalu tinggalkan lagi.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 26: Closing -->
+    <div class="slide" id="slide-26">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6 bg-green-100 text-green-700 border-green-200">5 MENIT TERAKHIR</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Closing Sesi</h2>
+            <div class="planet-card p-8 text-left border-l-8 border-green-500 bg-green-50">
+                <ul class="scl-list font-medium space-y-4 text-xl">
+                    <li><b>Show & Tell Terbuka:</b> Minta anak berdiri dari PC, kumpul lesehan kembali. Beri waktu mereka <i>Pamer Singkat</i> karyanya ke anak lain.</li>
+                    <li><b>Penilaian (Grading & Validasi Task):</b> Guru merekap quiz di Dashboard.</li>
+                    <li><b>Tayangkan Leaderboard!</b> Proyeksikan papan klasemen poin StarChamps di TV/dinding agar <i>hype</i> kompitisi positif memuncak!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SLIDE 27: Modul -->
+    <div class="slide" id="slide-27">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6">PROPERTI EKSKAVASI</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">Modul Cetak SCL</h2>
+            <p class="text-lg font-medium text-gray-700 mb-8 max-w-2xl mx-auto">
+                Modul Cetak bukan lagi textbook kaku yang dibacakan, melainkan <b>Workbook Actionable</b> yang jadi peta utama sihir anak berpetualang sendirian!
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div class="planet-card p-6 border-b-4 border-yellow-400">
+                    <h3 class="font-bold mb-2">1. Offline First</h3>
+                    <p class="text-sm">Membiasakan anak membaca dokumen fisik terlebih dahulu untuk mengurangi <i>screen fatigue</i> dan mengasah literasi murni.</p>
+                </div>
+                <div class="planet-card p-6 border-b-4 border-yellow-400">
+                    <h3 class="font-bold mb-2">2. Visual & Step-by-Step</h3>
+                    <p class="text-sm">Isinya sarat akan infografis, glosarium, dan checklist praktikum mandiri yang tidak butuh ceramah.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 28: Modul Materi -->
+    <div class="slide" id="slide-28">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto w-max">ANATOMI MODUL</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Anatomi Modul (Bagian 1: Pembuka & Outline)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full text-left items-stretch">
+                <!-- Point 1 -->
+                <div class="bg-white border rounded-xl p-8 shadow flex flex-col items-center text-center gap-6">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/f1e6a782-eb0a-4f52-babf-da34af3b3b16.png" class="w-full h-auto rounded border shadow-sm">
+                    <div>
+                        <span class="text-k-blue-d font-black text-2xl block mb-2 font-display">1. In This Lesson</span>
+                        <p class="text-lg text-gray-700 leading-relaxed font-medium">Bagian pembuka setiap modul yang menjelaskan tujuan belajar utama dan apa yang akan dipelajari di sesi itu.</p>
+                    </div>
+                </div>
+                <!-- Point 2 -->
+                <div class="bg-white border rounded-xl p-8 shadow flex flex-col items-center text-center gap-6">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/d82da8ce-8171-408a-975e-1c451118d6ab.png" class="w-full h-auto rounded border shadow-sm">
+                    <div>
+                        <span class="text-k-blue-d font-black text-2xl block mb-2 font-display">2. Materi & Langkah</span>
+                        <p class="text-lg text-gray-700 leading-relaxed font-medium">Isi utama modul: penjelasan, tahapan kerja, gambar panduan, dan urutan aktivitas yang perlu diikuti murid.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 29: Modul Kosakata -->
+    <div class="slide" id="slide-29">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto w-max">ANATOMI MODUL</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Anatomi Modul (Bagian 2: Kosakata & Wawasan)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full text-left items-stretch">
+                <!-- Point 3 -->
+                <div class="bg-white border rounded-xl p-8 shadow flex flex-col items-center text-center gap-6">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e09e7335-b368-4a27-9081-37bb8021ec32.png" class="w-full h-auto rounded border shadow-sm">
+                    <div>
+                        <span class="text-k-blue-d font-black text-2xl block mb-2 font-display">3. Kamus Coder</span>
+                        <p class="text-lg text-gray-700 leading-relaxed font-medium">Penjelasan istilah coding penting. Di modul akan muncul sebagai bubble <i>“Tutor says...”</i> untuk bantu murid memahami kosakata baru.</p>
+                    </div>
+                </div>
+                <!-- Point 4 -->
+                <div class="bg-white border rounded-xl p-8 shadow flex flex-col items-center text-center gap-6">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/003f7bd5-b37a-4b86-a37a-4e49b60d1d0f.png" class="w-full h-auto rounded border shadow-sm">
+                    <div>
+                        <span class="text-k-blue-d font-black text-2xl block mb-2 font-display">4. FYK / For Your Knowledge</span>
+                        <p class="text-lg text-gray-700 leading-relaxed font-medium">Tambahan wawasan singkat. Ini dipakai untuk memberi konteks atau fun fact supaya murid lebih paham konsep yang sedang dipelajari.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 30: Modul Evaluasi -->
+    <div class="slide" id="slide-30">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto w-max">ANATOMI MODUL</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Anatomi Modul (Bagian 3: Praktikum & Evaluasi)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left items-stretch">
+                <!-- Point 5 -->
+                <div class="planet-card bg-white p-6 border-t-8 border-yellow-500 shadow-sm flex flex-col items-center text-center">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/a5a9900d-914f-4f2e-b939-47b3f2b176ae.png" class="w-full h-auto rounded-lg shadow-sm border border-gray-200 mb-4 object-cover">
+                    <h3 class="font-black font-display text-2xl mb-2 text-yellow-600">5. Must Do</h3>
+                    <p class="text-md leading-relaxed text-gray-700 font-medium">Tugas inti yang wajib dikerjakan murid. Ini target minimum yang harus selesai di setiap modul.</p>
+                </div>
+                <!-- Point 6 -->
+                <div class="planet-card bg-white p-6 border-t-8 border-blue-500 shadow-sm flex flex-col items-center text-center">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/ed137362-9e14-4ac2-8924-d08bc69683c5.png" class="w-full h-auto rounded-lg shadow-sm border border-gray-200 mb-4 object-cover">
+                    <h3 class="font-black font-display text-2xl mb-2 text-blue-600 leading-tight">6. Should Do & <br><span class="text-xl">Aspire To Do</span></h3>
+                    <p class="text-md leading-relaxed text-gray-700 font-medium">Latihan pengayaan. “Should Do” untuk tantangan lanjutan yang disarankan, dan “Aspire To Do” untuk eksplorasi yang menantang.</p>
+                </div>
+                <!-- Point 7 -->
+                <div class="planet-card bg-white p-6 border-t-8 border-green-500 shadow-sm flex flex-col items-center text-center">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/f5e04d5d-9eb8-4001-a3e8-085f5d3b191c.png" class="w-full h-auto rounded-lg shadow-sm border border-gray-200 mb-4 object-cover">
+                    <h3 class="font-black font-display text-2xl mb-2 text-green-600">7. Mini Quiz</h3>
+                    <p class="text-md leading-relaxed text-gray-700 font-medium">Bagian evaluasi singkat di akhir modul untuk mengecek pemahaman murid sebelum lanjut ke sesi berikutnya.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 31: Modul vs INS -->
+    <div class="slide" id="slide-31">
+        <div class="max-w-6xl w-full text-center">
+            <span class="badge mb-6 block text-center mx-auto w-max">INTEGRASI PLATFORM</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Modul Cetak VS Platform INS</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left items-stretch">
+                <!-- Modul Cetak -->
+                <div class="planet-card p-8 border-t-8 border-t-blue-500 bg-white shadow-xl flex flex-col gap-4">
+                    <p class="text-xl leading-relaxed font-black mb-2 text-k-blue-d">Modul Cetak Fisik:</p>
+                    <p class="text-lg text-gray-700 flex-1">Sangat ringkas, terbatas di 2 lembar kertas (karena hemat biaya cetak materi cabang). Isinya To-Do-List instruksi dan gambar statis global.</p>
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/20e9b722-b598-45b2-b000-35d91f62b9d4.png" alt="Modul Screenshot" class="w-full h-auto rounded-xl shadow-md border-2 border-dashed border-gray-300">
+                </div>
+                <!-- INS -->
+                <div class="planet-card p-8 border-t-8 border-t-yellow-400 bg-yellow-50 shadow-xl flex flex-col gap-4">
+                    <p class="text-xl leading-relaxed font-black mb-2 text-yellow-700">INS (Dashboard Murid):</p>
+                    <p class="text-lg text-gray-800 flex-1">Berisi materi yang sifatnya <b>SUPER DETAIL</b> (GIF bergeraknya, video tutor, kode mendalam presisi, hingga spoiler rahasia).</p>
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/2c3adbdd-1538-47ad-b533-31929ed0f356.png" alt="INS Screenshot" class="w-full h-auto rounded-xl shadow-md border-2 border-dashed border-yellow-400">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 32: 3 Before Me -->
+    <div class="slide" id="slide-32">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 bg-red-100 text-red-600 border-red-200 block text-center mx-auto">STRATEGI MENGAJAR</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center text-red-800">The "Three BEFORE Me" Rule</h2>
+            <div class="planet-card p-8 flex flex-col justify-center border-2 border-red-200 bg-red-50/50 shadow-2xl">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center text-left">
+                    <div class="lg:col-span-2">
+                        <p class="text-xl font-medium leading-relaxed mb-6 text-gray-800">Aturan besi SCL: <b>Siswa DILARANG keras langsung bertanya ke Guru saat stuck!</b> Mereka wajib melewati 3 filter problem-solving mandiri:</p>
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-2 mt-4 text-center">
+                            <div class="flex-1 bg-white w-full p-6 rounded-xl shadow-md font-bold border-t-4 border-red-300">1. Brain<br><span class="text-sm font-normal text-gray-500 mt-2 block">Coba mikir & baca ulang errornya.</span></div>
+                            <span class="text-xl text-red-300 transform md:rotate-0 rotate-90 mx-2">➔</span>
+                            <div class="flex-1 bg-white w-full p-6 rounded-xl shadow-md font-bold border-t-4 border-red-400">2. Book/INS<br><span class="text-sm font-normal text-gray-500 mt-2 block">Cek slide interaktif (INS) untuk clue.</span></div>
+                            <span class="text-xl text-red-400 transform md:rotate-0 rotate-90 mx-2">➔</span>
+                            <div class="flex-1 bg-white w-full p-6 rounded-xl shadow-md font-bold border-t-4 border-red-500">3. Buddy<br><span class="text-sm font-normal text-gray-500 mt-2 block">Tanya teman sebelah (Peer Tutoring).</span></div>
+                        </div>
+                    </div>
+                    <!-- FLOWCHART IMAGE PLACEHOLDER -->
+                   
+                </div>
+                <div class="mt-8 text-center text-red-800 font-black text-2xl tracking-wide bg-red-100 py-3 rounded-lg border border-red-200">
+                    ...Baru akhirnya panggil MENTOR! (ME)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 33: Kasus Gak Sabaran -->
+    <div class="slide" id="slide-33">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 bg-yellow-100 text-yellow-600 border-yellow-200">KASUS #1: ANAK GAK SABARAN</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">"Kak! Tolong ini ngga berhasil gimana?"</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div class="planet-card p-8 bg-white border border-gray-200">
+                    <h3 class="font-bold text-xl mb-4 text-red-600">❌ Apa yang Guru BIASA lakukan:</h3>
+                    <p class="text-gray-700 font-medium">Buru-buru lari nyamperin si manis, lalu mengetikkan kodenya langsung di keyboard anak supaya cepat beres dan anak berhenti merengek.</p>
+                </div>
+                <div class="planet-card p-8 bg-green-50 border border-green-200 shadow-xl border-t-8 border-t-green-500">
+                    <h3 class="font-bold text-xl mb-4 text-green-700">✅ Apa yang Guru SCL kelakuan:</h3>
+                    <p class="text-gray-800 font-medium leading-relaxed"><i>"Tunda sejenak. Kamu udah minta tolong 'Buddy' teman sebelahmu belum? Terus kamu udah cek Slide Interaktif di akun INS kamu? Coba kamu baca buka INS nya bareng aku dulu, ikutin GIF-nya, lalu bilang ke kakak apa yang terjadi."</i></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 34: Mengapa Membaca INS -->
+    <div class="slide" id="slide-34">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6">MENGAPA?</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">Mengapa Wajib Mengecek INS?</h2>
+            <div class="planet-card p-10 text-left border-l-8 border-k-yellow shadow-lg bg-white">
+                <p class="text-xl font-medium leading-relaxed mb-6 text-gray-700">Seperti disinggung sebelumnya, Modul fisik hanyalah <i>blueprint</i> singkat. Semua instruksi valid bergeraknya ada di <b>Interactive Slide (INS)</b>.</p>
+                <div class="alert-box bg-yellow-50 border-yellow-300">
+                    <b class="text-2xl text-yellow-800 mb-2 block">Pentingnya INS untuk Resiliensi:</b>
+                    Saat murid mentok, mengarahkan dan memaksa mereka mencari jawaban di INS akan melatih daya juang literasi mandiri mereka. Jika setiap masalah langsung disuapi jawaban, selamanya mereka bergantung pada kemurahan hati Guru <i>(Spoiled Students)</i>, menguras energi guru.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 35: The Art of Scaffolding -->
+    <div class="slide" id="slide-35">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6">THE ART OF TEACHING</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">The Art of Scaffolding</h2>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto block">Memberi bantuan dalam SCL ibarat memasang perancah bambu (scaffolding). Sesedikit mungkin memegang, sebanyak mungkin menuntun (Clue).</p>
+            <div class="planet-card p-10 flex flex-col items-center bg-blue-50/50 shadow-xl border-t-4 border-k-blue-d">
+                <div class="text-left w-full space-y-6 text-xl font-medium leading-relaxed">
+                    <p class="bg-white p-4 rounded-lg border shadow-sm">👎 <b>Direct Answer (Buruk):</b> <br><i class="text-gray-500">"Pencet tombol spasi. Klik tombol hijau yang ada tulisan 'Run' itu loh."</i></p>
+                    <p class="bg-white p-4 rounded-lg border shadow-sm">🔥 <b>Scaffolding (SCL Pro):</b> <br><i class="text-k-blue-d font-bold">"Coba lihat petunjuk nomor 3... Dia minta kita menjalankan script. Kalau di aplikasi ini, tombol untuk menjalankan biasanya letaknya di mana yang warnanya mencolok dan logonya 'Play'?"</i></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- SLIDE 36: Gak Ngerti Kak -->
+    <div class="slide" id="slide-36">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-6 bg-red-100 text-red-600 border-red-200">KASUS #2: GAK NGERTI BACA</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">"Kak! Aku tetep ga ngerti ini disuruh apa!"</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div class="planet-card p-8 bg-white border border-gray-200">
+                    <h3 class="font-bold text-xl mb-4 text-red-600">❌ Kesalahan Guru Biasa:</h3>
+                    <p class="text-gray-700 font-medium">Guru langsung merangkum paragraf modul dan membuatkan kodenya ("Oh ini maksudnya disuruh bikin loop ke arah sini"). Anak akan kehilangan kemampuan mencerna bahasa.</p>
+                </div>
+                <div class="planet-card p-8 bg-green-50 border border-green-200 shadow-xl border-t-8 border-t-green-500">
+                    <h3 class="font-bold text-xl mb-4 text-green-700">✅ Guru SCL: (Membaca Bareng)</h3>
+                    <p class="text-gray-800 font-medium leading-relaxed"><i>"Oke, bagian mana yang membingungkan? Mari kita baca bareng kalimat pertama ya. 'Ulangi step di atas 5 kali'... Berarti menurut kamu, kode apa yang pas buat ngatur jumlah ulangan?"</i> (Decoding kalimat instruksi bersama).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 37: Membangun Peer Tutoring -->
+    <div class="slide" id="slide-37">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto">THE ART OF TEACHING</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Membangun Peer Tutoring Silang</h2>
+            <div class="flex flex-col lg:flex-row gap-8 items-stretch text-left">
+                <!-- IMAGE PLACEHOLDER -->
+                <div class="w-full lg:w-1/3 flex justify-center shrink-0">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTUZYgC-FEePRi6RgCJ_5XfBJ8yZI_2gqLofQ&s" alt="Peer Tutoring" class="w-full h-full rounded-xl shadow border-2 border-dashed border-gray-300 object-cover min-h-[300px]">
+                </div>
+                <div class="flex-1 flex flex-col gap-6">
+                    <div class="planet-card p-8 border border-blue-200 bg-white flex-1">
+                        <h3 class="font-bold text-2xl mb-4 text-k-blue">Mengkondisikan Sang Tutor:</h3>
+                        <p class="text-lg leading-relaxed text-gray-700">Tidak ada anak yang suka disuruh mengurusi problem temannya tiba-tiba jika mereka masih seru dengan kodingannya sendiri. Ajak dia menjadi "Kakak" dengan pujian halus.</p>
+                    </div>
+                    <div class="planet-card p-8 bg-blue-50 border border-blue-200 shadow-xl flex-1">
+                        <h3 class="font-bold text-2xl mb-4 text-k-blue-d">Contoh Manuver:</h3>
+                        <p class="text-lg leading-relaxed text-blue-900 border-l-4 border-yellow-400 pl-4 py-2 bg-white mt-2 shadow-sm italic font-bold">
+                            "Farel, Kakak lihat kamu jago banget nih pasang sensornya, super fast! Sebelah kiri mu ada Bima lagi bingung pasang blok loop, boleh tolong tutorin Bima bentar rel? Nanti kakak kasih star tambahan khusus deh buat mentor Farel!"
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 38: Ceramah SCL -->
+    <div class="slide" id="slide-38">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6 bg-red-100 text-red-600 border-red-200">KESALAHAN FATAL</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text text-center">Terjebak "Ceramah Mikro"</h2>
+            <div class="planet-card p-10 text-left border border-red-200 bg-white">
+                <div class="text-red-500 text-6xl mb-4 text-center">🚫</div>
+                <p class="text-xl font-medium leading-relaxed mb-6 text-gray-700 text-center">
+                    Banyak guru bangga sudah menghindari ceramah depan kelas. Tapi saat mendampingi 1 anak yang pelan, guru malah melakukan <b>Ceramah Mikro (Micro Lecture)</b> yang memakan waktu 15 menit penuh.
+                </p>
+                <div class="bg-red-50 p-6 rounded-xl text-lg font-medium text-red-900 border-l-4 border-red-500 shadow-sm">
+                    Sementara guru asik mendikte 1 anak selama 15 menit, 5 anak lain terlantar dan bosan. Waktu dampingan (*tailored time*) harus super singkat. Maksmisal 2-3 menit per anak. <b>Beri Clue -> Tinggalkan Ia Mikir -> Berputar Ke Anak Lain.</b>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 39: Check for Understanding -->
+    <div class="slide" id="slide-39">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6">MENGAJAR EFEKTIF</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">Check for Understanding (C4U)</h2>
+            <div class="planet-card p-10 text-left border-t-8 border-t-k-yellow">
+                <p class="text-xl font-medium leading-relaxed mb-6 text-gray-700">Dalam menularkan instruksi, jangan berasumsi anak mengerti hanya karena mereka manggut-manggut. Di SCL kita mengharuskan anak memvalidasi pemahamannya.</p>
+                <ul class="scl-list font-medium space-y-4 text-xl">
+                    <li><span class="text-red-500">❌</span> <b>Jauhkan kalimat "Udah ngerti belum?"</b> (90% anak pemalu akan bohong dan jawab "Udah kak").</li>
+                    <li><span class="text-green-500">✅</span> <b>Guru SCL bertanya:</b> <i>"Oke, coba kamu ceritakan ulang ke Kakak pakai bahasa kamu sendiri, fungsi dari blok loop warna orange tadi tuh untuk ngapain jadinya?"</i></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 40: Anak Dominan -->
+    <div class="slide" id="slide-40">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto">MANAJEMEN KELAS</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Kasus Dinamika: Anak Super Dominan</h2>
+            <div class="flex flex-col lg:flex-row gap-8 items-stretch text-left">
+                <!-- IMAGE PLACEHOLDER -->
+                <div class="w-full lg:w-1/3 flex justify-center shrink-0">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/812a95b2-10ae-4ab4-8460-81e2037b5612.png" alt="Anak Dominan" class="w-full h-full rounded-xl shadow border-2 border-dashed border-gray-300 object-cover min-h-[300px]">
+                </div>
+                <!-- TEXT SECTION -->
+                <div class="flex-1 flex flex-col gap-6">
+                    <div class="planet-card p-8 border border-gray-200 flex-1">
+                        <h3 class="font-bold text-2xl mb-4">Profil (Sok Tahu & Cepat):</h3>
+                        <p class="text-lg leading-relaxed text-gray-700">Anak yang paling berisik, merasa sudah jago IT, selesainya terlalu cepat, dan sering mengganggu teman sekelas dengan ikut campur merampas PC temannya (seolah dia Gurunya).</p>
+                    </div>
+                    <div class="planet-card p-8 border-t-4 border-k-green border bg-green-50 shadow-xl flex-1">
+                        <h3 class="font-bold text-2xl mb-4 text-green-800">Strategi Menjinakkan:</h3>
+                        <ul class="space-y-4 text-lg">
+                            <li><b>Jadikan dia Asisten (Penyaluran Energi):</b> Validasi egonya. Berikan dia otoritas membantu anak lain tapi <i>tanpa menyentuh mouse kawannya</i> (Strict Rules).</li>
+                            <li><b>Tegas Meminta Rem / Jarak:</b> "Kamu keren banget idenya, tapi biarkan Doni mikir dulu ya. Doni ga bakal hebat kalo kamu teriakkin jawabannya terus dari sana."</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 41: Anak Pasif -->
+    <div class="slide" id="slide-41">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto">MANAJEMEN KELAS</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Kasus Dinamika: Anak Terlalu Pasif</h2>
+            <div class="flex flex-col lg:flex-row-reverse gap-8 items-stretch text-left">
+                <!-- IMAGE PLACEHOLDER -->
+                <div class="w-full lg:w-1/3 flex justify-center shrink-0">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/a70b5ba8-bf2b-49a8-b4f5-1b40e40c0921.png" alt="Anak Pasif" class="w-full h-full rounded-xl shadow border-2 border-dashed border-gray-300 object-cover min-h-[300px]">
+                </div>
+                <!-- TEXT SECTION -->
+                <div class="flex-1 flex flex-col gap-6">
+                    <div class="planet-card p-8 border border-gray-200 flex-1">
+                        <h3 class="font-bold text-2xl mb-4">Profil (Invisible / Pemalu):</h3>
+                        <p class="text-lg leading-relaxed text-gray-700">Anak pendiam introvert, pasif diam bengong memandang layar saja dan sama sekali tak pernah komplain / mengangkat tangan meski tertinggal jauh.</p>
+                    </div>
+                    <div class="planet-card p-8 border-t-4 border-blue-400 bg-blue-50 shadow-xl flex-1">
+                        <h3 class="font-bold text-2xl mb-4 text-blue-800">Strategi Pendekatan:</h3>
+                        <ul class="space-y-4 text-lg">
+                            <li><b>The Silent Approach:</b> Jongkok pelan di samping posisinya dengan nada suara super rendah (bisik), jangan buat dia jadi pusat perhatian kelas karena itu membuatnya takut.</li>
+                            <li><b>Bongkar Blokade Mentok:</b> <i>"Lagi bingung yang mana? Boleh kakak lihat layarnya?"</i> Puji sekecil apapun usahanya (misal: memuji dia yang udah buka modul) untuk membangun kemanannya.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 42: Anak Stuck & Guru Sibuk -->
+    <div class="slide" id="slide-42">
+        <div class="max-w-6xl w-full">
+            <span class="badge mb-6 block text-center mx-auto">MANAJEMEN KELAS</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">Kasus Dinamika: Murid Stuck & Guru Sibuk</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left items-stretch">
+                <div class="planet-card p-8 border border-red-200">
+                    <h3 class="font-bold text-2xl mb-4 text-red-700">Situasi <i>(Crash Course)</i>:</h3>
+                    <p class="text-lg leading-relaxed text-gray-700">Seorang anak rewel karena benar-benar murni bingung sebuah konsep (misalnya logika <i class="font-bold border-b-2 border-k-yellow text-black font-display tracking-widest px-1">If-Then</i>), sedangkan sang guru posisinya sedang sibuk mendampingi 3 anak lain yang juga stuck.</p>
+                </div>
+                <div class="planet-card p-8 border-t-4 border-k-yellow bg-yellow-50 shadow-xl">
+                    <h3 class="font-bold text-2xl mb-4 text-yellow-800">Strategi (Parallel Mini-Project):</h3>
+                    <ul class="space-y-4 text-lg">
+                        <li><b>Beli Waktu & Fokus:</b> Jangan biarkan sang anak bengong nungguin kamu. Buatkan <i>Mini Challenge (Project kecil di luar project utama)</i> untuk memecahkan kebingungannya sambil kamu mengurus anak lain.</li>
+                        <li><b>Contoh Challenge Singkat:</b> <i>"Oke, coba kamu buka tab baru, dan bikin balok yang bisa ganti warna kalau diinjak (If-Then)."</i> Jika kebingungan memikirkan jenis spesifik, <b>jangan sungkan request/tanya ke tim Akademik ya!</b></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 43: FAQ 1 -->
+    <div class="slide" id="slide-43">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6 bg-gray-100 text-gray-700 border-gray-300">FAQ / TANYA JAWAB</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">FAQ #1: "Anak Menolak Membaca Modul Cetak"</h2>
+            <div class="planet-card p-10 text-left border shadow-lg bg-white border-t-8 border-t-red-400">
+                <p class="text-xl font-bold leading-relaxed mb-4 text-red-800 border-b pb-4">Masalah:</p>
+                <p class="text-lg mb-6 text-gray-700 font-medium">Anak merengek, "Ih males baca panjang-panjang, Kakak aja yang bikinin!" dan mogok kerja.</p>
+                
+                <p class="text-xl font-bold leading-relaxed mb-4 text-green-700 border-b pb-4">Solusi SCL:</p>
+                <ul class="scl-list text-lg font-medium space-y-4">
+                    <li>Jangan menyerah dan membacakan semuanya. Arahkan anak membaca "Bersama-Sama" membagi beban pada <i>satu kalimat pertama</i>.</li>
+                    <li><i>"Yaudah, Kakak bacain kalimat ke-1 buat kamu, habis tu kamu baca kalimat ke-2 mau ga?"</i></li>
+                    <li>Seringkali anak cuma "takut merasa lelah" melihat banyak teks di awal. Begitu dibantu membongkar 1 puzzle baris teks, mereka akan lanjut sendiri karena sadar teksnya mudah dipahami.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 44: FAQ 2 -->
+    <div class="slide" id="slide-44">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6 bg-gray-100 text-gray-700 border-gray-300">FAQ / TANYA JAWAB</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">FAQ #2: "Anak Cepat Selesai dan Bosan"</h2>
+            <div class="planet-card p-10 text-left border shadow-lg bg-white border-t-8 border-t-teal-400">
+                <p class="text-xl font-bold leading-relaxed mb-4 text-red-800 border-b pb-4">Masalah:</p>
+                <p class="text-lg mb-6 text-gray-700 font-medium">Ada murid <i>High-Achiever</i> yang menyelesaikan tugas inti (Must-Do) dalam 15 menit saja, padahal kelas masih sisa 30 menit lagi.</p>
+                
+                <p class="text-xl font-bold leading-relaxed mb-4 text-teal-700 border-b pb-4">Solusi SCL:</p>
+                <ul class="scl-list text-lg font-medium space-y-4">
+                    <li>Arahkan ke bagian <b>Extra Challenge / Aspire To Do / Modul Kosong</b>. Tantang egonya: <i>"Keren banget kamu udah selesai level Normal super cepat, berani ga coba nyelesaiin mode Hard / Expert ini tanpa instruksi?"</i>.</li>
+                    <li>Delegasikan tugas Peer-Tutoring: Minta dia berkeliling membantu anak lain sebagai <b>Asisten Mentor</b> dengan imbalan point <i>StarChamps</i>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 45: FAQ 3 -->
+    <div class="slide" id="slide-45">
+        <div class="max-w-5xl w-full text-center">
+            <span class="badge mb-6 bg-gray-100 text-gray-700 border-gray-300">FAQ / TANYA JAWAB</span>
+            <h2 class="font-display font-black text-4xl mb-8 heading-text text-center">FAQ #3: "Orang Tua Protes: Guru Kurang Ngajar"</h2>
+            <div class="planet-card p-10 text-left border shadow-lg bg-white border-t-8 border-t-orange-400">
+                <p class="text-xl font-bold leading-relaxed mb-4 text-red-800 border-b pb-4">Masalah:</p>
+                <p class="text-lg mb-6 text-gray-700 font-medium">Beberapa orang tua (terutama yang mengintip dari kaca kelas) komplain: <i>"Kok anak saya didiemin aja baca modul sendiri? Gurunya kok mainin iPad terus berkeliling dan ngga nerangin di depan?"</i></p>
+                
+                <p class="text-xl font-bold leading-relaxed mb-4 text-orange-700 border-b pb-4">Penjelasan Customer Success:</p>
+                <ul class="scl-list text-lg font-medium space-y-4">
+                    <li>SCL (<i>Student Centered Learning</i>) memang dirancang agar murid sibuk dan guru terlihat santai. Padahal otak anak sedang bekerja aktif.</li>
+                    <li>Guru memegang iPad karena sedang <b>menilai dan memantau live tracking layer PC anak</b> via dashboard, bukan bermain HP.</li>
+                    <li>Justru jika guru terlalu sering mendikte instruksi (Spoon-feeding), anak akan menjadi robot yang cuma bisa menyalin, menghilangkan tujuan <i>problem solving / resiliensi</i>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 46: Kesimpulan 1 -->
+    <div class="slide" id="slide-46">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6 bg-blue-100 text-blue-700 border-blue-200">EPILOGUE</span>
+            <h2 class="font-display font-black text-4xl mb-6 heading-text">The "Aha!" Moments</h2>
+            <div class="planet-card p-10 text-left relative overflow-hidden bg-white shadow-xl">
+                <div class="text-9xl absolute right-5 bottom-5 opacity-20 transform rotate-12">💡</div>
+                <p class="text-xl font-medium leading-relaxed mb-6 text-gray-700">Tujuan pamungkas dari SCL Kalananti bukanlah anak bisa membuat game coding sekeren mungkin di hari itu juga (Output Driven).</p>
+                <p class="text-xl font-bold leading-relaxed mb-6 text-blue-800">
+                    Tujuannya adalah membimbing anak mencari jalan keluar, merakit logikanya sendiri, hingga mereka menepuk mejanya dan berseru riang secara penuh daya cipta: <br><br><i>"AHA! Oh, Aku Ngerti Cara Kerjanya!"</i>
+                </p>
+                <div class="bg-gray-50 border p-4 rounded text-md text-gray-500 font-medium">
+                    Percayalah, seiring berjalannya sesi yang ke-2 dan ke-3 dengan aturan ini, kelas kalian akan berjalan dengan magisnya, di mana murid akan sangat sibuk membaca instruksi dan saling <i>peer tutoring</i>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 47: Kesimpulan Akhir -->
+    <div class="slide" id="slide-47">
+        <div class="max-w-4xl w-full text-center">
+            <span class="badge mb-6 bg-yellow-100 text-yellow-700 border-yellow-200 block text-center">END OF MANUAL</span>
+            <div class="planet-card p-12 text-center relative overflow-hidden bg-gradient-to-tr from-k-blue-d to-k-green border-0 shadow-2xl transform hover:scale-105 transition-all">
+                <div class="text-9xl absolute -left-10 -top-10 opacity-20 transform -rotate-12">🏆</div>
+                <div class="text-9xl absolute -right-10 -bottom-10 opacity-20 transform rotate-12">🚀</div>
+                
+                <h2 class="font-display font-black text-5xl mb-6 text-white leading-tight relative z-10 drop-shadow-lg">
+                    You Are Now <br> <span class="text-k-yellow">SCL Certified</span> Mentor!
+                </h2>
+                
+                <p class="text-2xl font-medium leading-relaxed mb-10 text-blue-100 relative z-10">
+                    Mari ciptakan kelas yang penuh ledakan rasa penasaran, <i>resiliensi</i>, dan kolaborasi terbuka!
+                </p>
+                
+                <button onclick="goToSlide(1)" class="scl-btn inline-flex relative z-10 py-4 px-8 text-xl font-bold shadow-xl hover:shadow-2xl transition hover:scale-105 active:scale-95 border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white">
+                    Mulai Ulang Panduan ➔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Slides Logic
+        let currentSlideIndex = 1;
+        const totalSlides = 47;
+
+        function showSlide(index) {
+            // boundary checks
+            if (index < 1) index = 1;
+            if (index > totalSlides) index = totalSlides;
+            currentSlideIndex = index;
+
+            // Hide all slides
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            // Show new slide
+            const target = document.getElementById('slide-' + currentSlideIndex);
+            if(target) target.classList.add('active');
+
+            // Update Indicator
+            document.getElementById('slideIndicator').innerText = `${currentSlideIndex} / ${totalSlides}`;
+            
+            // update menu active state (optional UX enhance)
+        }
+
+        function nextSlide() {
+            if(currentSlideIndex < totalSlides) {
+                showSlide(currentSlideIndex + 1);
+            }
+        }
+
+        function prevSlide() {
+            if(currentSlideIndex > 1) {
+                showSlide(currentSlideIndex - 1);
+            }
+        }
+
+        function goToSlide(index) {
+            showSlide(index);
+            // hide menu if mobile
+            document.getElementById('tocMenu').classList.remove('show');
+        }
+
+        function toggleMenu() {
+            document.getElementById('tocMenu').classList.toggle('show');
+        }
+
+        // keyboard nav
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // initial load
+        showSlide(1);
+    </script>
+</body>
+</html>

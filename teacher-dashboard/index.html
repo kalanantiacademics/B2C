@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Login – Mission Control SCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'light');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.94);
+            --card-b: rgba(180,215,255,0.85);
+            --text: #1a4576;
+            --muted: #4d7daf;
+            --stars: 0.12;
+            --input-bg: rgba(255,255,255,0.8);
+            --input-b: rgba(180,215,255,0.8);
+            --input-t: #1a4576;
+        }
+
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.85);
+            --card-b: rgba(140,190,255,0.22);
+            --text: #ddeeff;
+            --muted: #8aadd8;
+            --stars: 0.45;
+            --input-bg: rgba(6,14,30,0.6);
+            --input-b: rgba(140,190,255,0.22);
+            --input-t: white;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -20;
+            opacity: var(--stars);
+            background-image:
+                radial-gradient(circle at 14% 24%, rgba(255,255,255,0.9) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 78% 68%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 56% 38%, rgba(255,255,255,0.60) 0 1px, transparent 1.4px);
+            background-size: 250px 250px, 320px 320px, 210px 210px;
+            animation: starDrift 200s linear infinite;
+        }
+        @keyframes starDrift { to { transform: translate3d(-120px, 70px, 0); } }
+
+        /* Background elements */
+        .edge-planet { position: absolute; opacity: 0.60; pointer-events: none; z-index: -10; }
+        .char-float { position: absolute; pointer-events: none; opacity: 0.8; z-index: 5; animation: floatY 6s ease-in-out infinite; }
+        @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        /* LOGIN CARD */
+        .planet-card {
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 32px 64px -24px rgba(0,0,0,0.9);
+            transition: background 0.3s ease, border 0.3s ease;
+        }
+
+        /* Input */
+        .k-input {
+            background: var(--input-bg);
+            border: 2px solid var(--input-b);
+            color: var(--input-t);
+            transition: all 0.2s;
+        }
+        .k-input:focus {
+            outline: none;
+            border-color: #F9C013;
+            box-shadow: 0 0 16px rgba(249,192,19,0.25);
+        }
+
+        /* Btn 3D */
+        .btn-3d {
+            box-shadow: 0 6px 0 #B28400, 0 16px 28px -8px rgba(249,192,19,0.3);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #B28400, 0 6px 12px -6px rgba(249,192,19,0.2);
+        }
+
+        .mission-text { color: var(--text); }
+        .grad-text {
+            background: linear-gradient(90deg, #F9C013, #FF9D00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Theme Toggle in Login */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 1rem;
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.2s;
+        }
+        .theme-toggle-btn:hover {
+            transform: translateY(-2px);
+            border-color: #F9C013;
+        }
+    </style>
+</head>
+<body class="p-5">
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle-btn shadow-lg" onclick="toggleTheme()" title="Ganti Tema">
+        <span id="theme-icon" class="text-xl">☀️</span>
+    </div>
+
+
+    <!-- Background Orbs and Planets -->
+    <div class="fixed -top-32 -left-24 w-[42rem] h-[42rem] rounded-full" style="background:rgba(82,188,255,0.1); filter:blur(130px);"></div>
+    <div class="fixed -bottom-32 -right-24 w-[38rem] h-[38rem] rounded-full" style="background:rgba(249,192,19,0.1); filter:blur(120px);"></div>
+
+    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png" class="edge-planet" style="top:10%; left:-5%; width:25vw" alt="">
+    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png" class="edge-planet" style="bottom:-5%; right:-5%; width:30vw" alt="">
+    
+    <!-- Floating character -->
+    <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Rocket" class="char-float w-32 md:w-44" style="top:5%; right:15%; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5))" alt="Robot">
+    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" class="absolute top-8 left-8 h-10 w-auto z-10">
+
+    <!-- LOGIN CARD -->
+    <div class="planet-card rounded-[2.5rem] p-8 md:p-10 max-w-[420px] w-full mx-auto relative z-10 animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)_both]">
+        
+        <div id="step-1">
+            <h2 class="font-display font-black text-3xl mb-2 mission-text mt-2">Welcome, <span class="grad-text">Coach!</span> 💫</h2>
+            <p class="text-sm mb-8" style="color:var(--muted)">Masukkan <b class="mission-text">Email Akademia</b> yang terdaftar untuk mengakses Teacher Dashboard SCL.</p>
+
+            
+            <div class="mb-6">
+                <!-- Ubah id menjadi teacher-email -->
+                <input type="email" id="teacher-email" 
+                       class="k-input w-full px-5 py-4 rounded-2xl text-base font-bold tracking-wide text-center placeholder:font-medium placeholder:tracking-normal placeholder:text-blue-200/40" 
+                       placeholder="nama@akademia.id" autocomplete="email">
+            </div>
+
+            <button onclick="loginWithEmail()" id="btn-cek" class="btn-3d w-full select-none bg-gradient-to-b from-[#F9C013] to-[#E5AB00] text-[#5A3F00] font-black py-4 rounded-2xl text-lg tracking-wide uppercase">
+                Masuk ke Orbit 🚀
+            </button>
+
+            <!-- Loading & Error -->
+            <p id="msg-loading" class="hidden text-center mt-5 text-sm font-bold text-k-yellow animate-pulse">Menghubungkan ke server...</p>
+            <p id="msg-error" class="hidden text-center mt-5 text-sm font-bold text-red-400 bg-red-500/10 py-2 px-3 rounded-xl leading-relaxed"></p>
+        </div>
+
+    </div>
+
+    <script>
+        // Theme Management
+        function updateThemeUI(t) {
+            const icon = document.getElementById('theme-icon');
+            if (icon) icon.textContent = t === 'dark' ? '🌙' : '☀️';
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('kalanantiTheme', target);
+            updateThemeUI(target);
+        }
+
+        // Init UI
+        updateThemeUI(document.documentElement.getAttribute('data-theme'));
+
+        // MASUKAN URL WEB APP GOOGLE APPS SCRIPT DI SINI (Hasil Deploy code-teacher.gs)
+
+        const LOGIN_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyTxSyRYWoBTscc2553zM29exDTjlHGwTLX4CsFixL3-reCnkL2HAOedAk-UibMK-gj/exec'; // URL Live
+
+        async function loginWithEmail() {
+            const input = document.getElementById('teacher-email');
+            const btn = document.getElementById('btn-cek');
+            const msgError = document.getElementById('msg-error');
+            const msgLoading = document.getElementById('msg-loading');
+            const email = input.value.trim().toLowerCase();
+
+            if (!email) {
+                tampilError("Waduh, belum isi email ya coach?");
+                return;
+            }
+
+            // Validasi email basic
+            if(!email.includes('@')) {
+                tampilError("Format email belum benar!");
+                return;
+            }
+
+            // Ubah state UI
+            input.disabled = true;
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            msgError.classList.add('hidden');
+            msgLoading.classList.remove('hidden');
+
+            try {
+                let data = {};
+                
+                // MOCK DEMO FALLBACK jika URL belum diganti (berguna untuk testing UI offline)
+                if (LOGIN_WEB_APP_URL.includes('YOUR_APPSCRIPT')) {
+                    console.warn("MOCK LOGIN KARNA URL APPSCRIPT BELUM DIGANTI");
+                    await new Promise(r => setTimeout(r, 1200)); 
+                    
+                    if (email === 'demo@akademia.id' || email === 'admin@kalananti.id' || true) {
+                        data = { 
+                            success: true, 
+                            teacherName: 'Kak Demo', 
+                            teacherEmail: email,
+                            classes: [
+                                { classCode: 'SCL100-ROB', programName: 'Roblox Adventure', classLink: '#', day: 'Sabtu', time: '14:00 - 15:30 WIB' },
+                                { classCode: 'SCL102-SCR', programName: 'Scratch Basic', classLink: '#', day: 'Minggu', time: '10:00 - 11:30 WIB' }
+                            ]
+                        };
+                    } else {
+                        data = { success: false, message: 'Email tidak terdaftar atau tidak ada kelas SCL aktif.' };
+                    }
+                } else {
+                    // LIVE FETCH
+                    const url = `${LOGIN_WEB_APP_URL}?action=getClasses&email=${encodeURIComponent(email)}`;
+                    const res = await fetch(url);
+                    data = await res.json();
+                }
+
+                if (data.success) {
+                    // Simpan data di localstorage untuk dibaca dashboard.html
+                    localStorage.setItem('teacherName', data.teacherName);
+                    localStorage.setItem('teacherEmail', data.teacherEmail);
+                    localStorage.setItem('teacherClasses', JSON.stringify(data.classes));
+                    
+                    // Redirect
+                    window.location.href = 'dashboard.html';
+                } else {
+                    tampilError(data.message || 'Akses ditolak oleh pusat komando!');
+                }
+
+            } catch (err) {
+                console.error(err);
+                tampilError('Gagal memverifikasi. Mungkin koneksi terputus atau URL Web App salah.');
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                msgLoading.classList.add('hidden');
+            }
+        }
+
+        function tampilError(pesan) {
+            const err = document.getElementById('msg-error');
+            err.textContent = pesan;
+            err.classList.remove('hidden');
+            document.querySelector('.planet-card').animate([ 
+                {transform: 'translateX(-5px)'}, {transform: 'translateX(5px)'}, {transform: 'translateX(0)'} 
+            ], { duration: 300 });
+        }
+
+        // Add Enter key event listener
+        document.getElementById('teacher-email').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loginWithEmail();
+            }
+        });
+    </script>
+</body>
+</html>

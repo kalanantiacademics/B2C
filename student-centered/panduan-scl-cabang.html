@@ -518,7 +518,7 @@
         <div class="meeting-item" onclick="goToSlide(1)">1. You Are Now Ready  To Sell SCL!</div>
     </div>
 
-    <div class="slide-indicator" id="slideIndicator">1 / 47</div>
+    <div class="slide-indicator" id="slideIndicator">1 / 43</div>
 
     <div class="nav-controls">
         <button class="nav-btn" onclick="prevSlide()">←</button>
@@ -1600,8 +1600,29 @@
         </div>
     </div>
 
-<!-- SLIDE 39: Template Absensi -->
+
+<!-- SLIDE 39: Ketentuan Rombel SCL -->
     <div class="slide" id="slide-39">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-4 block text-center mx-auto w-max">ATURAN ROMBEL</span>
+            <h2 class="font-display font-black text-4xl mb-5 heading-text text-center">Ketentuan Rombel SCL</h2>
+            
+            <div class="planet-card p-6 md:p-8 flex flex-col bg-white shadow-xl border-t-8 border-yellow-400">
+                <ul class="scl-list font-medium space-y-4 text-lg text-gray-800">
+                    <li>1 rombel <b>minimal 3 orang</b> ➔ 3 orang dulu baru kelas bisa mulai.</li>
+                    <li>3 orang bisa dari level yang <b>berbeda-beda</b>.</li>
+                    <li>1 level tetap <b>12 sesi pertemuan</b> (1 jam @ sesi).</li>
+                    <li>Setiap anak diberi waktu <b>buffer 15 hari</b> dari tanggal sesi pertama.</li>
+                    <li>Di absen akan ada keterangan <b>Tanggal Maksimal Sesi 12 (Rumus)</b>.</li>
+                    <li>Jika anak belum 12 sesi tapi <b>Tanggal Maksimal Sesi 12 (Rumus)</b> sudah lewat, artinya paket sudah berakhir/hangus.</li>
+                    <li>Absen SCL menggunakan <b>template SCL</b> (berbeda dengan absen biasa).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+<!-- SLIDE 40: Template Absensi -->
+    <div class="slide" id="slide-40">
         <div class="max-w-4xl w-full text-center">
             <span class="badge mb-4">FORMAT ABSENSI</span>
             <h2 class="font-display font-black text-4xl mb-4 heading-text">Template Master Absensi SCL</h2>
@@ -1616,8 +1637,8 @@
         </div>
     </div>
 
-<!-- SLIDE 40: Contoh Absensi -->
-    <div class="slide" id="slide-40">
+<!-- SLIDE 41: Contoh Absensi -->
+    <div class="slide" id="slide-41">
         <div class="max-w-4xl w-full text-center">
             <span class="badge mb-4 bg-green-100 text-green-700 border-green-200">BEST PRACTICE PENGISIAN</span>
             <h2 class="font-display font-black text-4xl mb-4 heading-text">Contoh Pengisian Absen</h2>
@@ -1632,8 +1653,27 @@
         </div>
     </div>
 
-<!-- SLIDE 41: Closing -->
-    <div class="slide" id="slide-41">
+
+<!-- SLIDE 42: Quiz Points -->
+    <div class="slide" id="slide-42">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-4 block text-center mx-auto w-max">SISTEM REWARD</span>
+            <h2 class="font-display font-black text-4xl mb-5 heading-text text-center">Quiz Points</h2>
+            
+            <div class="planet-card p-6 md:p-8 flex flex-col bg-white shadow-xl border-t-8 border-green-500">
+                <ul class="scl-list font-medium space-y-4 text-lg text-gray-800">
+                    <li>Akan terekap di absen siswa.</li>
+                    <li>Sistem seperti <b>StarChamps</b>.</li>
+                    <li>Cabang bisa membeli hadiah sendiri sesuai dengan budget yang dimiliki.</li>
+                    <li>Budget disatukan dengan produk KIDS lainnya.</li>
+                    <li>Student Advisor wajib <b>update saldo points</b> siswa.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+<!-- SLIDE 43: Closing -->
+    <div class="slide" id="slide-43">
         <div class="max-w-4xl w-full text-center">
             <span class="badge mb-4 bg-yellow-100 text-yellow-700 border-yellow-200 block text-center mx-auto w-max">END OF MANUAL</span>
             <div class="planet-card p-8 text-center relative overflow-hidden bg-gradient-to-tr from-k-blue-d to-k-green border-0 shadow-2xl transform hover:scale-105 transition-all">
@@ -1657,7 +1697,7 @@
 <script>
         // Slides Logic
         let currentSlideIndex = 1;
-        const totalSlides = 41;
+        const totalSlides = 43;
 
         function showSlide(index) {
             // boundary checks

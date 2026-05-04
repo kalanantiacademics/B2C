@@ -4,8 +4,11 @@
 # Keep this ignore file tracked.
 !.gitignore
 
-# Track only the student and teacher dashboards.
-!student-dashboards/
-!student-dashboards/**
-!teacher-dashboard/
-!teacher-dashboard/**
+# Track only the specific folders inside student-centered
+!student-centered/
+!student-centered/student-dashboards/
+!student-centered/student-dashboards/**
+!student-centered/teacher-dashboard/
+!student-centered/teacher-dashboard/**
+!student-centered/panduan-scl-cabang.html
+*.py

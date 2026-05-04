@@ -419,11 +419,13 @@
         .sb-d6 { top: 240px; right: 80px; } .sb-c6 { top: 200px; right: 103px; }
         .sb-td { bottom: 65px; left: 50%; transform: translateX(-50%); width:80px; } .sb-tc { bottom: 20px; left: 50%; transform: translateX(-50%); }
 
-        /* Wall (Bad) */
-        .w-d1 { top: 40px; left: 20px; width: 38px; height: 68px; } .w-c1 { top: 63px; left: 65px; }
-        .w-d2 { top: 140px; left: 20px; width: 38px; height: 68px;} .w-c2 { top: 163px; left: 65px; }
-        .w-d3 { top: 40px; right: 20px; width: 38px; height: 68px;} .w-c3 { top: 63px; right: 65px; }
-        .w-d4 { top: 140px; right: 20px; width: 38px; height: 68px;} .w-c4 { top: 163px; right: 65px; }
+        /* Back to Teacher (Bad) */
+        .w-d1 { top: 40px; left: 60px; width: 38px; height: 68px; } .w-c1 { top: 63px; left: 20px; }
+        .w-d2 { top: 120px; left: 60px; width: 38px; height: 68px;} .w-c2 { top: 143px; left: 20px; }
+        .w-d3 { top: 200px; left: 60px; width: 38px; height: 68px;} .w-c3 { top: 223px; left: 20px; }
+        .w-d4 { top: 40px; right: 60px; width: 38px; height: 68px;} .w-c4 { top: 63px; right: 20px; }
+        .w-d5 { top: 120px; right: 60px; width: 38px; height: 68px;} .w-c5 { top: 143px; right: 20px; }
+        .w-d6 { top: 200px; right: 60px; width: 38px; height: 68px;} .w-c6 { top: 223px; right: 20px; }
         .w-td { bottom: 65px; left: 50%; transform: translateX(-50%); width:80px;} .w-tc { bottom: 20px; left: 50%; transform: translateX(-50%); }
 
         /* Circular Best */
@@ -492,7 +494,7 @@
         <div class="meeting-item" onclick="goToSlide(12)">12. Teacher-Centered vs Student-Centered</div>
         <div class="meeting-item" onclick="goToSlide(13)">13. Prinsip Open Space</div>
         <div class="meeting-item" onclick="goToSlide(14)">14. Layout "Ruang Sidang" (Reguler)</div>
-        <div class="meeting-item" onclick="goToSlide(15)">15. Layout "Menghadap Dinding"</div>
+        <div class="meeting-item" onclick="goToSlide(15)">15. Layout "Membelakangi Guru"</div>
         <div class="meeting-item" onclick="goToSlide(16)">16. Best Practice: "Center Space"</div>
         <div class="meeting-item" onclick="goToSlide(17)">17. Pemanfaatan "Center Space"</div>
         <div class="meeting-item" onclick="goToSlide(18)">18. The SCL Ecosystem</div>
@@ -1021,11 +1023,11 @@
         </div>
     </div>
 
-    <!-- SLIDE 15: Bad Layout 2 (Dinding) -->
+    <!-- SLIDE 15: Bad Layout 2 (Membelakangi Guru) -->
     <div class="slide" id="slide-15">
         <div class="max-w-5xl w-full">
             <span class="badge mb-4 bg-red-100 text-red-600 border-red-200">KESALAHAN LAYOUT #2</span>
-            <h2 class="font-display font-black text-4xl mb-5 heading-text text-center">Layout "Menghadap Dinding"</h2>
+            <h2 class="font-display font-black text-4xl mb-5 heading-text text-center">Layout "Membelakangi Guru"</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="room-container">
                     <div class="room-desk teacher-desk w-td">Teacher</div><div class="room-chair teacher-chair w-tc"></div>
@@ -1033,16 +1035,18 @@
                     <div class="room-desk w-d2">Desk</div><div class="room-chair w-c2"></div>
                     <div class="room-desk w-d3">Desk</div><div class="room-chair w-c3"></div>
                     <div class="room-desk w-d4">Desk</div><div class="room-chair w-c4"></div>
+                    <div class="room-desk w-d5">Desk</div><div class="room-chair w-c5"></div>
+                    <div class="room-desk w-d6">Desk</div><div class="room-chair w-c6"></div>
                     <div class="absolute inset-0 bg-red-500 bg-opacity-10 pointer-events-none rounded-2xl flex items-center justify-center">
-                        <span class="text-red-600 font-black text-6xl opacity-30 transform -rotate-12">ANTI-SOSIAL</span>
+                        <span class="text-red-600 font-black text-6xl opacity-30 transform -rotate-12">SULIT REVIEW</span>
                     </div>
                 </div>
                 <div class="planet-card p-6 flex flex-col justify-center border-l-8 border-red-500">
                     <h3 class="font-bold text-2xl mb-4 text-red-700">Mengapa Ini Buruk?</h3>
                     <ul class="scl-list font-medium space-y-3 lg:text-lg text-gray-700">
-                        <li>Siswa menatap tembok kosong atau sudut mati.</li>
-                        <li><b>Sekat Komunikasi Tingkat Tinggi:</b> Jika butuh bantuan teman, mereka harus memundurkan kursi dan berbalik badan total, yang sangat menguras energi & canggung.</li>
-                        <li>Sangat tertutup bagi Peer-Tutoring spontan.</li>
+                        <li>Siswa duduk menyandar di tembok, sehingga layar monitor mereka <b>membelakangi guru</b> yang ada di tengah.</li>
+                        <li><b>Sangat Sulit Review:</b> Jika guru berada di tengah ruangan, guru tidak bisa melihat apa yang sedang dikerjakan siswa di layarnya.</li>
+                        <li>Guru terpaksa harus memutar paksa monitor anak atau duduk di samping anak setiap kali ingin mengecek <i>project</i>. Ini sangat menguras energi & waktu.</li>
                     </ul>
                 </div>
             </div>

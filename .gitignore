@@ -12,3 +12,7 @@
 !student-centered/teacher-dashboard/**
 !student-centered/panduan-scl-cabang.html
 *.py
+
+# Track trial-new folder
+!trial-new/
+!trial-new/**

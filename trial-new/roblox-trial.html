@@ -227,7 +227,7 @@
         </div>
         <div class="flex items-center gap-4">
             <button onclick="prevSlide()" class="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-brand-600 transition disabled:opacity-30"><i class="fa-solid fa-chevron-left"></i></button>
-            <span class="font-mono text-sm font-bold text-slate-400"><span id="slideCounter" class="text-brand-600">1</span>/<span id="totalSlidesDisplay">29</span></span>
+            <span class="font-mono text-sm font-bold text-slate-400"><span id="slideCounter" class="text-brand-600">1</span>/<span id="totalSlidesDisplay">30</span></span>
             <button onclick="nextSlide()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-brand-600 transition shadow-lg shadow-brand-500/20"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     </div>
@@ -916,6 +916,37 @@
         </div>
     </div>
 
+    <!-- SLIDE: SHOWCASE PROJECTS -->
+    <div class="slide" id="slideShowcase">
+        <div class="glass-card p-10 max-w-6xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-10 text-slate-900">Apa yang Bisa Kamu Bikin? 🚀</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Project 1 -->
+                <div class="bg-white/50 p-6 rounded-2xl border border-slate-200 hover:bg-white transition-all duration-300 shadow-sm">
+                    <h3 class="text-2xl font-bold text-brand-600 mb-4">RPG Chasing Game</h3>
+                    <div class="rounded-xl overflow-hidden shadow-2xl border-2 border-brand-500/20 aspect-video flex items-center justify-center bg-slate-100">
+                        <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/0f0fb3f4-dada-403c-9898-497f6ba2381c.gif" 
+                             class="w-full h-full object-cover" 
+                             alt="RPG Chasing Game">
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="bg-white/50 p-6 rounded-2xl border border-slate-200 hover:bg-white transition-all duration-300 shadow-sm">
+                    <h3 class="text-2xl font-bold text-secondary mb-4">Interactive Collectible Obby</h3>
+                    <div class="rounded-xl overflow-hidden shadow-2xl border-2 border-secondary/20 aspect-video flex items-center justify-center bg-slate-100">
+                        <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/6836d51d-bed7-4550-b628-0488bc7be702.gif" 
+                             class="w-full h-full object-cover" 
+                             alt="Interactive Collectible Obby">
+                    </div>
+                </div>
+            </div>
+            
+            <p class="mt-8 text-xl text-slate-500 italic">"Mulai petualangan coding-mu hari ini!"</p>
+        </div>
+    </div>
+
     <!-- COURSES & CTA -->
     <div class="slide" id="slide28">
         <div class="max-w-4xl mx-auto w-full flex flex-col items-center gap-8 px-6 text-center z-10">
@@ -942,7 +973,7 @@
     <script>
         // Navigation Logic
         let currentSlide = 1;
-        let totalSlides = 29;
+        let totalSlides = 30;
         
         const slideCounter = document.getElementById('slideCounter');
         const progressBar = document.getElementById('progressBar');

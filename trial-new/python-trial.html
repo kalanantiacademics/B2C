@@ -190,7 +190,7 @@
         </div>
         <div class="flex items-center gap-4">
             <button onclick="prevSlide()" class="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition"><i class="fa-solid fa-chevron-left"></i></button>
-            <span class="font-mono text-sm font-bold text-slate-400"><span id="slideCounter" class="text-primary">1</span>/<span id="totalSlidesDisplay">25</span></span>
+            <span class="font-mono text-sm font-bold text-slate-400"><span id="slideCounter" class="text-primary">1</span>/<span id="totalSlidesDisplay">24</span></span>
             <button onclick="nextSlide()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-primary transition shadow-lg"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     </div>
@@ -742,8 +742,44 @@
         </div>
     </div>
 
-    <!-- COURSES & CTA -->
+    <!-- SLIDE 21: SHOWCASE - Journaling -->
     <div class="slide" id="slide21">
+        <div class="glass-card p-10 max-w-6xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-8 text-primary">Project: Journaling App 📝</h2>
+            <div class="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-white/10 p-2">
+                <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/c0176dee-2b6c-4b50-ad14-4b248a801117.png" 
+                     class="w-full h-auto max-h-[65vh] object-contain mx-auto rounded-xl" 
+                     alt="Journaling App">
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 22: SHOWCASE - Arcade Game -->
+    <div class="slide" id="slide22">
+        <div class="glass-card p-10 max-w-6xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-8 text-secondary">Project: Arcade Game 🕹️</h2>
+            <div class="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-white/10 p-2">
+                <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/7f3300fa-1129-4fbf-964a-2eb8225049c6.png" 
+                     class="w-full h-auto max-h-[65vh] object-contain mx-auto rounded-xl" 
+                     alt="Arcade Game">
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 23: SHOWCASE - Kalkulator Tabungan -->
+    <div class="slide" id="slide23">
+        <div class="glass-card p-10 max-w-6xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-8 text-green-600">Project: Kalkulator Tabungan 💰</h2>
+            <div class="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-white/10 p-2">
+                <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/d7559309-3374-4b0c-93c1-20284d31f4c8.png" 
+                     class="w-full h-auto max-h-[65vh] object-contain mx-auto rounded-xl" 
+                     alt="Kalkulator Tabungan">
+            </div>
+        </div>
+    </div>
+
+    <!-- COURSES & CTA -->
+    <div class="slide" id="slide24">
         <div class="max-w-4xl mx-auto w-full flex flex-col items-center gap-8 px-6 text-center z-10">
             <!-- Promo Image -->
             <img src="https://roboguru-forum-cdn.ruangguru.com/image/ac921ee5-2120-43d3-baeb-4c50011cf681.jpeg" 
@@ -768,7 +804,7 @@
     <script>
         // Slideshow Logic
         let currentSlide = 1;
-        const totalSlides = 21; // Adjusted total
+        const totalSlides = 24; // Adjusted total
         const progressBar = document.getElementById('progressBar');
         const slideCounter = document.getElementById('slideCounter');
         const totalSlidesDisplay = document.getElementById('totalSlidesDisplay');

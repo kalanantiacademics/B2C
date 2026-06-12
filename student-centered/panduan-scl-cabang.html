@@ -159,23 +159,28 @@
             border-bottom: 1px solid var(--nav-b);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
-            position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+            position: fixed; top: 0; left: 280px; width: calc(100% - 280px); z-index: 50;
         }
 
         /* Slide Component */
         .slide {
             display: none;
             height: 100vh;
-            width: 100%;
+            width: calc(100% - 280px);
             position: absolute;
-            top: 0; left: 0;
+            top: 0; left: 280px;
             padding: 100px 2rem 100px 2rem;
             box-sizing: border-box;
             overflow-y: auto;
             overflow-x: hidden;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* Fixed for overflow */
+        }
+
+        .slide > div {
+            margin-top: auto;
+            margin-bottom: auto;
+            flex-shrink: 0;
         }
 
         .slide.active {
@@ -243,7 +248,7 @@
         .slide-indicator {
             position: fixed;
             bottom: 30px;
-            left: 50%;
+            left: calc(280px + (100vw - 280px) / 2);
             transform: translateX(-50%);
             font-family: 'Orbitron', sans-serif;
             font-weight: 800;
@@ -257,80 +262,68 @@
             backdrop-filter: blur(10px);
         }
 
-        /* Daftar Isi Menu */
-        .meeting-menu-btn {
+        /* ── SIDETAB (SIDEBAR) ── */
+        .sidebar-tab {
             position: fixed;
-            bottom: 30px;
-            left: 30px;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
             background: var(--card);
-            border: 2px solid var(--card-b);
-            padding: 0.8rem 1.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            cursor: pointer;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            color: var(--text-heading);
+            border-right: 1.5px solid var(--card-b);
             z-index: 100;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            backdrop-filter: blur(10px);
-        }
-        .meeting-menu-btn:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
-        }
-
-        .meeting-dropdown {
-            position: fixed;
-            bottom: 100px;
-            left: 30px;
-            background: var(--card);
-            border: 1.5px solid var(--card-b);
-            border-radius: 1.5rem;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            width: 320px;
-            max-height: 60vh;
+            padding: 1.5rem 1rem;
+            box-sizing: border-box;
             overflow-y: auto;
-            z-index: 99;
-            display: none;
-            padding: 1rem;
-            backdrop-filter: blur(16px);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
-        .meeting-dropdown.show {
+        
+        .sidebar-logo {
             display: block;
-            animation: fadeInUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
+        }
+        .sidebar-logo img {
+            height: 36px;
+            width: auto;
+            object-fit: contain;
         }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .meeting-item {
-            padding: 0.8rem 1rem;
+        .sidetab-item {
+            padding: 1rem;
             border-radius: 1rem;
             cursor: pointer;
             transition: all 0.2s;
             color: var(--text);
-            font-weight: 600;
-            margin-bottom: 0.25rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.9rem;
+            line-height: 1.3;
         }
-        .meeting-item:hover {
-            background: rgba(249,192,19,0.15);
-            color: var(--text-heading);
+
+        .sidetab-item:hover {
+            background: rgba(38,94,155,0.05);
             transform: translateX(4px);
         }
-        .meeting-section-title {
-            font-size: 0.75rem;
+
+        .sidetab-item.active {
+            background: rgba(249,192,19,0.1);
+            border-color: #F9C013;
+            color: var(--text-heading);
             font-weight: 800;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin: 1rem 0 0.5rem 0.5rem;
         }
+        .sidetab-item.active span.icon {
+            transform: scale(1.2);
+            transition: transform 0.2s;
+        }
+
+
 
         /* Highlight Boxes */
         .highlight-box {
@@ -470,57 +463,39 @@
         </div>
     </nav>
 
-    <!-- ── CONTROLS ── -->
-    <button class="meeting-menu-btn" onclick="toggleMenu()">
-        <span>📑</span> Daftar Isi
-    </button>
+    <!-- ── SIDETAB ── -->
+    <aside class="sidebar-tab" id="tocMenu">
+        <div class="sidebar-logo mb-6 border-b border-gray-200 pb-4">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png"
+                 alt="Logo Kalananti" class="cursor-pointer hover:scale-105 transition-transform" onclick="window.location.href='../teacher-dashboard/dashboard.html'">
+            <div class="mt-2 text-xs font-bold text-gray-500 uppercase tracking-widest">SCL Cabang Guide</div>
+        </div>
 
-    <div class="meeting-dropdown" id="tocMenu">
-        <div class="meeting-section-title mt-0">Daftar Isi Cabang</div>
-        <div class="meeting-item" onclick="goToSlide(1)">1. Cover</div>
-        <div class="meeting-item" onclick="goToSlide(2)">2. SCL Journey Map</div>
-        <div class="meeting-item" onclick="goToSlide(3)">3. Tantangan Pengalaman Belajar</div>
-        <div class="meeting-item" onclick="goToSlide(4)">4. Learning Journey (6 Level)</div>
-        <div class="meeting-item" onclick="goToSlide(5)">5. Kendala Administratif (1/2)</div>
-        <div class="meeting-item" onclick="goToSlide(6)">6. Kendala Administratif (2/2)</div>
-        <div class="meeting-item" onclick="goToSlide(7)">7. Kesimpulan Akar Masalah</div>
-        <div class="meeting-item" onclick="goToSlide(8)">8. The Solution:</div>
-        <div class="meeting-item" onclick="goToSlide(9)">9. Apa itu SCL?</div>
-        <div class="meeting-item" onclick="goToSlide(10)">10. Karakteristik & Hasil SCL</div>
-        <div class="meeting-item" onclick="goToSlide(11)">11. Keterlibatan Guru (Kalananti vs Lainnya)</div>
-        <div class="meeting-item" onclick="goToSlide(12)">12. Teacher-Centered vs Student-Centered</div>
-        <div class="meeting-item" onclick="goToSlide(13)">13. Prinsip Open Space</div>
-        <div class="meeting-item" onclick="goToSlide(14)">14. Layout "Ruang Sidang" (Reguler)</div>
-        <div class="meeting-item" onclick="goToSlide(15)">15. Layout "Membelakangi Guru"</div>
-        <div class="meeting-item" onclick="goToSlide(16)">16. Best Practice: "Center Space"</div>
-        <div class="meeting-item" onclick="goToSlide(17)">17. Pemanfaatan "Center Space"</div>
-        <div class="meeting-item" onclick="goToSlide(18)">18. The SCL Ecosystem</div>
-        <div class="meeting-item" onclick="goToSlide(19)">19. Satu Ruangan, Beda Level</div>
-        <div class="meeting-item" onclick="goToSlide(20)">20. Class Preparation (Sebelum Kelas)</div>
-        <div class="meeting-item" onclick="goToSlide(21)">21. Rundown 60 Menit</div>
-        <div class="meeting-item" onclick="goToSlide(22)">22. 10' Shared Activity</div>
-        <div class="meeting-item" onclick="goToSlide(23)">23. Kevakuman "Late Students"</div>
-        <div class="meeting-item" onclick="goToSlide(24)">24. The End Goal: "Peer Tutoring"</div>
-        <div class="meeting-item" onclick="goToSlide(25)">25. Inti KBM SCL</div>
-        <div class="meeting-item" onclick="goToSlide(26)">26. Closing Sesi</div>
-        <div class="meeting-item" onclick="goToSlide(27)">27. Modul Cetak SCL</div>
-        <div class="meeting-item" onclick="goToSlide(28)">28. Anatomi Modul (Bagian 1: Pembuka & Outline)</div>
-        <div class="meeting-item" onclick="goToSlide(29)">29. Anatomi Modul (Bagian 2: Kosakata & Wawasan)</div>
-        <div class="meeting-item" onclick="goToSlide(30)">30. Anatomi Modul (Bagian 3: Praktikum & Evaluasi)</div>
-        <div class="meeting-item" onclick="goToSlide(31)">31. Modul Cetak VS Platform INS</div>
-        <div class="meeting-item" onclick="goToSlide(32)">32. The "Three BEFORE Me" Rule</div>
-        <div class="meeting-item" onclick="goToSlide(33)">33. Elevator Pitch: Jualan dalam 1 Menit!</div>
-        <div class="meeting-item" onclick="goToSlide(34)">34. Briefing Sebelum Ortu Mengintip Trial</div>
-        <div class="meeting-item" onclick="goToSlide(35)">35. FAQ Sales #1: "Anak saya pusing kalau nggak dituntun?"</div>
-        <div class="meeting-item" onclick="goToSlide(36)">36. FAQ Sales #2: "Di tempat lain 1 guru cuma 2 anak!"</div>
-        <div class="meeting-item" onclick="goToSlide(37)">37. The "AHA!" Moments</div>
-        <div class="meeting-item" onclick="goToSlide(38)">38. Sistem Absensi SCL</div>
-        <div class="meeting-item" onclick="goToSlide(39)">39. Ketentuan Rombel SCL</div>
-        <div class="meeting-item" onclick="goToSlide(40)">40. Template Master Absensi SCL</div>
-        <div class="meeting-item" onclick="goToSlide(41)">41. Contoh Pengisian Absen</div>
-        <div class="meeting-item" onclick="goToSlide(42)">42. Quiz Points</div>
-        <div class="meeting-item" onclick="goToSlide(43)">43. You Are Now Ready To Sell SCL!</div>
-    </div>
+        <div class="sidetab-item active" onclick="goToSlide(1)" data-section="sec-1">
+            <span class="text-xl icon">🎓</span>
+            <div>1. SCL & Cabang<br><span class="text-xs font-medium text-gray-500">Urgensi & Akar Masalah</span></div>
+        </div>
+        
+        <div class="sidetab-item" onclick="goToSlide(9)" data-section="sec-2">
+            <span class="text-xl icon">💡</span>
+            <div>2. Konsep SCL & Layout<br><span class="text-xs font-medium text-gray-500">Definisi & Tata Ruang</span></div>
+        </div>
+        
+        <div class="sidetab-item" onclick="goToSlide(18)" data-section="sec-3">
+            <span class="text-xl icon">📝</span>
+            <div>3. Teknis KBM<br><span class="text-xs font-medium text-gray-500">Ekosistem & Alur Kelas</span></div>
+        </div>
+        
+        <div class="sidetab-item" onclick="goToSlide(33)" data-section="sec-4">
+            <span class="text-xl icon">💰</span>
+            <div>4. Sales & FAQ<br><span class="text-xs font-medium text-gray-500">Handling Objection Ortu</span></div>
+        </div>
+        
+        <div class="sidetab-item" onclick="goToSlide(38)" data-section="sec-5">
+            <span class="text-xl icon">📋</span>
+            <div>5. Admin & Absensi SA<br><span class="text-xs font-medium text-gray-500">Rombel & Panduan GDocs</span></div>
+        </div>
+    </aside>
 
     <div class="slide-indicator" id="slideIndicator">1 / 43</div>
 
@@ -1631,41 +1606,8 @@
         </div>
     </div>
 
-<!-- SLIDE 40: Template Absensi -->
+<!-- SLIDE 40: Quiz Points -->
     <div class="slide" id="slide-40">
-        <div class="max-w-4xl w-full text-center">
-            <span class="badge mb-4">FORMAT ABSENSI</span>
-            <h2 class="font-display font-black text-4xl mb-4 heading-text">Template Master Absensi SCL</h2>
-            <div class="planet-card p-8 text-center bg-white border shadow-lg border-t-8 border-yellow-400">
-                <div class="text-6xl mb-4">📋</div>
-                <p class="text-xl leading-relaxed mb-6 font-medium text-gray-700">Gunakan template Google Sheets resmi ini untuk melacak kehadiran, progres modul, dan level masing-masing murid SCL di cabang Anda.</p>
-                
-                <a href="https://docs.google.com/spreadsheets/d/1KSXyZO7VH1pZ7kUa-5kgCyGKmVdTyndBKWOJC1-4B1k/edit?gid=1826580349#gid=1826580349" target="_blank" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105">
-                    Buka Template Absensi ➔
-                </a>
-            </div>
-        </div>
-    </div>
-
-<!-- SLIDE 41: Contoh Absensi -->
-    <div class="slide" id="slide-41">
-        <div class="max-w-4xl w-full text-center">
-            <span class="badge mb-4 bg-green-100 text-green-700 border-green-200">BEST PRACTICE PENGISIAN</span>
-            <h2 class="font-display font-black text-4xl mb-4 heading-text">Contoh Pengisian Absen</h2>
-            <div class="planet-card p-8 text-center bg-green-50/50 border border-green-200 shadow-lg border-t-8 border-green-500">
-                <div class="text-6xl mb-4">✅</div>
-                <p class="text-xl leading-relaxed mb-6 font-medium text-gray-700">Masih bingung cara mengisinya? Lihat contoh nyata dari cabang lain bagaimana menulis keterangan level dan modul terakhir untuk murid.</p>
-                
-                <a href="https://docs.google.com/spreadsheets/d/1DuSje0O4jy0E6tlA4of-G-LiEDxguXjpJ7Xljzs0_-U/edit?gid=882938945#gid=882938945" target="_blank" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105">
-                    Lihat Contoh Absen ➔
-                </a>
-            </div>
-        </div>
-    </div>
-
-
-<!-- SLIDE 42: Quiz Points -->
-    <div class="slide" id="slide-42">
         <div class="max-w-5xl w-full">
             <span class="badge mb-4 block text-center mx-auto w-max">SISTEM REWARD</span>
             <h2 class="font-display font-black text-4xl mb-5 heading-text text-center">Quiz Points</h2>
@@ -1682,8 +1624,123 @@
         </div>
     </div>
 
-<!-- SLIDE 43: Closing -->
-    <div class="slide" id="slide-43">
+<!-- SLIDE 41: SA GDocs as HTML (Full Document) -->
+    <div class="slide" id="slide-41">
+        <div class="max-w-5xl w-full">
+            <span class="badge mb-4 block text-center mx-auto w-max">PANDUAN ABSENSI (FULL)</span>
+            <h2 class="font-display font-black text-4xl mb-5 heading-text text-center">Panduan Pengisian Absensi SCL</h2>
+            
+            <div class="planet-card p-6 md:p-10 flex flex-col bg-white shadow-xl border-t-8 border-green-500 overflow-y-auto" style="max-height: 65vh; text-align: left;">
+                <p class="text-gray-700 mb-6 italic">Dokumen ini disusun sebagai panduan resmi bagi Student Advisor (SA) dan tim operasional cabang dalam mengelola, mengisi, dan memelihara template absensi untuk program Self-Centered Learning (SCL). Harap ikuti setiap langkah di bawah ini dengan saksama demi menjaga akurasi data pada sistem.</p>
+                
+                <h3 class="font-bold text-2xl text-k-blue-d mt-6 mb-3 border-b pb-2">1. Akses dan Penggandaan (Duplicate) Template Absensi</h3>
+                <p class="mb-3">Sebelum melakukan pengisian data, Anda wajib mengakses dan menggandakan dokumen master terlebih dahulu agar tidak mengubah format asli.</p>
+                <ul class="list-[disc] pl-8 space-y-2 mb-4">
+                    <li><b>Tautan Template Absensi:</b> <a href="https://docs.google.com/spreadsheets/d/1KSXyZO7VH1pZ7kUa-5kgCyGKmVdTyndBKWOJC1-4B1k/edit?usp=sharing" target="_blank" class="text-blue-600 underline font-bold">Akses Spreadsheet di Sini</a></li>
+                    <li><b>Instruksi:</b> Silakan buka tautan tersebut, lalu pilih menu <b>File > Make a copy</b> (Buat salinan) atau klik kanan pada tabsheet lalu pilih <b>Duplicate</b> untuk membuat lembar kerja baru Anda sendiri.</li>
+                </ul>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">2. Format Penamaan File Absensi</h3>
+                <p class="mb-3">Setiap file absensi baru yang telah digandakan wajib diubah namanya (rename) dengan mengikuti format baku tanpa menggunakan spasi atau tanda baca koma.</p>
+                <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/0f62d66f-1a7a-4933-8a00-d124ee90bade.png" alt="Rename File" class="border shadow-sm rounded max-w-md"></div>
+                <ul class="list-[disc] pl-8 space-y-2 mb-4">
+                    <li><b>Format Penamaan:</b> SCL + [Kode Cabang] + [Dua Digit Tahun] + [Nomor Urut Kelas]</li>
+                    <li><b>Contoh:</b> SCLKR26001</li>
+                </ul>
+                <ul class="list-[circle] pl-12 space-y-1 mb-4 text-gray-700">
+                    <li><b>SCL:</b> Keterangan program (Self-Centered Learning).</li>
+                    <li><b>KR:</b> Kode cabang (Contoh: Karawang).</li>
+                    <li><b>26:</b> Dua digit terakhir tahun berjalan (Contoh: 2026).</li>
+                    <li><b>001:</b> Nomor urut kelas pertama yang dibuka di cabang tersebut.</li>
+                </ul>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">3. Pengisian Identitas Kelas</h3>
+                <div class="my-4"><img src="https://roboguru-forum-cdn.ruangguru.com//image/04c29396-0d07-494b-b614-5bc79a7adc76.png" alt="Identitas Kelas" class="border shadow-sm rounded w-full max-w-lg"></div>
+                <p class="mb-3">Sebagian besar kolom pada bagian Identitas Kelas telah terintegrasi dengan rumus otomatis (formula-locked). Anda hanya diperbolehkan mengisi dan menyesuaikan kolom-kolom operasional berikut secara manual:</p>
+                <ol class="list-[decimal] pl-8 space-y-1 mb-4 font-medium text-gray-800">
+                    <li>Nama Ruangan (lokasi kelas berlangsung).</li>
+                    <li>Nama Pengajar (Teacher) yang bertugas.</li>
+                    <li>Program atau Modul yang sedang aktif berjalan.</li>
+                    <li>Hari dan Jam pelaksanaan kelas.</li>
+                </ol>
+                <p class="italic text-red-700 bg-red-50 border-l-4 border-red-500 p-3 rounded mb-4"><b>Catatan:</b> Hindari melakukan perubahan pada kolom selain komponen di atas agar rumus otomatis tidak rusak.</p>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">4. Pengisian Identitas Siswa (Student Identity)</h3>
+                <div class="my-4"><img src="https://roboguru-forum-cdn.ruangguru.com//image/3db6c77e-d564-4123-9832-7462e5676200.png" alt="Identitas Siswa" class="border shadow-sm rounded w-full max-w-3xl"></div>
+                <p class="mb-3">Masukkan data siswa yang terdaftar ke dalam rombongan belajar (rombel) pada kelas ini dengan memperhatikan ketentuan ketat berikut:</p>
+                <ul class="list-[disc] pl-8 space-y-2 mb-4 text-gray-800">
+                    <li><b>Format Penulisan Nama Siswa:</b> Nama siswa wajib ditulis dengan format Capital First Letter (Huruf Kapital pada setiap Awal Kata). <br> <i>Contoh Benar:</i> Budi Santoso | <i>Contoh Salah:</i> budi santoso atau BUDI SANTOSO</li>
+                    <li><b>Penting:</b> Pastikan penulisan nama benar dan bebas dari saltik (typo), karena nama yang diinput di sini akan langsung ditarik secara otomatis untuk ditampilkan pada dashboard siswa.</li>
+                    <li><b>Kapasitas Maksimal Rombel:</b> Jumlah maksimal siswa dalam satu rombel adalah 8 siswa. Jika kuota rombel sudah penuh dan ada siswa baru yang ingin masuk, Anda wajib membuka rombel baru.</li>
+                    <li><b>Kondisi Rombel Tidak Penuh:</b> Jika rombel hanya terisi sebagian (misalnya hanya ada 3 atau 5 siswa), jangan pernah menghapus baris kosong yang tersisa. Biarkan baris kosong tersebut tetap utuh karena di dalamnya terdapat rumus aktif.</li>
+                    <li><b>Ketentuan Penggabungan Level:</b> Isi kolom Usia dan Level masing-masing siswa. Sistem SCL memungkinkan siswa dari berbagai tingkatan (Level 1 hingga 6) berada dalam satu rombel yang sama, dengan syarat mutlak mereka harus mempelajari <b>MODUL YANG SAMA</b>.</li>
+                    <li><b>Tanggal Masuk Siswa:</b> Masukkan tanggal mulai masuk (start date) masing-masing siswa secara presisi.</li>
+                </ul>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">5. Pengaturan Sesi Pembelajaran</h3>
+                <p class="mb-3">Setiap siswa memiliki paket pertemuan yang berbeda saat melakukan pendaftaran kelas, yaitu paket 12 pertemuan atau paket 6 pertemuan (di mana terdapat 2 sesi dalam setiap pertemuannya). Untuk memudahkan guru dalam melakukan absensi, Anda wajib melakukan pengaturan jadwal pada Kolom AE:</p>
+                <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/10fc3226-39ee-4fbe-9224-7ae4a377e329.png" alt="Pengaturan Sesi" class="border shadow-sm rounded max-w-sm"></div>
+                <ul class="list-[disc] pl-8 space-y-2 mb-4 text-gray-800">
+                    <li>Silakan isi perkiraan tanggal mulai kelas beserta tanggal pelaksanaan untuk setiap sesi pembelajaran siswa.</li>
+                    <li>Perhatikan dengan teliti format sesi harian yang diambil oleh masing-masing siswa:</li>
+                </ul>
+                <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/ea6a6c39-64f1-47d2-9241-30e484a7c0a3.png" alt="Format Sesi" class="border shadow-sm rounded max-w-2xl"></div>
+                <ul class="list-[circle] pl-12 space-y-2 mb-4 text-gray-800">
+                    <li><b>Format 2 Sesi per Hari:</b> Jika siswa mengambil 2 sesi dalam satu hari belajar, maka tanggal perkiraan untuk Sesi 1 dan Sesi 2 wajib diisi dengan tanggal yang sama.</li>
+                    <li><b>Format 1 Sesi per Hari:</b> Jika siswa hanya mengambil 1 sesi per hari belajar, isi setiap kolom sesi dengan tanggal pelaksanaan yang berurutan sesuai jadwal belajarnya.</li>
+                </ul>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">6. Kelola Absensi dan Kehadiran</h3>
+                <p class="mb-3">Sistem absensi ini telah dirancang secara semi-otomatis untuk meminimalkan pengisian manual:</p>
+                <ul class="list-[disc] pl-8 space-y-3 mb-4 text-gray-800">
+                    <li>
+                        <b>Data Kehadiran (Kolom F hingga Q):</b> Kolom ini akan terisi secara otomatis (auto-filled) berdasarkan input yang dilakukan oleh pengajar melalui dashboard teacher. Anda tidak perlu mengedit secara manual atau menambahkan tanda centang.
+                        <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/750e2227-0607-4b0a-8205-3b54a1c62003.png" alt="Data Kehadiran" class="border shadow-sm rounded w-full max-w-3xl"></div>
+                    </li>
+                    <li>
+                        <b>Tingkat Kehadiran (Attendance Rate):</b> Persentase tingkat kehadiran siswa akan dihitung secara otomatis oleh sistem dengan membandingkan kecocokan data kehadiran pada Kolom F–Q dengan pengaturan sesi pada Kolom AF dan AQ.
+                        <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/3ab7ee28-4eb9-4415-8d62-bbfb65c43652.png" alt="Attendance Rate" class="border shadow-sm rounded max-w-xs"></div>
+                    </li>
+                </ul>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">7. Sistem Reward (Star Coins) & Observasi</h3>
+                <ul class="list-[disc] pl-8 space-y-3 mb-4 text-gray-800">
+                    <li>
+                        <b>Mekanisme Star Coins:</b> Selama proses pembelajaran berjalan, siswa akan mendapatkan apresiasi (<i>reward</i>) berupa poin bintang (<b>Stars</b>). Siswa dapat menukarkannya dengan hadiah langsung (<i>doorprize</i>) di cabang.
+                        <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/1e0121eb-686c-4948-b3bb-8871f6bafeab.png" alt="Quiz Score Total" class="border shadow-sm rounded max-w-lg"></div>
+                        <ul class="list-[circle] pl-8 mt-2 space-y-1">
+                            <li><i>Catatan untuk SA:</i> Silakan ajukan <i>Cash Advance</i> (CA) ke pusat untuk pengadaan barang atau hadiah.</li>
+                            <li><b>Kolom AA (Jumlah Koin):</b> Menampilkan akumulasi jumlah poin bintang secara otomatis.</li>
+                            <li><b>Kolom AB & AC (Pencatatan Penukaran):</b> SA wajib mencatat jumlah pengurangan bintang (<b>Kolom AB</b>) dan jenis hadiah (<b>Kolom AC</b>).</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <b>Nilai Observasi:</b> Nilai evaluasi Sesi 4 dan 8 akan muncul otomatis berdasarkan penilaian dari <i>dashboard</i> guru. <b>Dilarang mengubah nilai pada kolom ini secara manual.</b>
+                        <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/894d48c1-ac78-4720-9eef-442e7ad81975.png" alt="Nilai Observasi" class="border shadow-sm rounded w-full max-w-3xl"></div>
+                    </li>
+                </ul>
+
+                <h3 class="font-bold text-2xl text-k-blue-d mt-8 mb-3 border-b pb-2">8. Tabsheet Progress (Database Siswa)</h3>
+                <p class="mb-3">Tabsheet (sheet tab) ini merupakan pusat penyimpanan database utama yang merekam riwayat dan kemajuan belajar seluruh siswa Anda.</p>
+                <ul class="list-[disc] pl-8 space-y-2 mb-4 text-gray-800">
+                    <li class="text-red-600 bg-red-50 p-2 rounded"><b>Penting:</b> Anda dilarang keras mengubah, mengedit, atau menghapus komponen apa pun yang ada di dalam tabsheet ini.</li>
+                    <li>Abaikan saja lembar kerja ini selama proses operasional harian. Pastikan tabsheet ini tetap ada dan tidak terhapus.</li>
+                </ul>
+                <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9a295d69-5977-417c-8444-fc015117c90c.png" alt="Tabsheet" class="border shadow-sm rounded max-w-xs"></div>
+                <p class="mb-2 italic text-sm text-gray-500">(Berikut di bawah ini adalah contoh visualisasi tampilan spreadsheet ketika data siswa dari dashboard telah masuk)</p>
+                <div class="my-4"><img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/2e6c79df-d5fb-49b2-b7f6-f9e9f59293da.png" alt="Contoh Spreadsheet" class="border shadow-sm rounded w-full"></div>
+            </div>
+            
+            <div class="text-center mt-6">
+                <a href="https://docs.google.com/spreadsheets/d/1DuSje0O4jy0E6tlA4of-G-LiEDxguXjpJ7Xljzs0_-U/edit?gid=882938945#gid=882938945" target="_blank" class="scl-btn inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 border-2 border-white">
+                    📊 Lihat Contoh Absen SCL ➔
+                </a>
+            </div>
+        </div>
+    </div>
+
+<!-- SLIDE 42: Closing -->
+    <div class="slide" id="slide-42">
         <div class="max-w-4xl w-full text-center">
             <span class="badge mb-4 bg-yellow-100 text-yellow-700 border-yellow-200 block text-center mx-auto w-max">END OF MANUAL</span>
             <div class="planet-card p-8 text-center relative overflow-hidden bg-gradient-to-tr from-k-blue-d to-k-green border-0 shadow-2xl transform hover:scale-105 transition-all">
@@ -1707,7 +1764,7 @@
 <script>
         // Slides Logic
         let currentSlideIndex = 1;
-        const totalSlides = 43;
+        const totalSlides = 42;
 
         function showSlide(index) {
             // boundary checks
@@ -1726,7 +1783,22 @@
             // Update Indicator
             document.getElementById('slideIndicator').innerText = `${currentSlideIndex} / ${totalSlides}`;
             
-            // update menu active state (optional UX enhance)
+            updateSidebarHighlight(currentSlideIndex);
+        }
+
+        function updateSidebarHighlight(index) {
+            let activeSection = 'sec-1';
+            
+            if (index >= 1 && index <= 8) activeSection = 'sec-1';
+            else if (index >= 9 && index <= 17) activeSection = 'sec-2';
+            else if (index >= 18 && index <= 32) activeSection = 'sec-3';
+            else if (index >= 33 && index <= 37) activeSection = 'sec-4';
+            else if (index >= 38 && index <= 42) activeSection = 'sec-5';
+
+            document.querySelectorAll('.sidetab-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.dataset.section === activeSection) item.classList.add('active');
+            });
         }
 
         function nextSlide() {
@@ -1743,12 +1815,6 @@
 
         function goToSlide(index) {
             showSlide(index);
-            // hide menu if mobile
-            document.getElementById('tocMenu').classList.remove('show');
-        }
-
-        function toggleMenu() {
-            document.getElementById('tocMenu').classList.toggle('show');
         }
 
         // keyboard nav

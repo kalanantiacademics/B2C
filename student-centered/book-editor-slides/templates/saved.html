@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Books</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .p-4 { padding: 1rem; }
+        .p-8 { padding: 2rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .max-w-4xl { max-width: 56rem; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .rounded { border-radius: 0.25rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .border { border-width: 1px; border-style: solid; }
+        .border-4 { border-width: 4px; border-style: solid; }
+        .border-blue-200 { border-color: #bfdbfe; }
+        .border-blue-600 { border-color: #2563eb; }
+        .border-green-200 { border-color: #bbf7d0; }
+        .border-green-500 { border-color: #22c55e; }
+        .border-yellow-500 { border-color: #eab308; }
+        .bg-white { background: #fff; }
+        .bg-blue-50 { background: #eff6ff; }
+        .bg-blue-500 { background: #3b82f6; }
+        .bg-green-50 { background: #f0fdf4; }
+        .bg-yellow-400 { background: #facc15; }
+        .hover\:bg-blue-600:hover { background: #2563eb; }
+        .hover\:bg-yellow-500:hover { background: #eab308; }
+        .text-white { color: #fff; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-blue-500 { color: #3b82f6; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-800 { color: #1f2937; }
+        .text-green-700 { color: #15803d; }
+        .text-red-500 { color: #ef4444; }
+        .text-yellow-900 { color: #713f12; }
+        .font-bold { font-weight: 700; }
+        .italic { font-style: italic; }
+        .shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08); }
+        .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+        .transition-colors { transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease; }
+        a { text-decoration: none; display: inline-block; }
+        body { font-family: 'Nunito', sans-serif; background-color: #F0Fdf4; }
+        h1 { font-family: 'Fredoka', sans-serif; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow border-4 border-green-500">
+        <h1 class="text-3xl font-bold mb-6 text-green-700">📚 Arsip Buku Tersimpan</h1>
+        <div class="mb-4">
+            <a href="/" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-bold shadow transition-colors">⬅️ Kembali ke Editor Utama</a>
+        </div>
+
+        <h2 class="text-xl font-bold mt-6 text-green-700">Draft Editor</h2>
+        <p class="text-sm text-gray-500">Draft ini dibuka memakai template editor terbaru, jadi update HTML/CSS tetap ikut.</p>
+        <ul id="draft-list" class="space-y-3 mt-4">
+            <li class="text-gray-500 italic">Memuat draft...</li>
+        </ul>
+        
+        <h2 class="text-xl font-bold mt-8 text-green-700">HTML Lama</h2>
+        <p class="text-sm text-gray-500">Arsip HTML penuh dari sistem save lama.</p>
+        <ul id="file-list" class="space-y-3 mt-6">
+            <li class="text-gray-500 italic">Memuat data...</li>
+        </ul>
+    </div>
+
+    <script>
+        async function loadFiles() {
+            try {
+                const res = await fetch('/api/saved_list');
+                const data = await res.json();
+                const list = document.getElementById('file-list');
+                const draftList = document.getElementById('draft-list');
+                list.innerHTML = '';
+                draftList.innerHTML = '';
+
+                if (!data.drafts || data.drafts.length === 0) {
+                    draftList.innerHTML = '<li class="text-gray-500 italic">Belum ada draft editor.</li>';
+                } else {
+                    data.drafts.forEach(file => {
+                        const li = document.createElement('li');
+                        li.className = "flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-200";
+                        const date = new Date(file.mtime * 1000).toLocaleString('id-ID');
+                        const title = `${file.course || 'course'} Level ${file.level || 'all'}`;
+                        li.innerHTML = `
+                            <div>
+                                <div class="font-bold text-lg text-gray-800">${title}</div>
+                                <div class="text-sm text-gray-500">${date} • ${file.pageCount || 0} halaman • ${file.name}</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="/?draft=${encodeURIComponent(file.name)}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-bold shadow-sm transition-colors border border-blue-600">Lanjut Edit</a>
+                            </div>
+                        `;
+                        draftList.appendChild(li);
+                    });
+                }
+                
+                if (!data.files || data.files.length === 0) {
+                    list.innerHTML = '<li class="text-gray-500 italic">Belum ada buku yang tersimpan.</li>';
+                    return;
+                }
+                
+                data.files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = "flex justify-between items-center bg-green-50 p-4 rounded-lg border border-green-200";
+                    
+                    const date = new Date(file.mtime * 1000).toLocaleString('id-ID');
+                    
+                    li.innerHTML = `
+                        <div>
+                            <div class="font-bold text-lg text-gray-800">${file.name}</div>
+                            <div class="text-sm text-gray-500">${date}</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/saved_books/${file.name}" target="_blank" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-4 py-2 rounded font-bold shadow-sm transition-colors border border-yellow-500">Buka / Edit</a>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (e) {
+                document.getElementById('file-list').innerHTML = '<li class="text-red-500">Gagal memuat daftar buku.</li>';
+            }
+        }
+        
+        loadFiles();
+    </script>
+</body>
+</html>

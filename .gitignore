@@ -11,7 +11,14 @@
 !student-centered/teacher-dashboard/
 !student-centered/teacher-dashboard/**
 !student-centered/panduan-scl-cabang.html
+
 *.py
+
+!student-centered/book-editor-slides/
+!student-centered/book-editor-slides/**
+student-centered/book-editor-slides/venv/
+student-centered/book-editor-slides/__pycache__/
+student-centered/book-editor-slides/server.log
 
 # Track trial-new folder
 !trial-new/

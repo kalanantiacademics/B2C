@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="editor" contenteditable="true" style="border:1px solid black; padding: 20px; margin: 20px;">
+  <p>Select this text.</p>
+</div>
+<div id="toolbar" style="background: #eee; padding: 10px;">
+  <select id="sel" onchange="runCmd(this.value); this.value=''">
+    <option value="">Choose...</option>
+    <option value="H2">H2</option>
+  </select>
+</div>
+<script>
+let savedRange = null;
+const editor = document.getElementById('editor');
+
+document.getElementById('toolbar').addEventListener('mousedown', (e) => {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) savedRange = sel.getRangeAt(0).cloneRange();
+    if (e.target.closest('button')) e.preventDefault();
+});
+
+function runCmd(val) {
+    if (!val) return;
+    const sel = window.getSelection();
+    if (savedRange) {
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+        editor.focus();
+    }
+    if (sel.isCollapsed) {
+        console.log("Collapsed!");
+        return;
+    }
+    console.log("Running formatBlock on", sel.toString());
+    document.execCommand('formatBlock', false, `<${val}>`) || document.execCommand('formatBlock', false, val);
+}
+</script>
+</body>
+</html>

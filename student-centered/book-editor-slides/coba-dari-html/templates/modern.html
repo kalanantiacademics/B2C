@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Aktivitas Kalananti (Slides Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'kalananti-navy': '#2A4365',
+                        'kalananti-orange': '#F07D49',
+                        'kalananti-blue': '#4CAAE4',
+                        'kalananti-yellow': '#F9C846'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        :root {
+            --font-display: 'Fredoka', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+            --theme-primary: #2A4365;
+            /* Navy */
+            --theme-secondary: #F07D49;
+            /* Orange */
+            --theme-accent: #4CAAE4;
+            /* Light Blue */
+            --theme-yellow: #F9C846;
+        }
+
+        body {
+            background-color: #E2E8F0;
+            font-family: var(--font-body);
+            margin: 0;
+            padding-top: 80px;
+            padding-bottom: 80px;
+        }
+
+        #menu-tools {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999999;
+            background: white;
+            border-bottom: 4px solid var(--theme-secondary);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* GDocs Style: Container kertas-kertas */
+        #editor-canvas {
+            width: 19.55cm;
+            margin: 0 auto;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        /* Satu lembar kertas A4 */
+        .page-sheet {
+            width: 19.55cm;
+            height: 23.93cm;
+            background: white;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
+            border-radius: 4px;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* Area konten dalam kertas */
+        .page-content {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 0.8cm 1cm;
+            outline: none;
+        }
+
+        /* Watermark nomor halaman di pojok kanan bawah */
+        .page-num {
+            position: absolute;
+            bottom: 10px;
+            right: 16px;
+            font-family: var(--font-display);
+            font-size: 9pt;
+            font-weight: 800;
+            color: rgba(42, 67, 101, 0.25);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Gambar dengan resize handle */
+        .shot-card,
+        .inline-image {
+            display: block;
+            width: fit-content;
+            max-width: 100%;
+            max-height: 750px;
+            margin: 16px auto;
+            padding: 10px;
+            background-color: white;
+            border: 3px solid var(--theme-accent);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--theme-secondary);
+            resize: both;
+            overflow: hidden;
+            min-width: 80px;
+            min-height: 60px;
+            cursor: se-resize;
+        }
+
+        .shot-card img,
+        .inline-image img,
+        .todo-group-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .todo-group-image-item {
+            display: block;
+            width: fit-content;
+            margin: 12px auto;
+            padding: 6px;
+            border: 2px solid var(--theme-accent);
+            border-radius: 8px;
+            background: white;
+            max-width: 100%;
+            max-height: 750px;
+            resize: both;
+            overflow: hidden;
+            min-width: 60px;
+            min-height: 50px;
+            cursor: se-resize;
+            position: relative;
+        }
+
+        .todo-group,
+        .todo-group-body,
+        .todo-group-images {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .todo-group.has-images .check-row {
+            margin-bottom: 10px;
+        }
+
+        .todo-group-images {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 12px 0;
+            width: 100%;
+        }
+
+        .todo-group-images .todo-group-image-item,
+        .todo-group-images .shot-card {
+            margin: 0;
+        }
+
+        /* Top-Right Resize Handle */
+        .resize-handle-tr {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 28px;
+            height: 28px;
+            background-color: var(--theme-secondary);
+            border-bottom-left-radius: 12px;
+            cursor: ew-resize;
+            z-index: 20;
+            opacity: 0.2;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resize-handle-tr::after {
+            content: "⤢";
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .shot-card:hover .resize-handle-tr,
+        .inline-image:hover .resize-handle-tr,
+        .todo-group-image-item:hover .resize-handle-tr {
+            opacity: 0.9;
+        }
+
+        /* -------- KOMPONEN DESAIN HYBRID -------- */
+        /* Komponen-komponen ini akan di-screenshot cangkangnya oleh html2canvas */
+
+        .think-bubble {
+            background-color: #F8FAFC;
+            border: 3px solid var(--theme-primary);
+            border-radius: 16px;
+            padding: 34px 24px 22px 24px;
+            position: relative;
+            margin: 32px 0 20px 0;
+            z-index: 1;
+            /* Use box-shadow instead of ::before for html2canvas compatibility */
+            box-shadow: 6px 6px 0 var(--theme-accent);
+        }
+
+        .think-title {
+            position: absolute;
+            top: -18px;
+            left: 20px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            background: var(--theme-secondary);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 var(--theme-primary);
+            transform: rotate(-2deg);
+            z-index: 10;
+        }
+
+        .knowledge-bubble.warm {
+            border-color: var(--theme-secondary);
+            box-shadow: 6px 6px 0 var(--theme-yellow);
+        }
+
+        .knowledge-bubble.warm .think-title {
+            background: var(--theme-primary);
+            box-shadow: 4px 4px 0 var(--theme-secondary);
+        }
+
+        .activity-card {
+            background-color: white;
+            padding: 34px 20px 16px 20px;
+            border: 4px solid var(--theme-primary);
+            border-radius: 12px;
+            position: relative;
+            margin: 35px 0 20px 0;
+            z-index: 1;
+            box-shadow: 8px 8px 0 var(--theme-yellow);
+        }
+
+        .activity-label,
+        .challenge-label {
+            position: absolute;
+            top: -20px;
+            left: -5px;
+            background-color: var(--theme-yellow);
+            color: var(--theme-primary);
+            font-family: var(--font-display);
+            font-weight: 800;
+            padding: 6px 20px;
+            border-radius: 8px;
+            border: 3px solid var(--theme-primary);
+            box-shadow: 4px 4px 0 var(--theme-primary);
+            transform: rotate(-3deg);
+            z-index: 10;
+        }
+
+        .challenge-card {
+            background-color: #FFFDF5;
+            border: 4px solid var(--theme-secondary);
+            border-radius: 12px;
+            padding: 34px 20px 16px 20px;
+            position: relative;
+            margin: 35px 0 20px 0;
+            z-index: 1;
+            box-shadow: 8px 8px 0 var(--theme-accent);
+        }
+
+        .challenge-label {
+            background-color: var(--theme-accent);
+            color: white;
+            border-color: var(--theme-secondary);
+            box-shadow: -4px 4px 0 var(--theme-secondary);
+            left: auto;
+            right: -5px;
+            transform: rotate(3deg);
+        }
+
+        .step-card {
+            background-color: #F8FCFF;
+            color: #1E293B;
+            padding: 28px 18px 16px 18px;
+            margin: 30px 0 15px 0;
+            border-radius: 16px;
+            position: relative;
+            /* html2canvas bug with dashed borders and backgrounds: we use a solid border */
+            border: 4px solid var(--theme-accent);
+            box-shadow: 8px 8px 0 #D9EEF9;
+            z-index: 1;
+        }
+
+        .step-badge {
+            position: absolute;
+            top: -20px;
+            left: 15px;
+            background-color: var(--theme-primary);
+            color: white;
+            font-family: var(--font-display);
+            font-weight: 800;
+            padding: 6px 18px;
+            border-radius: 10px;
+            transform: rotate(2deg);
+            z-index: 10;
+        }
+
+        .step-card h1,
+        .step-card h2,
+        .step-card h3,
+        .step-card h4,
+        .step-card p,
+        .step-card div:not(.step-badge),
+        .step-card span:not(.step-badge) {
+            color: #1E293B;
+        }
+
+        .quiz-stack {
+            margin: 25px 0;
+        }
+
+        .quiz-item {
+            background-color: white;
+            padding: 20px 18px 14px 18px;
+            border: 3px solid var(--theme-primary);
+            border-radius: 12px;
+            position: relative;
+            margin-bottom: 15px;
+            z-index: 1;
+            box-shadow: 6px 6px 0 var(--theme-secondary);
+        }
+
+        .shot-card {
+            background-color: white;
+            padding: 12px;
+            border: 3px solid var(--theme-accent);
+            border-radius: 12px;
+            margin: 20px auto;
+            box-shadow: 5px 5px 0 var(--theme-secondary);
+            width: fit-content;
+            position: relative;
+        }
+
+        .inline-image {
+            display: block;
+            width: fit-content;
+            margin: 15px auto;
+            padding: 12px;
+            background-color: white;
+            border: 3px solid var(--theme-accent);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--theme-secondary);
+            position: relative;
+        }
+
+        /* Typography & Content Layout */
+        .text-reading {
+            font-size: 11pt;
+            color: #1E293B;
+            line-height: 1.7;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .list-objective {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+
+        .list-objective>li {
+            font-size: 11pt;
+            margin-bottom: 8px;
+            font-weight: 600;
+            padding-left: 20px;
+            position: relative;
+            color: #1E293B;
+        }
+
+        .list-objective>li::before {
+            content: "✦";
+            color: var(--theme-secondary);
+            position: absolute;
+            left: 0;
+            font-weight: 900;
+        }
+
+        /* Checkbox lists */
+        .check-row {
+            width: 100%;
+            margin-bottom: 8px;
+            border-collapse: collapse;
+        }
+
+        .check-cell {
+            width: 24px;
+            vertical-align: top;
+            padding-top: 2px;
+        }
+
+        .check-box {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--theme-primary);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0 var(--theme-accent);
+            background: white;
+        }
+
+        .check-content {
+            vertical-align: top;
+            font-size: 10.5pt;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Quiz elements */
+        .quiz-question {
+            display: flex;
+            font-size: 10pt;
+            font-weight: 800;
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+
+        .quiz-number {
+            color: var(--theme-primary);
+            min-width: 15px;
+        }
+
+        .quiz-options {
+            margin-left: 15px;
+        }
+
+        .quiz-option {
+            display: flex;
+            font-size: 9.5pt;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+
+        .quiz-option-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--theme-accent);
+            color: white;
+            font-size: 8pt;
+            font-weight: 900;
+            margin-right: 8px;
+        }
+
+        /* ===== SESSION HEADER (REDESIGNED) ===== */
+        .session-divider {
+            margin-top: 40px;
+            margin-bottom: 24px;
+        }
+
+        /* Outer frame - navy bg + orange bottom shadow */
+        .scd-hero {
+            background: var(--theme-primary);
+            border-radius: 18px;
+            box-shadow: 0 8px 0 var(--theme-secondary);
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top rainbow stripe (seperti di template Slides) */
+        .scd-stripe {
+            height: 8px;
+            background: linear-gradient(90deg, #F07D49 0%, #F9C846 35%, #4CAAE4 70%, #2A4365 100%);
+        }
+
+        /* Main content area inside hero */
+        .scd-body {
+            padding: 20px 28px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .scd-body-left {
+            flex: 1;
+        }
+
+        /* Badge pill kecil di atas */
+        .scd-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(240, 125, 73, 0.18);
+            border: 2px solid var(--theme-secondary);
+            color: var(--theme-yellow);
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 14px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+
+        .scd-pill-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--theme-secondary);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Judul kelas besar */
+        .scd-course-title {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 22pt;
+            color: white;
+            margin: 0 0 8px;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        /* Baris topik */
+        .scd-topic-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .scd-topic-label {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 9pt;
+            color: var(--theme-accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .scd-topic {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 12pt;
+            color: white;
+        }
+
+        /* Logo area di kanan */
+        .scd-icons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .scd-icon-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+        }
+
+        .scd-icon-img.small {
+            width: 44px;
+            height: 44px;
+        }
+
+        .btn-primary {
+            background: var(--theme-primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #1a2a40;
+        }
+
+        .btn-secondary {
+            background: var(--theme-secondary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: #d06334;
+        }
+
+        /* --- NATIVE PRINT CSS --- */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            @page {
+                size: 19.55cm 23.93cm; /* Ukuran khusus agar sesuai dengan layout asli 100% */
+                margin: 0;
+            }
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #menu-tools, .resize-handle-tr {
+                display: none !important;
+            }
+            #editor-canvas {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 19.55cm !important;
+                gap: 0 !important;
+                display: block !important;
+                background: white !important;
+            }
+            .page-sheet {
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                position: relative !important;
+                border-radius: 0 !important;
+            }
+            /* Hilangkan garis tebal yg mungkin terpotong di print */
+            .page-content {
+                outline: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="menu-tools">
+        <div>
+            <select id="course-select" class="border-2 border-gray-800 rounded p-2 mr-2 font-bold text-kalananti-navy">
+                <option value="roblox">Roblox Studio</option>
+                <option value="scratch">Scratch</option>
+            </select>
+            <select id="level-input" class="border-2 border-gray-800 rounded p-2 w-32 font-bold text-kalananti-navy">
+                <option value="1">Level 1</option>
+                <option value="2">Level 2</option>
+                <option value="3">Level 3</option>
+                <option value="4">Level 4</option>
+            </select>
+            <button onclick="fetchBook()" class="btn-primary ml-2">Muat Konten</button>
+        </div>
+        <div class="flex gap-3 items-center">
+            <span id="save-status" class="text-sm font-bold text-gray-500 mr-2">Status: Menunggu</span>
+            <button onclick="document.execCommand('bold',false,null);"
+                class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded font-bold border border-gray-400">B</button>
+            <button onclick="document.execCommand('italic',false,null);"
+                class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded italic border border-gray-400">I</button>
+            <button onclick="document.execCommand('underline',false,null);"
+                class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded underline border border-gray-400">U</button>
+            <button onclick="manualRepaginate()"
+                class="bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded font-bold border border-blue-400 text-blue-800 ml-2">⟳
+                Susun Ulang</button>
+            <button id="btn-undo" onclick="undoLast()"
+                class="bg-yellow-100 hover:bg-yellow-200 px-3 py-1 rounded font-bold border border-yellow-400 text-yellow-800 ml-1"
+                disabled title="Ctrl+Z">↩ Undo <span id="undo-count" class="text-xs opacity-60"></span></button>
+            <button onclick="resetToDefault()"
+                class="bg-red-100 hover:bg-red-200 px-3 py-1 rounded font-bold border border-red-400 text-red-800 ml-1">🗑️
+                Reset ke Awal</button>
+            <button onclick="printToPdf()" class="btn-secondary ml-2">🖨️ Print PDF</button>
+        </div>
+    </div>
+
+    <div id="editor-canvas">
+        <div class="page-sheet" id="page-1">
+            <div class="page-content">
+                <div style="text-align:center;color:#aaa;padding-top:60px;font-family:var(--font-display);font-weight:700;font-size:13pt;"
+                    contenteditable="false">
+                    Pilih Course &amp; Level, lalu klik <strong>"Muat Konten"</strong>.<br>
+                    <span style="font-size:10pt;font-weight:500;">Tiap kotak putih = 1 halaman Slides (19.55 &times;
+                        23.93 cm).</span>
+                </div>
+            </div>
+            <div class="page-num">1</div>
+        </div>
+    </div>
+
+    <script>
+        const editorCanvas = document.getElementById('editor-canvas');
+        const saveStatus = document.getElementById('save-status');
+        let saveTimeout;
+        let currentLoadedParams = "";
+        let _availableLevelsByCourse = {};
+
+        // --- UNDO SYSTEM ---
+        const UNDO_MAX = 30;
+        let _undoStack = [];
+
+        function pushUndoSnapshot() {
+            const els = editorCanvas.querySelectorAll('.page-content > *');
+            if (els.length === 0) return;
+            const snapshot = [...els].map(el => el.outerHTML).join('<!--ELBREAK-->');
+            // Jangan push kalau sama persis dengan snapshot terakhir
+            if (_undoStack.length > 0 && _undoStack[_undoStack.length - 1] === snapshot) return;
+            _undoStack.push(snapshot);
+            if (_undoStack.length > UNDO_MAX) _undoStack.shift();
+            updateUndoButton();
+        }
+
+        function undoLast() {
+            if (_undoStack.length === 0) return;
+            const snapshot = _undoStack.pop();
+            updateUndoButton();
+
+            _isRepaginating = true;
+            const anchor = findScrollAnchor();
+
+            // Rebuild elements dari snapshot
+            const chunks = snapshot.split('<!--ELBREAK-->');
+            const flatElements = [];
+            chunks.forEach(html => {
+                if (!html.trim()) return;
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html.trim();
+                const child = wrapper.firstElementChild;
+                if (child) flatElements.push(child);
+            });
+
+            if (flatElements.length === 0) { _isRepaginating = false; return; }
+            repaginate(flatElements);
+            requestAnimationFrame(() => {
+                attachResizeObservers();
+                restoreScrollAnchor(anchor);
+                _isRepaginating = false;
+                saveToLocal();
+            });
+            saveStatus.textContent = '↩ Undo berhasil';
+        }
+
+        function updateUndoButton() {
+            const btn = document.getElementById('btn-undo');
+            const count = document.getElementById('undo-count');
+            btn.disabled = _undoStack.length === 0;
+            count.textContent = _undoStack.length > 0 ? `(${_undoStack.length})` : '';
+        }
+
+        // Ctrl+Z shortcut
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undoLast();
+            }
+        });
+
+        // Helper: ukur tinggi halaman dalam px
+        function getPageHeightPx() {
+            // Gunakan angka tetap jika deteksi probe gagal (A4 pada 96 DPI ~ 904px)
+            const CM_TO_PX = 37.795;
+            return 23.93 * CM_TO_PX;
+        }
+
+        // Buat satu lembar halaman baru
+        function createPageSheet(num) {
+            const sheet = document.createElement('div');
+            sheet.className = 'page-sheet';
+            sheet.id = `page-${num}`;
+            const content = document.createElement('div');
+            content.className = 'page-content';
+            content.contentEditable = 'true';
+            content.addEventListener('input', onEdit);
+            sheet.appendChild(content);
+            const pageNum = document.createElement('div');
+            pageNum.className = 'page-num';
+            pageNum.textContent = num;
+            sheet.appendChild(pageNum);
+            return { sheet, content };
+        }
+
+        // Kelas yang HARUS tetap satu blok (tidak boleh di-split)
+        const ATOMIC_CLASSES = [
+            'session-divider', 'activity-card', 'challenge-card',
+            'step-card', 'think-bubble', 'knowledge-bubble',
+            'quiz-item', 'quiz-stack', 'quiz-wrapper',
+            'shot-card', 'inline-image', 'todo-group',
+            'cover-page', 'book-guide-page', 'toc-page',
+            'step-headpack', 'check-row', 'lead-check-text'
+        ];
+
+        // Cek apakah element harus tetap utuh (atomic)
+        function isAtomic(el) {
+            if (!el.classList) return true;
+            // Element kecil tanpa children = atomic
+            if (el.children.length === 0) return true;
+            // Cek class list
+            for (const cls of ATOMIC_CLASSES) {
+                if (el.classList.contains(cls)) return true;
+            }
+            // Hanya DIV yang boleh di-flatten (P, H1-H6, SPAN, dll TIDAK boleh)
+            if (el.tagName !== 'DIV') return true;
+            // DIV dengan text nodes langsung = atomic (mixed content, text bisa hilang)
+            for (const node of el.childNodes) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Flatten compound containers menjadi elemen-elemen kecil yg bisa mengalir antar halaman
+        function deepFlatten(elements) {
+            const result = [];
+            for (const el of elements) {
+                if (isAtomic(el)) {
+                    result.push(el);
+                } else {
+                    // Unwrap: ambil children-nya sebagai elemen independen
+                    const children = [...el.children];
+                    if (children.length === 0) {
+                        result.push(el);
+                    } else {
+                        // Recursively flatten children juga
+                        for (const child of children) {
+                            if (isAtomic(child)) {
+                                result.push(child);
+                            } else {
+                                result.push(...deepFlatten([child]));
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        function createMeasurePage() {
+            const sheet = document.createElement('div');
+            sheet.className = 'page-sheet';
+            sheet.style.position = 'absolute';
+            sheet.style.left = '-99999px';
+            sheet.style.top = '0';
+            sheet.style.visibility = 'hidden';
+            sheet.style.pointerEvents = 'none';
+            sheet.style.zIndex = '-1';
+
+            const content = document.createElement('div');
+            content.className = 'page-content';
+            sheet.appendChild(content);
+            document.body.appendChild(sheet);
+
+            return { sheet, content };
+        }
+
+        function measureElementHeight(el, measureContent) {
+            measureContent.innerHTML = '';
+            const clone = el.cloneNode(true);
+            measureContent.appendChild(clone);
+            return Math.ceil(clone.getBoundingClientRect().height);
+        }
+
+        function getBubbleContentLineUnits(contentEl) {
+            const units = [];
+            let currentNodes = [];
+
+            function pushCurrent() {
+                if (!currentNodes.length) return;
+                const wrapper = document.createElement('div');
+                currentNodes.forEach(node => wrapper.appendChild(node));
+                const html = wrapper.innerHTML.trim();
+                if (html) units.push(html);
+                currentNodes = [];
+            }
+
+            [...contentEl.childNodes].forEach(node => {
+                const isBreak = node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BR';
+                const isInlineImage = node.nodeType === Node.ELEMENT_NODE && node.classList.contains('inline-image');
+                const isBlockNode = node.nodeType === Node.ELEMENT_NODE && ['P', 'UL', 'OL', 'TABLE', 'DIV'].includes(node.tagName);
+
+                if (isInlineImage || isBlockNode) {
+                    pushCurrent();
+                    const wrapper = document.createElement('div');
+                    wrapper.appendChild(node.cloneNode(true));
+                    units.push(wrapper.innerHTML.trim());
+                    return;
+                }
+
+                currentNodes.push(node.cloneNode(true));
+
+                if (isBreak) {
+                    pushCurrent();
+                }
+            });
+
+            pushCurrent();
+            return units;
+        }
+
+        function getBubbleNumberedSectionUnits(contentEl) {
+            const html = (contentEl.innerHTML || '').trim();
+            if (!html) return [];
+
+            const markerRegex = /<strong>\s*\d+[\)\.\:]\s*<\/strong>/gi;
+            const matches = [...html.matchAll(markerRegex)];
+            if (matches.length < 2) return [];
+
+            const sections = [];
+            const prefix = html.slice(0, matches[0].index).trim();
+
+            for (let i = 0; i < matches.length; i++) {
+                const start = matches[i].index;
+                const end = i + 1 < matches.length ? matches[i + 1].index : html.length;
+                let sectionHtml = html.slice(start, end).trim();
+                if (i === 0 && prefix) {
+                    sectionHtml = `${prefix}${sectionHtml}`;
+                }
+                if (sectionHtml) sections.push(sectionHtml);
+            }
+
+            return sections;
+        }
+
+        function getBubbleContentUnits(contentEl) {
+            const numberedSections = getBubbleNumberedSectionUnits(contentEl);
+            if (numberedSections.length > 0) {
+                return numberedSections;
+            }
+
+            const lineUnits = getBubbleContentLineUnits(contentEl);
+            if (lineUnits.length <= 1) return lineUnits;
+
+            const sectionUnits = [];
+            let currentSection = [];
+
+            function pushSection() {
+                if (!currentSection.length) return;
+                const html = currentSection.join('').trim();
+                if (html) sectionUnits.push(html);
+                currentSection = [];
+            }
+
+            lineUnits.forEach(unitHtml => {
+                const probe = document.createElement('div');
+                probe.innerHTML = unitHtml;
+                const text = (probe.textContent || '').replace(/\u00a0/g, ' ').trim();
+                const hasMedia = Boolean(probe.querySelector('.inline-image, img'));
+                const startsNumberedItem = /^\d+[\).\:]/.test(text);
+
+                if (startsNumberedItem && currentSection.length) {
+                    pushSection();
+                }
+
+                currentSection.push(unitHtml);
+
+                // Jika ada media di unit ini, tetap tempel di section yang sama
+                // agar gambar/kode tidak gampang "terlepas" ke halaman lain.
+                if (!text && !hasMedia) {
+                    return;
+                }
+            });
+
+            pushSection();
+            return sectionUnits.length > 1 ? sectionUnits : lineUnits;
+        }
+
+        function cloneKnowledgeBubble(el, contentHtml, isContinuation) {
+            const clone = el.cloneNode(true);
+            const content = clone.querySelector('.bubble-content');
+            const title = clone.querySelector('.think-title');
+            if (content) content.innerHTML = contentHtml;
+            if (title) {
+                const baseTitle = title.textContent.replace(/\s+\(Lanjutan\)$/i, '');
+                title.textContent = isContinuation ? `${baseTitle} (Lanjutan)` : baseTitle;
+            }
+            return clone;
+        }
+
+        function buildKnowledgeBubbleChunkUnitGroups(el, maxHeight, measureContent) {
+            const contentEl = el.querySelector('.bubble-content');
+            if (!contentEl) return [[]];
+
+            const units = getBubbleContentUnits(contentEl);
+            if (units.length <= 1) return [units];
+
+            const chunkUnits = [];
+            let cursor = 0;
+
+            while (cursor < units.length) {
+                let currentUnits = [];
+                let fittedCount = 0;
+
+                for (let i = cursor; i < units.length; i++) {
+                    const candidateUnits = currentUnits.concat(units[i]);
+                    const candidateBubble = cloneKnowledgeBubble(el, candidateUnits.join(''), chunkUnits.length > 0);
+                    const candidateHeight = measureElementHeight(candidateBubble, measureContent);
+
+                    if (candidateHeight <= maxHeight || fittedCount === 0) {
+                        currentUnits = candidateUnits;
+                        fittedCount++;
+                    } else {
+                        break;
+                    }
+                }
+
+                chunkUnits.push(currentUnits);
+                cursor += fittedCount;
+            }
+
+            return chunkUnits;
+        }
+
+        function rebalanceKnowledgeBubbleChunkUnits(el, chunkUnits, maxHeight, measureContent) {
+            if (chunkUnits.length < 2) return chunkUnits;
+
+            const minFillRatio = 0.45;
+            const balanced = chunkUnits.map(group => group.slice());
+
+            function chunkHeight(units, continuation) {
+                const bubble = cloneKnowledgeBubble(el, units.join(''), continuation);
+                return measureElementHeight(bubble, measureContent);
+            }
+
+            for (let i = 0; i < balanced.length - 1; i++) {
+                let current = balanced[i];
+                let next = balanced[i + 1];
+                let nextHeight = chunkHeight(next, true);
+
+                while (current.length > 1 && nextHeight < maxHeight * minFillRatio) {
+                    const movedUnit = current[current.length - 1];
+                    const candidateCurrent = current.slice(0, -1);
+                    const candidateNext = [movedUnit].concat(next);
+                    const candidateCurrentHeight = chunkHeight(candidateCurrent, i > 0);
+                    const candidateNextHeight = chunkHeight(candidateNext, true);
+
+                    if (candidateCurrentHeight <= maxHeight && candidateNextHeight <= maxHeight) {
+                        current = candidateCurrent;
+                        next = candidateNext;
+                        nextHeight = candidateNextHeight;
+                        balanced[i] = current;
+                        balanced[i + 1] = next;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            return balanced.filter(group => group.length > 0);
+        }
+
+        function buildKnowledgeBubbleChunks(el, maxHeight, measureContent) {
+            const contentEl = el.querySelector('.bubble-content');
+            if (!contentEl) return [el];
+
+            const units = getBubbleContentUnits(contentEl);
+            if (units.length <= 1) return [el];
+
+            let chunkUnits = buildKnowledgeBubbleChunkUnitGroups(el, maxHeight, measureContent);
+            chunkUnits = rebalanceKnowledgeBubbleChunkUnits(el, chunkUnits, maxHeight, measureContent);
+
+            const chunks = chunkUnits.map((unitGroup, index) =>
+                cloneKnowledgeBubble(el, unitGroup.join(''), index > 0)
+            );
+
+            return chunks;
+        }
+
+        function splitOversizedKnowledgeBubbles(elements) {
+            const measure = createMeasurePage();
+            const maxHeight = measure.content.clientHeight;
+            const result = [];
+
+            try {
+                elements.forEach(el => {
+                    if (!(el instanceof HTMLElement) || !el.classList.contains('think-bubble') || !el.classList.contains('knowledge-bubble')) {
+                        result.push(el);
+                        return;
+                    }
+
+                    const originalHeight = measureElementHeight(el, measure.content);
+                    if (originalHeight <= maxHeight) {
+                        result.push(el);
+                        return;
+                    }
+
+                    const contentEl = el.querySelector('.bubble-content');
+                    if (!contentEl) {
+                        result.push(el);
+                        return;
+                    }
+
+                    result.push(...buildKnowledgeBubbleChunks(el, maxHeight, measure.content));
+                });
+            } finally {
+                measure.sheet.remove();
+            }
+
+            return result;
+        }
+
+        function cloneCard(el, units, isContinuation) {
+            const clone = el.cloneNode(true);
+            const label = clone.querySelector('.activity-label, .challenge-label');
+            if (label && isContinuation) {
+                const baseText = label.textContent.replace(/\s+\(Lanjutan\)$/i, '');
+                label.textContent = `${baseText} (Lanjutan)`;
+            }
+
+            const contentWrappers = [...clone.children].filter(child => !child.classList.contains('activity-label') && !child.classList.contains('challenge-label'));
+            if (contentWrappers.length > 0) {
+                const wrapper = contentWrappers[0];
+                wrapper.innerHTML = '';
+                units.forEach(u => wrapper.appendChild(u.cloneNode(true)));
+            }
+            return clone;
+        }
+
+        function buildCardChunks(el, maxHeight, measureContent) {
+            const contentWrappers = [...el.children].filter(child => !child.classList.contains('activity-label') && !child.classList.contains('challenge-label'));
+            if (contentWrappers.length === 0) return [el];
+
+            const wrapper = contentWrappers[0];
+            const units = [...wrapper.children];
+            if (units.length <= 1) return [el];
+
+            const chunks = [];
+            let currentUnits = [];
+
+            for (let i = 0; i < units.length; i++) {
+                currentUnits.push(units[i]);
+                const candidateCard = cloneCard(el, currentUnits, chunks.length > 0);
+                const candidateHeight = measureElementHeight(candidateCard, measureContent);
+
+                if (candidateHeight > maxHeight && currentUnits.length > 1) {
+                    currentUnits.pop();
+                    chunks.push(cloneCard(el, currentUnits, chunks.length > 0));
+                    currentUnits = [units[i]];
+                }
+            }
+
+            if (currentUnits.length > 0) {
+                chunks.push(cloneCard(el, currentUnits, chunks.length > 0));
+            }
+
+            return chunks;
+        }
+
+        function splitOversizedCards(elements) {
+            const measure = createMeasurePage();
+            const maxHeight = measure.content.clientHeight - 20;
+            const result = [];
+
+            try {
+                elements.forEach(el => {
+                    if (!(el instanceof HTMLElement) || (!el.classList.contains('activity-card') && !el.classList.contains('challenge-card'))) {
+                        result.push(el);
+                        return;
+                    }
+
+                    const originalHeight = measureElementHeight(el, measure.content);
+                    if (originalHeight <= maxHeight) {
+                        result.push(el);
+                        return;
+                    }
+
+                    result.push(...buildCardChunks(el, maxHeight, measure.content));
+                });
+            } finally {
+                measure.sheet.remove();
+            }
+
+            return result;
+        }
+
+        function toRoman(num) {
+            const lookup = { m: 1000, cm: 900, d: 500, cd: 400, c: 100, xc: 90, l: 50, xl: 40, x: 10, ix: 9, v: 5, iv: 4, i: 1 };
+            let roman = '';
+            for (let i in lookup) {
+                while (num >= lookup[i]) {
+                    roman += i;
+                    num -= lookup[i];
+                }
+            }
+            return roman;
+        }
+
+        const TOC_ITEMS_PER_PAGE = 12;
+
+        function formatLevelText(value) {
+            const clean = normalizeLevelLabel(value);
+            return clean ? `Level ${clean}` : 'Level';
+        }
+
+        function formatSessionText(value) {
+            const clean = String(value || '').replace(/session/ig, '').trim();
+            return clean ? `Sesi ${clean}` : 'Sesi';
+        }
+
+        function renderTocItems(list, chunk, pageIndex) {
+            const isContinuationPage = pageIndex > 0;
+            list.style.gap = '0';
+            list.innerHTML = chunk.map((item, index) => {
+                const actualIndex = pageIndex * TOC_ITEMS_PER_PAGE + index;
+                const moduleNo = item.moduleNo || actualIndex + 1;
+                const topic = item.topic || item.courseTitle || `Modul ${moduleNo}`;
+                const levelSession = [item.levelLabel, item.sessionLabel].filter(Boolean).join(' - ');
+                return `
+                    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 2px;border-bottom:1.5px solid #E2E8F0;min-height:45px;">
+                        <div style="width:22px;flex:0 0 auto;text-align:right;font-family:var(--font-display);font-size:10pt;font-weight:800;color:#2A4365;line-height:1.25;">${moduleNo}.</div>
+                        <div style="min-width:0;flex:1;">
+                            <div style="display:flex;align-items:flex-end;gap:7px;">
+                                <div style="font-size:10.4pt;color:#1E293B;font-weight:800;line-height:1.18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(topic)}</div>
+                                <div style="height:1px;flex:1;border-bottom:1.5px dotted #CBD5E1;margin-bottom:4px;"></div>
+                                <div style="font-size:10pt;color:#2A4365;font-weight:800;line-height:1.18;white-space:nowrap;">${item.pageNum}</div>
+                            </div>
+                            <div style="margin-top:2px;font-size:8pt;color:#64748B;font-weight:700;line-height:1.15;">${escapeHtml(levelSession)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function rebalancePages() {
+            const pages = [...editorCanvas.querySelectorAll('.page-sheet')];
+            if (pages.length < 2) return;
+
+            for (let i = 0; i < pages.length - 1; i++) {
+                const currentContent = pages[i].querySelector('.page-content');
+                const nextContent = pages[i + 1].querySelector('.page-content');
+                if (!currentContent || !nextContent) continue;
+
+                let movedAny = false;
+                while (nextContent.firstElementChild) {
+                    const candidate = nextContent.firstElementChild;
+                    currentContent.appendChild(candidate);
+
+                    if (currentContent.scrollHeight <= currentContent.clientHeight) {
+                        movedAny = true;
+                        continue;
+                    }
+
+                    currentContent.removeChild(candidate);
+                    nextContent.insertBefore(candidate, nextContent.firstChild);
+                    break;
+                }
+
+                if (movedAny && nextContent.children.length === 0) {
+                    pages[i + 1].remove();
+                }
+            }
+
+            let romanCount = 1;
+            let arabicCount = 1;
+            const tocData = [];
+
+            [...editorCanvas.querySelectorAll('.page-sheet')].forEach((sheet) => {
+                const pageNumEl = sheet.querySelector('.page-num');
+                if (!pageNumEl) return;
+
+                const content = sheet.querySelector('.page-content');
+
+                const isCover = !!content.querySelector('.cover-page');
+                const isGuide = !!content.querySelector('.book-guide-page');
+                const isToc = !!content.querySelector('.toc-page');
+
+                if (isCover) {
+                    pageNumEl.style.display = 'none';
+                } else if (isGuide || isToc) {
+                    pageNumEl.style.display = 'block';
+                    pageNumEl.style.fontStyle = 'italic';
+                    pageNumEl.textContent = toRoman(romanCount);
+                    romanCount++;
+                } else {
+                    pageNumEl.style.display = 'block';
+                    pageNumEl.style.fontStyle = 'normal';
+                    pageNumEl.textContent = arabicCount;
+                    sheet.setAttribute('data-page-number', arabicCount);
+
+                    const dividers = content.querySelectorAll('.session-divider');
+                    dividers.forEach(divider => {
+                        const pill = divider.querySelector('.scd-pill');
+                        const courseTitleEl = divider.querySelector('.scd-course-title');
+                        const topicEl = divider.querySelector('.scd-topic');
+                        if (pill && courseTitleEl) {
+                            tocData.push({
+                                moduleNo: Number(divider.dataset.moduleNo) || tocData.length + 1,
+                                levelLabel: divider.dataset.levelLabel || '',
+                                sessionLabel: divider.dataset.sessionLabel || '',
+                                topic: divider.dataset.topic || topicEl?.textContent.trim() || '',
+                                courseTitle: courseTitleEl.textContent.trim(),
+                                pageNum: arabicCount
+                            });
+                        }
+                    });
+
+                    arabicCount++;
+                }
+            });
+
+            const tocLists = editorCanvas.querySelectorAll('.toc-page .toc-list');
+            if (tocLists.length > 0 && tocData.length > 0) {
+                tocLists.forEach((list, i) => {
+                    const chunk = tocData.slice(i * TOC_ITEMS_PER_PAGE, (i + 1) * TOC_ITEMS_PER_PAGE);
+                    renderTocItems(list, chunk, i);
+                });
+            }
+        }
+
+        function mergeContinuations(elements) {
+            const result = [];
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+
+                if (result.length > 0 && el instanceof HTMLElement) {
+                    const prev = result[result.length - 1];
+
+                    if (prev instanceof HTMLElement) {
+                        const isCard = (el.classList.contains('activity-card') && prev.classList.contains('activity-card')) ||
+                            (el.classList.contains('challenge-card') && prev.classList.contains('challenge-card'));
+
+                        if (isCard) {
+                            const label = el.querySelector('.activity-label, .challenge-label');
+                            if (label && label.textContent.includes('(Lanjutan)')) {
+                                const prevWrapper = [...prev.children].find(c => !c.classList.contains('activity-label') && !c.classList.contains('challenge-label'));
+                                const elWrapper = [...el.children].find(c => !c.classList.contains('activity-label') && !c.classList.contains('challenge-label'));
+
+                                if (prevWrapper && elWrapper) {
+                                    while (elWrapper.firstChild) {
+                                        prevWrapper.appendChild(elWrapper.firstChild);
+                                    }
+                                    continue;
+                                }
+                            }
+                        }
+
+                        const isBubble = el.classList.contains('think-bubble') && prev.classList.contains('think-bubble');
+                        if (isBubble) {
+                            const title = el.querySelector('.think-title');
+                            if (title && title.textContent.includes('(Lanjutan)')) {
+                                const prevContent = prev.querySelector('.bubble-content');
+                                const elContent = el.querySelector('.bubble-content');
+                                if (prevContent && elContent) {
+                                    while (elContent.firstChild) {
+                                        prevContent.appendChild(elContent.firstChild);
+                                    }
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                result.push(el);
+            }
+            return result;
+        }
+
+        // Distribusikan elemen-elemen HTML ke halaman-halaman (Google Docs style)
+        function repaginate(rawElements) {
+            // Step 1: Flatten compound containers agar bisa mengalir antar halaman
+            let flatElements = deepFlatten(rawElements);
+            flatElements = mergeContinuations(flatElements);
+            let preparedElements = splitOversizedKnowledgeBubbles(flatElements);
+            preparedElements = splitOversizedCards(preparedElements);
+            console.log("Repaginating", rawElements.length, "→", flatElements.length, "flattened elements →", preparedElements.length, "prepared elements");
+
+            editorCanvas.innerHTML = '';
+
+            if (preparedElements.length === 0) {
+                editorCanvas.innerHTML = '<div class="page-sheet"><div class="page-content" style="padding:40px;color:#ccc;">Tidak ada data untuk level ini.</div></div>';
+                return;
+            }
+
+            let pageNum = 1;
+            let { sheet, content } = createPageSheet(pageNum);
+            editorCanvas.appendChild(sheet);
+
+            for (let i = 0; i < preparedElements.length; i++) {
+                let el = preparedElements[i];
+                content.appendChild(el);
+
+                // Deteksi overflow REAL dari DOM (bukan manual math)
+                // scrollHeight = total tinggi konten, clientHeight = tinggi container yg terlihat
+                if (content.scrollHeight > content.clientHeight && content.children.length > 1) {
+                    // Element ini bikin overflow → pindahkan ke halaman baru
+                    content.removeChild(el);
+                    pageNum++;
+                    const next = createPageSheet(pageNum);
+                    editorCanvas.appendChild(next.sheet);
+                    content = next.content;
+                    content.appendChild(el);
+
+                    // Cek kalau element sendiri lebih besar dari halaman (rare: gambar super besar)
+                    if (content.scrollHeight > content.clientHeight && content.children.length === 1) {
+                        console.warn("Element terlalu besar untuk 1 halaman:", el.className || el.tagName);
+                    }
+                }
+            }
+
+            rebalancePages();
+            console.log("Done. Total pages:", pageNum);
+        }
+
+        // --- LOGIKA REFLOW SEPERTI GOOGLE DOCS ---
+        let repaginateTimeout;
+        let _resizeObservers = [];
+        let _isRepaginating = false; // guard agar ResizeObserver tidak loop
+
+        // Cari elemen terdekat yg sedang terlihat di viewport (untuk anchor scroll)
+        function findScrollAnchor() {
+            const currentScrollY = window.scrollY;
+            const viewportTop = currentScrollY + 90; // offset toolbar
+            const allEls = editorCanvas.querySelectorAll('.page-content > *');
+            let bestEl = null;
+            let bestDist = Infinity;
+            for (const el of allEls) {
+                const rect = el.getBoundingClientRect();
+                const elTop = rect.top + currentScrollY;
+                const dist = Math.abs(elTop - viewportTop);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestEl = el;
+                }
+            }
+            if (!bestEl) return { fallbackScroll: currentScrollY };
+            // Beri data-attribute unik untuk tracking
+            const anchorId = 'scroll-anchor-' + Date.now();
+            bestEl.setAttribute('data-scroll-anchor', anchorId);
+            const offsetInEl = viewportTop - (bestEl.getBoundingClientRect().top + currentScrollY);
+            return { anchorId, offsetInEl, fallbackScroll: currentScrollY };
+        }
+
+        // Restore scroll ke elemen anchor setelah DOM rebuild
+        function restoreScrollAnchor(anchor) {
+            if (!anchor) return;
+            let restored = false;
+            if (anchor.anchorId) {
+                const el = editorCanvas.querySelector(`[data-scroll-anchor="${anchor.anchorId}"]`);
+                if (el) {
+                    const newTop = el.getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({ top: newTop - 90 + anchor.offsetInEl, behavior: 'instant' });
+                    el.removeAttribute('data-scroll-anchor');
+                    restored = true;
+                }
+            }
+            if (!restored && anchor.fallbackScroll !== undefined) {
+                window.scrollTo({ top: anchor.fallbackScroll, behavior: 'instant' });
+            }
+        }
+
+        function triggerAutoRepaginate() {
+            if (_isRepaginating) return;
+            saveStatus.textContent = 'Menyusun ulang...';
+
+            // Simpan snapshot SEBELUM repaginate untuk undo
+            pushUndoSnapshot();
+
+            clearTimeout(repaginateTimeout);
+            repaginateTimeout = setTimeout(() => {
+                _isRepaginating = true;
+
+                // Cari anchor element sebelum DOM dihancurkan
+                const anchor = findScrollAnchor();
+
+                const allEls = [];
+                editorCanvas.querySelectorAll('.page-content > *').forEach(el => {
+                    // Salin ukuran resize manual ke clone
+                    const clone = el.cloneNode(true);
+                    if (el.style.width) clone.style.width = el.style.width;
+                    if (el.style.height) clone.style.height = el.style.height;
+                    // Juga salin dari child resizable elements
+                    el.querySelectorAll('.shot-card, .inline-image, .todo-group-image-item').forEach((resEl, idx) => {
+                        const cloneRes = clone.querySelectorAll('.shot-card, .inline-image, .todo-group-image-item')[idx];
+                        if (cloneRes && resEl) {
+                            if (resEl.style.width) cloneRes.style.width = resEl.style.width;
+                            if (resEl.style.height) cloneRes.style.height = resEl.style.height;
+                        }
+                    });
+                    allEls.push(clone);
+                });
+
+                repaginate(allEls);
+
+                // Re-attach observers SETELAH jeda — agar initial-fire tidak trigger loop
+                requestAnimationFrame(() => {
+                    attachResizeObservers();
+                    // Restore scroll ke anchor
+                    restoreScrollAnchor(anchor);
+                    _isRepaginating = false;
+                    saveToLocal(); // auto-save setelah repaginate
+                    saveStatus.textContent = 'Status: OK';
+                });
+            }, 500);
+        }
+
+        let _isCustomResizing = false;
+        let activeResizeEl = null;
+        let startX, startY, startW, startH;
+
+        document.addEventListener('mousedown', (e) => {
+            const handle = e.target.closest('.resize-handle-tr');
+            if (handle) {
+                e.preventDefault();
+                e.stopPropagation();
+                activeResizeEl = handle.closest('.shot-card, .inline-image, .todo-group-image-item');
+                if (!activeResizeEl) return;
+
+                _isCustomResizing = true;
+                const rect = activeResizeEl.getBoundingClientRect();
+                startW = rect.width;
+                startH = rect.height;
+                startX = e.clientX;
+                startY = e.clientY;
+                document.body.style.userSelect = 'none';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (_isCustomResizing && activeResizeEl) {
+                const dx = e.clientX - startX;
+                let newW = Math.max(60, startW + dx);
+                let newH = Math.max(50, startH * (newW / startW)); // Proportional
+
+                activeResizeEl.style.width = newW + 'px';
+                activeResizeEl.style.height = newH + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (_isCustomResizing) {
+                document.body.style.userSelect = '';
+                _isCustomResizing = false;
+                activeResizeEl = null;
+                if (!_isRepaginating) {
+                    triggerAutoRepaginate();
+                }
+            }
+        });
+
+        // Pasang ResizeObserver pada semua elemen resizable
+        function attachResizeObservers() {
+            _resizeObservers.forEach(obs => obs.disconnect());
+            _resizeObservers = [];
+
+            const resizables = editorCanvas.querySelectorAll('.shot-card, .inline-image, .todo-group-image-item');
+            resizables.forEach(el => {
+                if (!el.querySelector('.resize-handle-tr')) {
+                    const handle = document.createElement('div');
+                    handle.className = 'resize-handle-tr';
+                    handle.contentEditable = 'false';
+                    el.appendChild(handle);
+                }
+
+                let isFirst = true;
+                const obs = new ResizeObserver((entries) => {
+                    if (isFirst) {
+                        isFirst = false;
+                        return;
+                    }
+                    if (_isRepaginating || _isCustomResizing) return;
+                    triggerAutoRepaginate();
+                });
+                obs.observe(el);
+                _resizeObservers.push(obs);
+            });
+        }
+
+        // Fallback: mouseup di canvas → trigger reflow jika user baru resize gambar
+        editorCanvas.addEventListener('mouseup', (e) => {
+            const target = e.target.closest('.shot-card, .inline-image, .todo-group-image-item');
+            if (target && !_isRepaginating) {
+                triggerAutoRepaginate();
+            }
+        });
+
+        function onEdit() {
+            saveStatus.textContent = 'Mengetik...';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveToLocal();
+                triggerAutoRepaginate();
+            }, 1500);
+        }
+
+        const CACHE_VERSION = 3; // Increment ini kalau ada perubahan format data
+
+        function saveToLocal() {
+            if (!currentLoadedParams) return;
+            // Capture inline resize styles ke data-attributes agar persist di outerHTML
+            editorCanvas.querySelectorAll('.shot-card, .inline-image, .todo-group-image-item').forEach(el => {
+                if (el.style.width) el.setAttribute('data-saved-w', el.style.width);
+                if (el.style.height) el.setAttribute('data-saved-h', el.style.height);
+            });
+            const flat = [...editorCanvas.querySelectorAll('.page-content > *')].map(el => el.outerHTML).join('<!--ELBREAK-->');
+            try {
+                localStorage.setItem('book_editor_' + currentLoadedParams, flat);
+                localStorage.setItem('book_editor_last', currentLoadedParams);
+                localStorage.setItem('book_editor_version', String(CACHE_VERSION));
+                localStorage.setItem('book_editor_scroll', window.scrollY);
+                saveStatus.textContent = 'Disimpan ✔';
+            } catch (e) {
+                console.warn('localStorage full:', e);
+                saveStatus.textContent = 'Gagal simpan (storage penuh)';
+            }
+        }
+
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('book_editor_scroll', window.scrollY);
+        });
+
+        function loadFromLocal() {
+            // Cek versi cache — invalidate jika versi lama
+            const savedVersion = parseInt(localStorage.getItem('book_editor_version') || '0');
+            if (savedVersion < CACHE_VERSION) {
+                console.log(`Cache version ${savedVersion} < ${CACHE_VERSION}, invalidating old data`);
+                // Hapus semua cache lama
+                const keys = Object.keys(localStorage).filter(k => k.startsWith('book_editor_'));
+                keys.forEach(k => localStorage.removeItem(k));
+                return false;
+            }
+
+            // Coba restore layout terakhir saat page load
+            const lastParams = localStorage.getItem('book_editor_last');
+            if (!lastParams) return false;
+
+            const saved = localStorage.getItem('book_editor_' + lastParams);
+            if (!saved) return false;
+
+            // Parse params: course_level
+            const parts = lastParams.split('_');
+            if (parts.length < 2) return false;
+            const course = parts[0];
+            const level = parts.slice(1).join('_');
+
+            // Set dropdown values
+            document.getElementById('course-select').value = course;
+            document.getElementById('level-input').value = level;
+            currentLoadedParams = lastParams;
+
+            // Rebuild elements from saved HTML
+            const tempDiv = document.createElement('div');
+            const chunks = saved.split('<!--ELBREAK-->');
+            const flatElements = [];
+            chunks.forEach(html => {
+                if (!html.trim()) return;
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html.trim();
+                const child = wrapper.firstElementChild;
+                if (child) {
+                    // Restore inline resize styles from data attributes
+                    child.querySelectorAll('[data-saved-w]').forEach(el => {
+                        el.style.width = el.getAttribute('data-saved-w');
+                        el.style.height = el.getAttribute('data-saved-h') || '';
+                    });
+                    if (child.hasAttribute('data-saved-w')) {
+                        child.style.width = child.getAttribute('data-saved-w');
+                        child.style.height = child.getAttribute('data-saved-h') || '';
+                    }
+                    flatElements.push(child);
+                }
+            });
+
+            if (flatElements.length === 0) return false;
+
+            repaginate(flatElements);
+            attachResizeObservers();
+            saveStatus.textContent = `Layout ${course} Level ${level} di-restore ✔`;
+            console.log(`Restored ${flatElements.length} elements from localStorage (${lastParams})`);
+
+            setTimeout(() => {
+                const savedScroll = localStorage.getItem('book_editor_scroll');
+                if (savedScroll) {
+                    window.scrollTo({ top: parseInt(savedScroll), behavior: 'instant' });
+                }
+            }, 100);
+
+            return true;
+        }
+
+        function manualRepaginate() {
+            pushUndoSnapshot();
+            _isRepaginating = true;
+            const anchor = findScrollAnchor();
+            const allEls = [...editorCanvas.querySelectorAll('.page-content > *')].map(el => el.cloneNode(true));
+            if (allEls.length === 0) { _isRepaginating = false; return; }
+            repaginate(allEls);
+            requestAnimationFrame(() => {
+                attachResizeObservers();
+                restoreScrollAnchor(anchor);
+                _isRepaginating = false;
+                saveToLocal(); // persist setelah manual repaginate
+            });
+            saveStatus.textContent = '⟳ Disusun ulang ✔';
+        }
+
+        function resetToDefault() {
+            if (!currentLoadedParams) {
+                alert("Pilih Course dan Level terlebih dahulu.");
+                return;
+            }
+            if (confirm("Apakah kamu yakin ingin mengulangi semua ke format awal? Semua perubahan ukuran dan teks yang belum diexport akan HILANG.")) {
+                localStorage.removeItem('book_editor_' + currentLoadedParams);
+                _undoStack = [];
+                updateUndoButton();
+                fetchBook();
+            }
+        }
+
+        function proxyImageUrl(html) {
+            if (!html) return html;
+            return html.replace(/https:\/\/cdn-web-2\.ruangguru\.com\/[^"'\s>]+/g, (match) => {
+                return `/media-proxy?src=${encodeURIComponent(match)}`;
+            });
+        }
+
+        function normalizeLevelLabel(value) {
+            return String(value || '')
+                .replace(/scratch/ig, '')
+                .replace(/roblox/ig, '')
+                .replace(/studio/ig, '')
+                .replace(/creator/ig, '')
+                .replace(/play/ig, '')
+                .replace(/level/ig, '')
+                .replace(/[_-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        async function loadLevelOptionsForCourse(preferredLevel = '') {
+            const course = document.getElementById('course-select').value;
+            const levelSelect = document.getElementById('level-input');
+            if (!levelSelect) return;
+
+            try {
+                if (!_availableLevelsByCourse[course]) {
+                    const res = await fetch(`/api/modules?course=${course}`);
+                    const data = await res.json();
+                    const modules = Array.isArray(data.modules) ? data.modules : [];
+                    const uniqueLevels = [...new Set(modules.map(mod => String(mod.level || '').trim()).filter(Boolean))];
+                    _availableLevelsByCourse[course] = uniqueLevels;
+                }
+
+                const levels = _availableLevelsByCourse[course];
+                if (!levels || levels.length === 0) {
+                    return;
+                }
+
+                levelSelect.innerHTML = levels.map(level => {
+                    const label = normalizeLevelLabel(level) || level;
+                    return `<option value="${level}">Level ${label}</option>`;
+                }).join('');
+
+                const matchedPreferred = levels.find(level =>
+                    String(level).trim() === String(preferredLevel).trim() ||
+                    normalizeLevelLabel(level) === normalizeLevelLabel(preferredLevel)
+                );
+
+                levelSelect.value = matchedPreferred || levels[0];
+            } catch (err) {
+                console.warn('Gagal memuat level options', err);
+            }
+        }
+
+        function proxiedAsset(url) {
+            return `/media-proxy?src=${encodeURIComponent(url)}`;
+        }
+
+        const ASSET_LOGO_MAIN = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/545c0426-169c-406f-8775-93afcacef50a.png');
+        const ASSET_LOGO_RG = proxiedAsset('https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/94907efd-30d9-49af-8e62-aa4aee51ad33.png');
+        let ASSET_COVER_HERO_MAIN = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/8f2b314c-7e90-4757-bfb6-fbb7d902e746.png');
+        let ASSET_COVER_HERO_SIDE = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/5bddd17b-2d0a-48e3-860a-ce758e88a191.png');
+        const ASSET_OBJ = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/f1e6a782-eb0a-4f52-babf-da34af3b3b16.png');
+        const ASSET_MATERI = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/d82da8ce-8171-408a-975e-1c451118d6ab.png');
+        const ASSET_MUST_DO = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/a5a9900d-914f-4f2e-b939-47b3f2b176ae.png');
+        const ASSET_SHOULD_ASPIRE = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/ed137362-9e14-4ac2-8924-d08bc69683c5.png');
+        const ASSET_QUIZ = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/f5e04d5d-9eb8-4001-a3e8-085f5d3b191c.png');
+        const ASSET_KAMUS = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/003f7bd5-b37a-4b86-a37a-4e49b60d1d0f.png');
+        const ASSET_FYK = proxiedAsset('https://cdn-web-2.ruangguru.com/landing-pages/assets/e09e7335-b368-4a27-9081-37bb8021ec32.png');
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function buildCoverPageHtml(modules, courseTitle, selectedLevel) {
+            const cleanLevel = escapeHtml(String(selectedLevel || '').replace('Scratch Level ', '').replace('Level ', '') || '-');
+            return `
+                <div class="cover-page" data-page-role="cover" style="min-height:21.7cm;background:
+                    radial-gradient(circle at 15% 18%, rgba(255, 247, 214, 0.95) 0%, rgba(255, 247, 214, 0) 33%),
+                    radial-gradient(circle at 88% 80%, rgba(217, 243, 255, 0.95) 0%, rgba(217, 243, 255, 0) 32%),
+                    linear-gradient(180deg, #fffdf3 0%, #ffffff 100%);
+                    border:4px solid #E2E8F0;border-radius:18px;padding:20px 22px 28px 22px;box-sizing:border-box;position:relative;overflow:hidden;">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <img src="${ASSET_LOGO_MAIN}" style="height:42px;">
+                        <span style="display:inline-block;width:2px;height:32px;background:#CBD5E0;border-radius:2px;"></span>
+                        <img src="${ASSET_LOGO_RG}" style="height:28px;">
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:22px;">
+                        <div style="flex:1;">
+                            <div style="display:inline-block;background:#F9C846;color:#2A4365;border:3px solid #2A4365;border-radius:999px;padding:8px 18px;font-family:var(--font-display);font-size:12pt;font-weight:800;box-shadow:4px 4px 0 #F07D49;">
+                                ${modules.length} modul digabung • Level ${cleanLevel}
+                            </div>
+                            <h1 style="margin:18px 0 10px 0;font-family:var(--font-display);font-size:28pt;line-height:1.05;color:#2A4365;">${escapeHtml(courseTitle)}</h1>
+                            <p style="margin:0;color:#475569;font-size:12pt;line-height:1.6;font-weight:700;">Buku aktivitas siap pakai untuk export Google Slides dengan susunan halaman yang mengikuti versi HTML final.</p>
+                        </div>
+                        <div style="width:38%;min-width:220px;position:relative;height:280px;">
+                            <div style="position:absolute;inset:0;background:#D9F3FF;border-radius:28px;transform:rotate(-4deg);"></div>
+                            <img src="${ASSET_COVER_HERO_MAIN}" style="position:absolute;left:8%;bottom:0;width:72%;height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,0.18));">
+                            <img src="${ASSET_COVER_HERO_SIDE}" style="position:absolute;right:-2%;bottom:10px;width:40%;height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,0.16));">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildGuidePagesHtml(modulesCount, levelLabel) {
+            // Color palette per card: [accentBg, accentText, badgeBg, iconEmoji]
+            const palette = [
+                { accent: '#EBF4FF', border: '#93C5FD', badge: '#2563EB', marker: '1' },
+                { accent: '#F0FDF4', border: '#86EFAC', badge: '#16A34A', marker: '2' },
+                { accent: '#FFF7ED', border: '#FCA5A1', badge: '#EA580C', marker: '3' },
+                { accent: '#FAF5FF', border: '#D8B4FE', badge: '#7C3AED', marker: '4' },
+                { accent: '#FFF1F2', border: '#FDA4AF', badge: '#E11D48', marker: '5' },
+                { accent: '#ECFDF5', border: '#6EE7B7', badge: '#059669', marker: '6' },
+                { accent: '#FFFBEB', border: '#FDE68A', badge: '#D97706', marker: '7' },
+            ];
+            const items = [
+                { img: ASSET_OBJ,         title: 'Tujuan Belajar',       tag: 'Pembuka',   desc: 'Bagian ini menjelaskan hal utama yang akan dipelajari pada sesi tersebut.' },
+                { img: ASSET_MATERI,      title: 'Materi dan Langkah',    tag: 'Materi',    desc: 'Bagian ini berisi penjelasan, urutan kerja, dan gambar panduan yang perlu diikuti.' },
+                { img: ASSET_KAMUS,       title: 'Kamus Istilah',         tag: 'Istilah',   desc: 'Bagian ini membantu murid memahami kata-kata penting dalam kegiatan coding.' },
+                { img: ASSET_FYK,         title: 'Pengetahuan Tambahan',  tag: 'Wawasan',   desc: 'Bagian ini berisi informasi singkat agar murid lebih memahami materi.' },
+                { img: ASSET_MUST_DO,     title: 'Tugas Utama',           tag: 'Wajib',     desc: 'Bagian ini berisi tugas yang perlu diselesaikan oleh murid pada setiap sesi.' },
+                { img: ASSET_SHOULD_ASPIRE, title: 'Tugas Pengayaan',     tag: 'Tantangan', desc: 'Bagian ini berisi latihan tambahan untuk murid yang sudah siap mencoba lebih jauh.' },
+                { img: ASSET_QUIZ,        title: 'Kuis Singkat',          tag: 'Evaluasi',  desc: 'Bagian ini berisi pertanyaan singkat untuk mengecek pemahaman sebelum lanjut.' },
+            ];
+
+            const cardHtml = items.map((item, index) => {
+                const p = palette[index];
+                return `
+                <div style="grid-column:${index === items.length - 1 ? '1 / -1' : 'auto'};background:white;border-radius:12px;border:2px solid ${p.border};overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;min-height:0;">
+                    <!-- Top: image preview -->
+                    <div style="background:${p.accent};padding:8px 12px 0 12px;display:flex;gap:8px;align-items:flex-end;min-height:0;">
+                        <div style="flex:1;min-width:0;">
+                            <img src="${item.img}" style="width:100%;height:68px;object-fit:cover;object-position:top;border-radius:7px 7px 0 0;display:block;">
+                        </div>
+                    </div>
+                    <!-- Bottom: info -->
+                    <div style="padding:11px 13px 13px 13px;flex:1;display:flex;flex-direction:column;gap:5px;justify-content:flex-start;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <div style="width:23px;height:23px;border-radius:50%;background:${p.badge};color:white;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:10pt;font-weight:900;flex-shrink:0;">${p.marker}</div>
+                            <div style="font-family:var(--font-display);font-size:10.8pt;font-weight:900;color:#1E293B;line-height:1.08;">${item.title}</div>
+                        </div>
+                        <div style="display:inline-block;background:${p.accent};border:1.5px solid ${p.border};border-radius:6px;padding:1px 7px;font-size:7pt;font-weight:800;color:${p.badge};text-transform:uppercase;letter-spacing:0;width:fit-content;">${item.tag}</div>
+                        <div style="font-size:8.8pt;line-height:1.35;color:#475569;font-weight:650;margin-top:1px;">${item.desc}</div>
+                    </div>
+                </div>`;
+            });
+
+            const headerBanner = `
+                <div style="background:linear-gradient(135deg,#2A4365 0%,#1e3a5f 100%);border-radius:14px;padding:12px 18px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:10pt;font-weight:900;color:white;flex-shrink:0;">INFO</div>
+                    <div style="flex:1;">
+                        <div style="font-family:var(--font-display);font-size:16.5pt;font-weight:900;color:white;line-height:1.08;">Petunjuk Penggunaan Buku</div>
+                        <div style="font-size:8.8pt;color:rgba(255,255,255,0.78);font-weight:600;margin-top:2px;line-height:1.35;">Buku ini berisi <strong style="color:#F9C846;">${modulesCount} modul</strong>${levelLabel ? ` untuk Level <strong style="color:#F9C846;">${escapeHtml(levelLabel)}</strong>` : ''}. Setiap halaman disusun agar mudah diikuti saat belajar.</div>
+                    </div>
+                    <!-- Rainbow stripe -->
+                    <div style="width:6px;height:40px;border-radius:3px;background:linear-gradient(180deg,#F07D49,#F9C846,#4CAAE4);flex-shrink:0;"></div>
+                </div>
+            `;
+
+            const legendRow = `
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:10px;flex-wrap:wrap;">
+                    <span style="font-family:var(--font-display);font-size:8.3pt;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0;">Komponen dalam modul:</span>
+                    ${palette.map((p,i) => i < items.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:${p.accent};border:1.5px solid ${p.border};border-radius:6px;padding:1px 7px;font-size:7.3pt;font-weight:800;color:${p.badge};">${items[i].tag}</span>` : '').join('')}
+                </div>
+            `;
+
+            return `
+                <div class="book-guide-page" data-page-role="guide" style="height:21.7cm;max-height:21.7cm;border:2px solid #E2E8F0;border-radius:18px;padding:12px 16px;background:linear-gradient(180deg,#F8FAFC 0%,#ffffff 100%);box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;">
+                    ${headerBanner}
+                    ${legendRow}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,minmax(0,1fr));gap:8px;flex:1;min-height:0;">
+                        ${cardHtml.join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildTocPageHtml(modules, courseTitle) {
+            const pagesCount = Math.max(1, Math.ceil(modules.length / TOC_ITEMS_PER_PAGE));
+            let html = '';
+            for (let i = 0; i < pagesCount; i++) {
+                html += `
+                <div class="toc-page" data-page-role="toc" data-toc-index="${i}" style="min-height:21.7cm;border:2px solid #E2E8F0;border-radius:18px;padding:24px 30px 28px 30px;background:#ffffff;box-sizing:border-box;">
+                    <h2 style="margin:0;text-align:center;font-family:var(--font-display);font-size:${i === 0 ? '22pt' : '19pt'};color:#2A4365;line-height:1.05;">${i === 0 ? 'Daftar Isi' : 'Daftar Isi Lanjutan'}</h2>
+                    <div style="margin:6px 0 18px 0;text-align:center;font-size:9pt;font-weight:700;color:#64748B;">${escapeHtml(courseTitle)}</div>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #CBD5E1;padding-bottom:6px;margin-bottom:4px;">
+                        <div style="font-size:8.2pt;font-weight:900;color:#64748B;text-transform:uppercase;">Modul</div>
+                        <div style="font-size:8.2pt;font-weight:900;color:#64748B;text-transform:uppercase;">Halaman</div>
+                    </div>
+                    <div class="toc-list" style="display:grid;grid-template-columns:1fr;">
+                        <!-- Diisi otomatis oleh rebalancePages -->
+                    </div>
+                </div>
+                `;
+            }
+            return html;
+        }
+
+        function getExportCompressionProfile(totalPages) {
+            if (totalPages >= 120) {
+                return { scale: 1.0, quality: 0.72, maxWidth: 1680 };
+            }
+            if (totalPages >= 90) {
+                return { scale: 1.06, quality: 0.76, maxWidth: 1780 };
+            }
+            if (totalPages >= 60) {
+                return { scale: 1.14, quality: 0.82, maxWidth: 1880 };
+            }
+            return { scale: 1.22, quality: 0.86, maxWidth: 2048 };
+        }
+
+        function canvasToExportImage(canvas, totalPages, options = {}) {
+            const profile = getExportCompressionProfile(totalPages);
+            const maxWidth = options.forceHighDetail ? Math.max(profile.maxWidth, 2200) : profile.maxWidth;
+            const needsResize = canvas.width > maxWidth;
+            const usePng = !!options.forcePng;
+            let finalCanvas = canvas;
+
+            if (needsResize) {
+                const ratio = maxWidth / canvas.width;
+                const resized = document.createElement('canvas');
+                resized.width = Math.round(canvas.width * ratio);
+                resized.height = Math.round(canvas.height * ratio);
+                const ctx = resized.getContext('2d', { alpha: usePng });
+                if (!usePng) {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, resized.width, resized.height);
+                }
+                ctx.drawImage(canvas, 0, 0, resized.width, resized.height);
+                finalCanvas = resized;
+            }
+
+            return {
+                profile,
+                imageBase64: usePng
+                    ? finalCanvas.toDataURL('image/png')
+                    : finalCanvas.toDataURL('image/jpeg', options.forceHighDetail ? Math.max(profile.quality, 0.88) : profile.quality)
+            };
+        }
+
+        function cropCanvasByRect(canvas, rectPx) {
+            const cropX = Math.max(0, Math.round(rectPx.x));
+            const cropY = Math.max(0, Math.round(rectPx.y));
+            const cropWidth = Math.max(1, Math.round(rectPx.width));
+            const cropHeight = Math.max(1, Math.round(rectPx.height));
+
+            const cropped = document.createElement('canvas');
+            cropped.width = cropWidth;
+            cropped.height = cropHeight;
+            const ctx = cropped.getContext('2d');
+            ctx.clearRect(0, 0, cropWidth, cropHeight);
+            ctx.drawImage(
+                canvas,
+                cropX, cropY, cropWidth, cropHeight,
+                0, 0, cropWidth, cropHeight
+            );
+            return cropped;
+        }
+
+        function getPageCaptureSpec(pageContent, role) {
+            // Export harus sama persis dengan halaman editor. Jangan crop isi:
+            // screenshot penuh menjaga posisi Y, padding, dan jarak antar elemen tetap identik.
+            return { captureRatio: { x: 0, y: 0, width: 1, height: 1 } };
+        }
+
+        async function fetchBook() {
+            const course = document.getElementById('course-select').value;
+            const level = document.getElementById('level-input').value.trim();
+
+            if (!level) {
+                alert("Silakan masukkan Level!");
+                return;
+            }
+
+            currentLoadedParams = `${course}_${level}`;
+            // Hapus cache lama supaya data fresh dari server
+            localStorage.removeItem('book_editor_' + currentLoadedParams);
+            saveStatus.textContent = 'Memuat Level ' + level + '...';
+            editorCanvas.innerHTML = '<div class="page-sheet"><div class="page-content" style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-family:var(--font-display);font-size:18pt;font-weight:800;">Memuat Data...</div></div>';
+
+            try {
+                const res = await fetch(`/api/book?course=${course}&level=${level}`);
+                const data = await res.json();
+
+                const flatElements = [];
+                const frontMatter = document.createElement('div');
+                const courseTitle = data.title || (course === 'scratch' ? 'Scratch Creator Play' : 'Roblox Studio Play');
+                frontMatter.innerHTML = `
+                    ${buildCoverPageHtml(data.modules || [], courseTitle, level)}
+                    ${buildGuidePagesHtml((data.modules || []).length, level)}
+                    ${buildTocPageHtml(data.modules || [], courseTitle)}
+                `;
+                [...frontMatter.children].forEach(child => flatElements.push(child));
+
+                data.modules.forEach((mod, index) => {
+                    const levelLabel = formatLevelText(mod.level || level);
+                    const sessionLabel = formatSessionText(mod.session);
+                    const topicLabel = String(mod.topic || '').trim();
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'session-divider';
+                    headerDiv.dataset.moduleNo = String(index + 1);
+                    headerDiv.dataset.levelLabel = levelLabel;
+                    headerDiv.dataset.sessionLabel = sessionLabel;
+                    headerDiv.dataset.topic = topicLabel;
+                    headerDiv.innerHTML = `
+                        <div class="scd-hero">
+                            <div class="scd-stripe"></div>
+                            <div class="scd-body">
+                                <div class="scd-body-left">
+                                    <div class="scd-pill"><span class="scd-pill-dot"></span>${escapeHtml(levelLabel)} &nbsp;•&nbsp; ${escapeHtml(sessionLabel)}</div>
+                                    <h2 class="scd-course-title">${data.title}</h2>
+                                    <div class="scd-topic-row">
+                                        <span class="scd-topic-label">Topik:</span>
+                                        <span class="scd-topic">${escapeHtml(topicLabel || '—')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    flatElements.push(headerDiv);
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = proxyImageUrl(`
+                        ${mod.objectives_html}
+                        ${mod.materials_html}
+                        ${mod.must_do_html ? `<div class="activity-card"><div class="activity-label">MUST DO</div>${mod.must_do_html}</div>` : ''}
+                        ${mod.should_do_html ? `<div class="challenge-card"><div class="challenge-label">SHOULD DO</div>${mod.should_do_html}</div>` : ''}
+                        ${mod.aspire_to_do_html ? `<div class="challenge-card"><div class="challenge-label">ASPIRE TO DO</div>${mod.aspire_to_do_html}</div>` : ''}
+                        ${mod.quiz_html ? `<div class="quiz-wrapper">${mod.quiz_html}</div>` : ''}
+                    `);
+
+                    [...tempDiv.children].forEach(child => flatElements.push(child));
+                });
+
+                repaginate(flatElements);
+
+                const imgs = editorCanvas.querySelectorAll('img');
+                let loaded = 0;
+                if (imgs.length > 0) {
+                    imgs.forEach(img => {
+                        img.onload = () => {
+                            loaded++;
+                            if (loaded === imgs.length) {
+                                manualRepaginate();
+                            }
+                        };
+                        if (img.complete) img.onload();
+                    });
+                }
+
+                // Pasang auto-resize observer untuk SEMUA elemen resizable (gambar)
+                attachResizeObservers();
+
+                saveStatus.textContent = 'Level ' + level + ' Dimuat ✔';
+
+            } catch (e) {
+                console.error(e);
+                saveStatus.textContent = 'Error!';
+            }
+        }
+
+        // --- PRINT TO PDF PIPELINE (NATIVE BROWSER PRINT) ---
+        async function printToPdf() {
+            if (_isRepaginating) {
+                alert("Tunggu sampai proses susun ulang selesai!");
+                return;
+            }
+            
+            // Jeda sedikit untuk memastikan layout DOM benar-benar stabil
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+
+
+        // --- AUTO-RESTORE & EMERGENCY SAVE ---
+        // Saat page load, coba restore layout terakhir
+        window.addEventListener('DOMContentLoaded', async () => {
+            const courseSelect = document.getElementById('course-select');
+            if (courseSelect) {
+                courseSelect.addEventListener('change', () => {
+                    loadLevelOptionsForCourse();
+                });
+            }
+            await loadLevelOptionsForCourse();
+            loadFromLocal();
+        });
+
+        // Emergency save sebelum tab ditutup / refresh
+        window.addEventListener('beforeunload', () => {
+            saveToLocal();
+        });
+    </script>
+</body>
+
+</html>

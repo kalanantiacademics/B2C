@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="editor" contenteditable="true" style="border:1px solid black; padding: 20px; margin: 20px;">
+  <p>Select this text.</p>
+</div>
+<div id="toolbar" style="background: #eee; padding: 10px;">
+  <button id="btn" onclick="document.execCommand('bold', false, null)">Bold</button>
+</div>
+<script>
+document.getElementById('toolbar').addEventListener('pointerdown', (e) => {
+    // If we don't preventDefault here, does Safari shift focus?
+    console.log('pointerdown', window.getSelection().rangeCount);
+}, true);
+document.getElementById('toolbar').addEventListener('mousedown', (e) => {
+    console.log('mousedown', window.getSelection().rangeCount);
+    if (e.target.closest('button')) e.preventDefault();
+});
+</script>
+</body>
+</html>

@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Detail - Kalananti SCL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         (() => {
@@ -339,7 +340,7 @@
 </main>
 
 <!-- ── CUSTOM ALERT ── -->
-<div id="custom-alert" class="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+<div id="custom-alert" class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAlert()"></div>
     <div id="custom-alert-box" class="border border-[#8CBEFF]/20 p-8 rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] scale-95 transition-transform duration-300 relative z-10 max-w-sm w-[90%] text-center flex flex-col items-center" style="background: var(--card);">
         <div id="alert-icon" class="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mb-6 border bg-blue-500/20 border-blue-500/30 shadow-inner">ℹ️</div>
@@ -461,6 +462,39 @@
                             <button onclick="setPhaseRating('aspire', 5)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
                         </div>
                     </div>
+                </div>
+
+                
+                <!-- Dynamic Rubric Container (Session 4 & 8) -->
+                
+                <!-- Dynamic Rubric Container (Session 4 & 8) -->
+                <div id="appr-rubric-container" class="hidden phase-group mt-4 bg-[#0F172A] rounded-2xl border border-[#F9C013]/30 p-5 text-center">
+                    <h4 class="text-sm font-black text-white mb-2">Penilaian Observasi (Sesi <span id="appr-rubric-sess-num">X</span>)</h4>
+                    <p class="text-xs text-white/60 mb-4">Silahkan gunakan Pop-Up Rubrik Panduan untuk menilai indikator aktivitas dan engagement siswa.</p>
+                    
+                    <button type="button" onclick="openRubricModal()" class="px-5 py-3 rounded-xl font-black bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-all cursor-pointer inline-flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        Buka Rubrik & Nilai
+                    </button>
+                    
+                    <!-- Hidden inputs to store values -->
+                    <input type="hidden" id="hidden-obs-aktivitas" value="">
+                    <input type="hidden" id="hidden-obs-engagement" value="">
+                    <input type="hidden" id="hidden-obs-notes" value="">
+                    
+                    <div id="rubric-status-badge" class="mt-4 hidden items-center justify-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 py-2 rounded-lg border border-emerald-500/20">
+                        ✅ Nilai Rubrik Tersimpan Sementara
+                    </div>
+                </div>
+
+
+                <!-- Session 12 Confirmation -->
+                <div id="appr-confirmation-group" class="hidden phase-group mt-4">
+                    <h4 class="text-xs font-black uppercase tracking-widest text-[#F9C013] mb-3">Konfirmasi Project (Sesi 12)</h4>
+                    <label class="flex items-center gap-3 text-sm cursor-pointer p-3 border border-white/10 rounded-xl hover:bg-white/5">
+                        <input type="checkbox" id="appr-project-collected" class="w-5 h-5 rounded border-white/20 bg-transparent text-[#F9C013]">
+                        <span style="color: var(--text)">Project dikumpulkan dan disimpan di sheet</span>
+                    </label>
                 </div>
 
                 <!-- Quiz Stars -->
@@ -589,6 +623,28 @@ const CLASS_LINK = urlParams.get('link') || '';
 
 document.getElementById('nav-class-code').textContent = CLASS_CODE;
 document.getElementById('nav-class-prog').textContent = CLASS_PROG;
+
+
+// ── Rubric Data ─────────────────────────────────────────────────────────────
+window.rubricData = null;
+async function fetchRubrics() {
+    if (window.rubricData) return;
+    try {
+        const res = await fetch(`${WEB_APP_URL}?action=getRubrics`);
+        const json = await res.json();
+        if(json.success) {
+            window.rubricData = json.rubrics;
+            console.log('[Rubrics] Loaded:', window.rubricData.length);
+        } else {
+            console.error('[Rubrics] Server error:', json.message);
+        }
+    } catch(e) {
+        console.error('[Rubrics] Failed to load:', e);
+    }
+}
+// Call fetch rubrics early
+fetchRubrics();
+
 
 // Today's date
 const DAYS   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -734,9 +790,39 @@ function renderAbsensi() {
     }
 
     container.innerHTML = students.map((s, i) => {
-        const nextSessAbs   = s.attendanceSession + 1;
-        const isMaxedAbs    = s.attendanceSession >= MAX_SESSIONS;
-        const nextSessLabel = isMaxedAbs ? 'Selesai 12/12' : `Sesi ${nextSessAbs} dari ${MAX_SESSIONS}`;
+        // Budget logic (max 15 hours)
+        const budgetUsed = s.attendanceSession + (s.skipCount || 0);
+        const isMaxedAbs = budgetUsed >= 15 || s.attendanceSession >= MAX_SESSIONS;
+        
+        let nextSessLabel = '';
+        let nextSessions = [];
+        let meetingIndex = 0;
+        
+        if (isMaxedAbs) {
+            nextSessLabel = 'Waktu/Sesi Habis';
+        } else {
+            // Find the next meeting
+            if (s.meetings && s.meetings.length > 0) {
+                const nextSess = s.attendanceSession + 1;
+                for (let m = 0; m < s.meetings.length; m++) {
+                    if (s.meetings[m].includes(nextSess)) {
+                        nextSessions = s.meetings[m];
+                        meetingIndex = m + 1;
+                        break;
+                    }
+                }
+            } else {
+                nextSessions = [s.attendanceSession + 1];
+            }
+            
+            s.sessionsToMark = nextSessions; // store for saveAbsensi
+            
+            if (nextSessions.length > 1) {
+                nextSessLabel = `(Sesi ${nextSessions[0]}-${nextSessions[nextSessions.length-1]})`;
+            } else {
+                nextSessLabel = `Sesi ${nextSessions[0]}`;
+            }
+        }
         
         let targetSess = s.materialSession;
         let isReady    = false;
@@ -799,7 +885,12 @@ function renderAbsensi() {
                     </button>
 
                     <div class="flex items-center gap-3 border-l pl-5" style="border-color: var(--card-b)">
-                        <div class="text-right">
+                        <div class="flex flex-col items-center gap-1 mr-2">
+                            <p class="text-[8px] font-black uppercase tracking-tighter opacity-30" style="color: var(--text)">Tdk Hadir</p>
+                            <span class="text-[10px] font-black px-2 py-0.5 rounded-md ${s.skipCount > 0 ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}">${s.skipCount || 0} Sesi</span>
+                        </div>
+                        
+                        <div class="text-right ml-2">
                             <p class="text-[10px] font-black uppercase tracking-widest leading-tight" style="color: var(--text); opacity: 0.3;">Hadir Ke-</p>
                             <p class="text-sm font-black" style="color: var(--text)">${isMaxedAbs ? '—' : nextSessLabel}</p>
                         </div>
@@ -872,8 +963,17 @@ function renderProgress() {
             <td><span class="font-bold text-sm" style="color: var(--text); opacity: 0.6;">${s.level || '-'}</span></td>
             <td><span class="sess-pill">Sesi ${s.materialSession}/${MAX_SESSIONS}</span></td>
             <td>
+                <div class="flex items-center gap-2" title="${pct}% Selesai">
+                    <div class="w-16 h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-400 rounded-full transition-all" style="width: ${pct}%"></div>
+                    </div>
+                    <span class="text-[10px] font-black" style="color: var(--text); opacity: 0.5;">${pct}%</span>
+                </div>
+            </td>
+            <td>
                 <div class="flex items-center gap-2">
                     ${hasLink ? `<button onclick="event.stopPropagation(); openApprovalModal(${idx}, ${targetSess})" class="text-[11px] font-black px-3 py-1.5 rounded-lg bg-k-yellow text-[#5A3F00] hover:-translate-y-0.5 transition-all shadow-md cursor-pointer whitespace-nowrap">🌟 Nilai S${targetSess}</button>` : `<span class="text-[10px] italic" style="color: var(--text); opacity: 0.4;">Belum ada link</span>`}
+                    ${targetSess !== 12 ? `<button onclick="event.stopPropagation(); openApprovalModal(${idx}, 12)" class="text-[11px] font-black px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all border border-emerald-500/20 cursor-pointer whitespace-nowrap shadow-sm hover:-translate-y-0.5" title="Akses Langsung Final Project Sesi 12">🏆 S12</button>` : ''}
                     <button onclick="event.stopPropagation(); openHistoryModal(${idx})" class="p-2 rounded-lg transition-colors border cursor-pointer hover:bg-k-blue/10 shrink-0" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" title="Lihat Riwayat">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
@@ -1072,7 +1172,7 @@ function openHistoryModal(idx) {
                     <span>⭐</span> ${totalS}
                     
                     <!-- Custom Tooltip (Aligned to right to avoid horizontal cutoff) -->
-                    <div class="absolute top-full right-0 mt-3 w-max min-w-[150px] pointer-events-none opacity-0 group-hover/badge:opacity-100 transition-all duration-300 z-[60] flex flex-col p-4 border rounded-2xl shadow-2xl origin-top-right" style="background: var(--card); border-color: var(--card-b); backdrop-filter: blur(15px);">
+                    <div class="absolute top-full right-0 mt-3 w-max min-w-[150px] pointer-events-none opacity-0 group-hover/badge:opacity-100 transition-all duration-300 z-[110] flex flex-col p-4 border rounded-2xl shadow-2xl origin-top-right" style="background: var(--card); border-color: var(--card-b); backdrop-filter: blur(15px);">
                         <div class="text-[10px] font-black uppercase tracking-widest text-k-yellow mb-3 pb-2 border-b text-center" style="border-color: var(--card-b)">Score Breakdown</div>
 
                         ${hasDetailedMission ? `
@@ -1177,7 +1277,7 @@ let currentApprSession = -1;
 let phaseRatings = { must: 0, should: 0, aspire: 0 };
 let bonusStarsStored = 0;
 
-function openApprovalModal(idx, sNum) {
+async function openApprovalModal(idx, sNum) {
     currentApprIndex = idx;
     currentApprSession = sNum;
     const s = students[idx];
@@ -1191,14 +1291,58 @@ function openApprovalModal(idx, sNum) {
     bonusStarsStored = 0;
     
     const sessInfo = (s.sessionData && s.sessionData[sNum]) || { quiz: '0', quizStars: 0 };
+
+    if (sessInfo.stars) {
+        const lines = sessInfo.stars.split('\n');
+        lines.forEach(line => {
+            const match = line.match(/^(\d+)\s*Star/i);
+            if (match) {
+                const val = parseInt(match[1], 10);
+                if (line.toLowerCase().includes('must')) phaseRatings.must = val;
+                else if (line.toLowerCase().includes('should')) phaseRatings.should = val;
+                else if (line.toLowerCase().includes('aspire')) phaseRatings.aspire = val;
+            }
+        });
+    }
+
     const qVal    = sessInfo.quiz && sessInfo.quiz !== '-' ? sessInfo.quiz : '0';
     const qStars  = sessInfo.quizStars || 0;
     
     document.getElementById('appr-quiz-display').textContent = `${qVal} (${qStars} / 5 ⭐)`;
     document.getElementById('appr-quiz-stars').value = qStars;
+
+    // Sesi 12 specific
+    const confGroup = document.getElementById('appr-confirmation-group');
+    if (confGroup) {
+        if (sNum === 12) {
+            confGroup.classList.remove('hidden');
+            document.getElementById('appr-project-collected').checked = sessInfo.projectCollected || false;
+        } else {
+            confGroup.classList.add('hidden');
+        }
+    }
+
+    // Dynamic Rubrics for Sesi 4 & 8
+    const rubricCont = document.getElementById('appr-rubric-container');
+    if (rubricCont) {
+        if (sNum === 4 || sNum === 8) {
+            rubricCont.classList.remove('hidden');
+            document.getElementById('appr-rubric-sess-num').textContent = sNum;
+            
+            // Prefill hidden inputs if data exists
+            document.getElementById('hidden-obs-notes').value = sessInfo.observation || '';
+            // Reset status badge
+            document.getElementById('rubric-status-badge').classList.add('hidden');
+            
+            // Pre-fetch in background
+            if (!window.rubricData) fetchRubrics();
+        } else {
+            rubricCont.classList.add('hidden');
+        }
+    }
     
     // Update UI stars
-    ['must', 'should', 'aspire'].forEach(p => updateStarUI(p, 0));
+    ['must', 'should', 'aspire'].forEach(p => updateStarUI(p, phaseRatings[p]));
     
     // Reset Preview
     const iframe = document.getElementById('modal-project-iframe');
@@ -1397,10 +1541,7 @@ async function submitApproval() {
     const s = students[currentApprIndex];
     
     // Validate Must Do is filled
-    if (phaseRatings.must === 0) {
-        showAlert('Belum Memberi Nilai', 'Silahkan beri rating minimal pada Must Do.', '⚠️', 'yellow');
-        return;
-    }
+    // Removed as requested: User can now edit other stars without being forced to give Must Do rating.
 
     const btn = document.getElementById('btn-submit-appr');
     btn.innerHTML = '⏳ Menyimpan...';
@@ -1416,11 +1557,12 @@ async function submitApproval() {
             shouldStars: phaseRatings.should,
             aspireStars: phaseRatings.aspire,
             quizStars: document.getElementById('appr-quiz-stars').value,
-            bonusStars: bonusStarsStored // Will be summed in backend or added here
+            bonusStars: bonusStarsStored, // Will be summed in backend or added here
+            projectCollected: currentApprSession === 12 ? document.getElementById('appr-project-collected').checked : false,
+            obsAktivitasScore: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-aktivitas').value : '',
+            obsEngagementScore: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-engagement').value : '',
+            obsNotes: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-notes').value : ''
         };
-
-        // We sum bonus on the backend or here? The instruction said "calculate sum to star row".
-        // I'll add bonusStars to the payload, backend handles them.
         // Wait, I didn't update backend to handle `bonusStars` explicitly, I just summed must/should/aspire.
         // I'll add bonusStars to the total here before sending if I want to be safe, 
         // OR I can quickly update handleApproveProject again.
@@ -1457,7 +1599,8 @@ async function saveAbsensi() {
         .filter(s => s.hadir && s.attendanceSession < MAX_SESSIONS)
         .map(s => ({ 
             name: s.name, 
-            nextSessAbs: s.attendanceSession + 1, 
+            sessionsToMark: s.sessionsToMark || [s.attendanceSession + 1], 
+            skipCount: s.skipCount || 0,
             materialSession: s.materialSession 
         }));
 
@@ -1480,6 +1623,27 @@ async function saveAbsensi() {
         showAlert('Gagal Menyimpan', err.message, '❌', 'red');
     }
     resetAbsBtn();
+}
+
+async function markBolos(index) {
+    const s = students[index];
+    const sessionsSkipped = s.sessionsToMark ? s.sessionsToMark.length : 1;
+    
+    if (confirm(`Tandai ${s.name} sebagai BOLOS/IZIN hari ini? (+${sessionsSkipped} Jam)`)) {
+        try {
+            showAlert('⏳ Menyimpan...', `Sedang menandai bolos untuk ${s.name}...`, '⏳', 'blue');
+            const url = `${WEB_APP_URL}?action=markBolos&classLink=${encodeURIComponent(CLASS_LINK)}&studentName=${encodeURIComponent(s.name)}&sessionsSkipped=${sessionsSkipped}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            
+            if (json.success) {
+                showAlert('Berhasil!', `${s.name} berhasil ditandai bolos. Jatah bolos menjadi ${json.skipCount}.`, '✅', 'green', 3000);
+                loadStudents();
+            } else throw new Error(json.message);
+        } catch (err) {
+            showAlert('Gagal Menyimpan', err.message, '❌', 'red');
+        }
+    }
 }
 
 function resetAbsBtn() {
@@ -1509,7 +1673,208 @@ function closeAlert() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadStudents();
+
+// ── Rubric Modal Functions ──────────────────────────────────────────────────
+let selectedAktivitas = 0;
+let selectedEngagement = 0;
+
+async function openRubricModal() {
+    const sNum = currentApprSession;
+    document.getElementById('rubric-modal-title-num').textContent = sNum;
+    
+    document.getElementById('rubric-modal').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('rubric-modal-container').classList.remove('scale-95');
+    }, 10);
+    
+    const tbody = document.getElementById('rubric-table-body');
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-10"><span class="animate-spin inline-block">🔄</span> Memuat data rubrik...</td></tr>`;
+    
+    if (!window.rubricData) await fetchRubrics();
+    
+    const s = students[currentApprIndex];
+    const targetPertemuan = sNum === 4 ? 'Pertemuan 1-4' : 'Pertemuan 5-8';
+    let rData = [];
+    
+    if (window.rubricData) {
+        rData = window.rubricData.filter(r => 
+            r.program.toLowerCase().includes(CLASS_PROG.toLowerCase()) && 
+            r.level.toLowerCase().includes((s.level || '').toLowerCase()) &&
+            r.pertemuan.toLowerCase().includes(targetPertemuan.toLowerCase())
+        );
+        if (rData.length === 0) {
+            rData = window.rubricData.filter(r => 
+                r.program.toLowerCase().includes(CLASS_PROG.toLowerCase()) && 
+                r.pertemuan.toLowerCase().includes(targetPertemuan.toLowerCase())
+            );
+        }
+    }
+    
+    selectedAktivitas = parseInt(document.getElementById('hidden-obs-aktivitas').value) || 0;
+    selectedEngagement = parseInt(document.getElementById('hidden-obs-engagement').value) || 0;
+    document.getElementById('rubric-modal-notes').value = document.getElementById('hidden-obs-notes').value || '';
+    
+    if (rData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" class="p-6 text-center text-red-400">
+                    <p class="mb-4">Data rubrik untuk program "${CLASS_PROG}" tidak ditemukan di database.</p>
+                    <div class="flex gap-4 justify-center">
+                        <div class="w-48 text-left">
+                            <label class="text-xs mb-1 block">Manual Aktivitas (1-5)</label>
+                            <input type="number" id="manual-akt" min="1" max="5" value="${selectedAktivitas || ''}" class="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white">
+                        </div>
+                        <div class="w-48 text-left">
+                            <label class="text-xs mb-1 block">Manual Engagement (1-5)</label>
+                            <input type="number" id="manual-eng" min="1" max="5" value="${selectedEngagement || ''}" class="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white">
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        rData.sort((a, b) => a.nilai - b.nilai);
+        tbody.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const rowData = rData.find(r => r.nilai === i) || { obsAktivitas: '-', obsEngagement: '-' };
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-white/[0.02] transition-colors group';
+            
+            const isAktSelected = selectedAktivitas === i;
+            const isEngSelected = selectedEngagement === i;
+            
+            tr.innerHTML = `
+                <td class="py-4 px-6 border-b border-white/5 text-center font-black text-lg text-[#F9C013]">${i}</td>
+                <td class="py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isAktSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}" onclick="selectRubric('akt', ${i}, this)">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isAktSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}">
+                            ${isAktSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : ''}
+                        </div>
+                        <span class="${isAktSelected ? 'text-white' : 'text-white/70'} leading-relaxed">${rowData.obsAktivitas}</span>
+                    </div>
+                </td>
+                <td class="py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isEngSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}" onclick="selectRubric('eng', ${i}, this)">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isEngSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}">
+                            ${isEngSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : ''}
+                        </div>
+                        <span class="${isEngSelected ? 'text-white' : 'text-white/70'} leading-relaxed">${rowData.obsEngagement}</span>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+}
+
+function selectRubric(type, val, tdEl) {
+    if (type === 'akt') {
+        selectedAktivitas = val;
+    } else {
+        selectedEngagement = val;
+    }
+    
+    const tbody = document.getElementById('rubric-table-body');
+    const rows = tbody.querySelectorAll('tr');
+    
+    rows.forEach((tr, idx) => {
+        const i = idx + 1; 
+        const tds = tr.querySelectorAll('td');
+        if (tds.length < 3) return;
+        
+        const isAktSelected = selectedAktivitas === i;
+        tds[1].className = `py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isAktSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}`;
+        tds[1].querySelector('.w-4.h-4').className = `mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isAktSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}`;
+        tds[1].querySelector('.w-4.h-4').innerHTML = isAktSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : '';
+        tds[1].querySelector('span').className = isAktSelected ? 'text-white leading-relaxed' : 'text-white/70 leading-relaxed';
+        
+        const isEngSelected = selectedEngagement === i;
+        tds[2].className = `py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isEngSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}`;
+        tds[2].querySelector('.w-4.h-4').className = `mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isEngSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}`;
+        tds[2].querySelector('.w-4.h-4').innerHTML = isEngSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : '';
+        tds[2].querySelector('span').className = isEngSelected ? 'text-white leading-relaxed' : 'text-white/70 leading-relaxed';
+    });
+}
+
+function closeRubricModal() {
+    document.getElementById('rubric-modal-container').classList.add('scale-95');
+    setTimeout(() => {
+        document.getElementById('rubric-modal').classList.add('hidden');
+    }, 200);
+}
+
+function saveRubricModal() {
+    const manAkt = document.getElementById('manual-akt');
+    const manEng = document.getElementById('manual-eng');
+    if (manAkt) selectedAktivitas = manAkt.value;
+    if (manEng) selectedEngagement = manEng.value;
+    
+    document.getElementById('hidden-obs-aktivitas').value = selectedAktivitas;
+    document.getElementById('hidden-obs-engagement').value = selectedEngagement;
+    document.getElementById('hidden-obs-notes').value = document.getElementById('rubric-modal-notes').value;
+    
+    document.getElementById('rubric-status-badge').classList.remove('hidden');
+    
+    closeRubricModal();
+    submitApproval();
+}
+
 </script>
+
+
+<!-- Rubric Modal -->
+<div id="rubric-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-[#06101f]/90 backdrop-blur-sm transition-opacity" onclick="closeRubricModal()"></div>
+    
+    <!-- Modal Content -->
+    <div id="rubric-modal-container" class="relative bg-[#0F172A] w-full max-w-5xl max-h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-white/10 transition-all transform scale-95 overflow-hidden">
+        
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-[#1E293B]">
+            <div>
+                <h3 class="text-lg font-black text-white flex items-center gap-2">
+                    <span class="bg-[#F9C013] text-[#06101f] p-1.5 rounded-lg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+                    Observasi Pertemuan <span id="rubric-modal-title-num">X</span>
+                </h3>
+                <p class="text-xs text-[#F9C013] font-bold uppercase tracking-widest mt-1">PANDUAN PENILAIAN GURU</p>
+            </div>
+            <button onclick="closeRubricModal()" class="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-xl transition-colors cursor-pointer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <!-- Body (Table) -->
+        <div class="p-0 overflow-y-auto flex-1">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead class="bg-[#0F172A] text-white/50 text-[10px] uppercase font-bold tracking-widest sticky top-0 shadow-sm">
+                    <tr>
+                        <th class="py-4 px-6 border-b border-white/10 text-center w-20">Score</th>
+                        <th class="py-4 px-6 border-b border-white/10 w-1/2">Activity Observation</th>
+                        <th class="py-4 px-6 border-b border-white/10 w-1/2">Learning Engagement</th>
+                    </tr>
+                </thead>
+                <tbody id="rubric-table-body" class="divide-y divide-white/5 text-white/80">
+                    <!-- Injected via JS -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer (Notes) -->
+        <div class="p-6 bg-[#1E293B] border-t border-white/10">
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-red-400 mb-2 flex items-center gap-2"><span>⚠️</span> Catatan Khusus untuk Report Orang Tua</label>
+                <textarea id="rubric-modal-notes" rows="2" class="w-full bg-[#0F172A] border border-red-500/30 rounded-xl p-3 text-sm text-white focus:border-red-400 focus:outline-none transition-colors" placeholder="Tuliskan perkembangan, kekuatan, dan hal yang perlu ditingkatkan..."></textarea>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeRubricModal()" class="px-5 py-2.5 rounded-xl font-bold text-white/70 hover:bg-white/10 transition-colors border border-transparent hover:border-white/20 cursor-pointer">Batal</button>
+                <button onclick="saveRubricModal()" class="px-6 py-2.5 rounded-xl font-black bg-[#F9C013] text-[#06101f] hover:bg-yellow-400 hover:shadow-[0_0_15px_rgba(249,192,19,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2">
+                    Simpan Penilaian
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

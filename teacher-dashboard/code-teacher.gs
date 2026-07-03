@@ -6,13 +6,70 @@
 const DB_SPREADSHEET_ID = "1Dfm4RUOBbz3bvHT0nLnEIkYUoGxRRbC6fFqrZfKa8kQ";
 const SHEET_NAME = "Class Database";
 
-// Absensi sheet: data starts at row 16 (0-indexed: 15)
-const ABS_DATA_ROW   = 16;   // first student row (1-indexed)
-const ABS_COL_NAME   = 2;    // col B
-const ABS_COL_AGE    = 3;    // col C
-const ABS_COL_LEVEL  = 5;    // col E
-const ABS_COL_SESI1  = 6;    // col F  → Sesi 1
+// Absensi sheet fallbacks (0-indexed)
+const FALLBACK_ABS_DATA_ROW   = 15;
+const FALLBACK_ABS_COL_NAME   = 1;
+const FALLBACK_ABS_COL_AGE    = 2;
+const FALLBACK_ABS_COL_LEVEL  = 4;
+const FALLBACK_ABS_COL_SESI1  = 5;
+const FALLBACK_ABS_COL_PLANNED= 31;
+const FALLBACK_ABS_COL_JAM_SESI = 30; // Kolom AE (0-indexed)
+const FALLBACK_ABS_COL_TOTAL_STARS = 26;
+
 const MAX_SESSIONS   = 12;
+
+function getAbsensiMapping(absData) {
+  let mapping = {
+    dataRowStart: FALLBACK_ABS_DATA_ROW,
+    colName: FALLBACK_ABS_COL_NAME,
+    colAge: FALLBACK_ABS_COL_AGE,
+    colLevel: FALLBACK_ABS_COL_LEVEL,
+    colSesi1: FALLBACK_ABS_COL_SESI1,
+    colPlannedSesi1: FALLBACK_ABS_COL_PLANNED,
+    colJamSesi: FALLBACK_ABS_COL_JAM_SESI,
+    colTotalStars: FALLBACK_ABS_COL_TOTAL_STARS,
+    found: false
+  };
+
+  for (let r = 0; r < absData.length; r++) {
+    let rowNorm = absData[r].map(v => String(v).trim().toLowerCase());
+    
+    let nameIdx = -1;
+    for (let c = 0; c < rowNorm.length; c++) {
+      if (rowNorm[c] === "students name" || rowNorm[c] === "student's name" || rowNorm[c] === "nama siswa") {
+        nameIdx = c;
+        break;
+      }
+    }
+
+    if (nameIdx !== -1) {
+      mapping.found = true;
+      mapping.dataRowStart = r + 1; // Data starts below header
+      mapping.colName = nameIdx;
+      
+      let ageIdx = rowNorm.indexOf("usia");
+      if (ageIdx !== -1) mapping.colAge = ageIdx;
+      
+      let levelIdx = rowNorm.indexOf("level");
+      if (levelIdx !== -1) mapping.colLevel = levelIdx;
+      
+      let sesi1Idx = rowNorm.indexOf("sesi 1");
+      if (sesi1Idx !== -1) mapping.colSesi1 = sesi1Idx;
+
+      let plannedIdx = rowNorm.findIndex(h => h.includes("tanggal seharusnya sesi 1") || h === "tanggal sesi 1" || h === "tanggal seharusnya sesi 1 (rumus)");
+      if (plannedIdx !== -1) mapping.colPlannedSesi1 = plannedIdx;
+
+      let jamSesiIdx = rowNorm.findIndex(h => h.includes("jumlah jam/sesi") || h.includes("jumlah sesi") || h.includes("jumlah jam"));
+      if (jamSesiIdx !== -1) mapping.colJamSesi = jamSesiIdx;
+
+      let starIdx = rowNorm.findIndex(h => h.includes("quiz score total") || h.includes("total stars"));
+      if (starIdx !== -1) mapping.colTotalStars = starIdx;
+
+      break;
+    }
+  }
+  return mapping;
+}
 
 // Progress sheet: structure per-session block
 // Row layout per session block (relative, 5 rows each):
@@ -29,7 +86,9 @@ function doGet(e) {
   if (action === 'getClasses')   return handleLogin(e.parameter.email);
   if (action === 'getStudents')  return handleGetStudents(e.parameter.classLink);
   if (action === 'saveAbsensi')  return handleSaveAbsensi(e);
+  if (action === 'markBolos')    return handleMarkBolos(e);
   if (action === 'checkSync')    return handleCheckSync(e.parameter.classLink);
+  if (action === 'getRubrics')   return handleGetRubrics();
 
   return createJSONResponse({ success: false, message: "Action not recognized." });
 }
@@ -40,10 +99,50 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     if (data.action === 'approveProject') return handleApproveProject(data);
     if (data.action === 'giveBonus') return handleGiveBonus(data);
+    if (data.action === 'submitPlaylist') return handleSubmitPlaylist(data);
     
     return createJSONResponse({ success: false, message: "Invalid POST action" });
   } catch (err) {
     return createJSONResponse({ success: false, message: "Server POST Error: " + err.toString() });
+  }
+}
+
+// ── handleSubmitPlaylist ─────────────────────────────────────────────────────
+function handleSubmitPlaylist(data) {
+  try {
+    // 1. Simpan ke class sheet Absensi B3
+    let savedToAbsensi = false;
+    if (data.classLink) {
+      const match = data.classLink.match(/[-\w]{25,}/);
+      if (match) {
+        const ss = SpreadsheetApp.openById(match[0]);
+        const sheet = ss.getSheetByName('Absensi');
+        if (sheet) {
+          sheet.getRange('B3').setValue(data.link);
+          savedToAbsensi = true;
+        }
+      }
+    }
+    
+    // 2. Simpan ke database utama guru (opsional) jika ada sheet Playlists
+    try {
+      const db = SpreadsheetApp.openById(DB_SPREADSHEET_ID);
+      let plSheet = db.getSheetByName('Playlists');
+      if (!plSheet) {
+        plSheet = db.insertSheet('Playlists');
+        plSheet.appendRow(['Timestamp', 'Class Code', 'Teacher Name', 'Teacher Email', 'Playlist Link', 'Notes']);
+      }
+      plSheet.appendRow([new Date(), data.classCode, data.teacherName, data.teacherEmail, data.link, data.notes]);
+    } catch(e) {
+      // Abaikan jika tidak ada akses atau gagal membuat sheet
+    }
+
+    return createJSONResponse({ 
+      success: true, 
+      message: "Playlist berhasil disimpan" + (savedToAbsensi ? " dan dimasukkan ke sheet Absensi B3" : "")
+    });
+  } catch (err) {
+    return createJSONResponse({ success: false, message: err.toString() });
   }
 }
 
@@ -119,24 +218,24 @@ function handleGetStudents(classLink) {
     if (!absSheet) return createJSONResponse({ success: false, message: "Sheet 'Absensi' tidak ditemukan." });
 
     const absData    = absSheet.getDataRange().getValues();
-    const absHeaders = absData.slice(0, ABS_DATA_ROW - 1); // rows above data
+    const mapping = getAbsensiMapping(absData);
+    const absHeaders = absData.slice(0, mapping.dataRowStart); // rows above data
 
-    // Students start at ABS_DATA_ROW (1-indexed), i.e. index ABS_DATA_ROW-1
     const students = [];
-    for (var r = ABS_DATA_ROW - 1; r < absData.length; r++) {
+    for (var r = mapping.dataRowStart; r < absData.length; r++) {
       const row  = absData[r];
-      const name = String(row[ABS_COL_NAME - 1] || "").trim();
+      const name = String(row[mapping.colName] || "").trim();
       if (!name) continue;
 
-      const age   = String(row[ABS_COL_AGE - 1]   || "").trim();
-      const level = String(row[ABS_COL_LEVEL - 1]  || "").trim();
+      const age   = String(row[mapping.colAge]   || "").trim();
+      const level = String(row[mapping.colLevel]  || "").trim();
 
-      // Sesi 1–12 → columns F–Q (0-indexed: 5–16)
+      // Sesi 1–12
       let attendanceSession = 0; // 0 = belum mulai sama sekali
       const sessionDates = {};
       for (var s = 0; s < MAX_SESSIONS; s++) {
-        const cellVal = row[ABS_COL_SESI1 - 1 + s];
-        if (cellVal !== "" && cellVal !== null && cellVal !== undefined) {
+        const cellVal = row[mapping.colSesi1 + s];
+        if (cellVal !== "" && cellVal !== null && cellVal !== undefined && String(cellVal).trim().toUpperCase() !== "N/A") {
           attendanceSession = s + 1;
           // Format date nicely
           const d = cellVal instanceof Date ? cellVal : new Date(cellVal);
@@ -144,7 +243,25 @@ function handleGetStudents(classLink) {
         }
       }
 
-      students.push({ name, age, level, attendanceSession, totalSessions: MAX_SESSIONS, sessionDates });
+      // ── Parse Sessions Per Meeting ──
+      const jamSesiVal = String(row[mapping.colJamSesi] || "").toLowerCase();
+      let sessionsPerMeeting = 1;
+      
+      // Jika teksnya mengandung angka 2 (misal "2 Jam", "2 Sesi", "2"), jadikan 2
+      if (jamSesiVal.includes("2")) {
+        sessionsPerMeeting = 2;
+      }
+      
+      const meetings = [];
+      for (var s = 0; s < MAX_SESSIONS; s += sessionsPerMeeting) {
+        let currentMeeting = [];
+        for (var i = 0; i < sessionsPerMeeting && (s + i) < MAX_SESSIONS; i++) {
+          currentMeeting.push(s + i + 1);
+        }
+        meetings.push(currentMeeting);
+      }
+
+      students.push({ name, age, level, attendanceSession, totalSessions: MAX_SESSIONS, sessionDates, meetings, skipCount: 0 });
     }
 
     // ── Read Progress sheet for project links ──
@@ -165,10 +282,12 @@ function handleGetStudents(classLink) {
         
         const nameNorm = normalize(stu.name);
         let colIdx = -1;
+        let headerRowIdx = -1;
         
         // Strategy 1: Search Row 2 (index 1) first, then Row 1 (index 0)
         for (let ri = 1; ri >= 0 && colIdx === -1; ri--) {
           colIdx = normHeaders[ri].indexOf(nameNorm);
+          if (colIdx !== -1) headerRowIdx = ri;
         }
         
         // Strategy 2: Partial match if exact fails
@@ -178,6 +297,7 @@ function handleGetStudents(classLink) {
               const h = normHeaders[ri][c];
               if (h && (nameNorm.includes(h) || h.includes(nameNorm))) {
                 colIdx = c;
+                headerRowIdx = ri;
                 break;
               }
             }
@@ -185,6 +305,15 @@ function handleGetStudents(classLink) {
         }
         
         if (colIdx === -1) continue;
+
+        // Extract skipCount (Bolos) from the header cell Note
+        if (headerRowIdx !== -1) {
+          const noteText = String(progNotes[headerRowIdx][colIdx] || "");
+          const skipMatch = noteText.match(/\[BOLOS:\s*(\d+)\]/i);
+          if (skipMatch) {
+            stu.skipCount = parseInt(skipMatch[1], 10);
+          }
+        }
 
         const todayStr = Utilities.formatDate(new Date(), "Asia/Jakarta", "d MMM yyyy");
 
@@ -308,6 +437,7 @@ function handleSaveAbsensi(e) {
     if (!absSheet) return createJSONResponse({ success: false, message: "Sheet 'Absensi' tidak ditemukan." });
 
     const absData = absSheet.getDataRange().getValues();
+    const mapping = getAbsensiMapping(absData);
     
     // Build prog student map if progSheet exists
     let studentColMap = {};
@@ -325,32 +455,64 @@ function handleSaveAbsensi(e) {
 
     for (const entry of attendanceList) {
       const targetNameNorm = normalize(entry.name);
-      const nextSessAbs = parseInt(entry.nextSessAbs, 10);
+      const sessionsToMark = Array.isArray(entry.sessionsToMark) ? entry.sessionsToMark : [parseInt(entry.nextSessAbs, 10)];
       const matSess     = parseInt(entry.materialSession, 10);
+      const skipCount   = parseInt(entry.skipCount || 0, 10);
       
-      if (!targetNameNorm || isNaN(nextSessAbs) || nextSessAbs < 1 || nextSessAbs > MAX_SESSIONS) continue;
+      if (!targetNameNorm) continue;
 
       // 1. Catat ke sheet Absensi
       let foundAbs = false;
-      for (var r = ABS_DATA_ROW - 1; r < absData.length; r++) {
-        const rowNameNorm = normalize(absData[r][ABS_COL_NAME - 1]);
+      let newAttendedCount = 0;
+      let rowIdxForNA = -1;
+
+      for (var r = mapping.dataRowStart; r < absData.length; r++) {
+        const rowNameNorm = normalize(absData[r][mapping.colName]);
         if (rowNameNorm !== targetNameNorm) continue;
 
-        // Column for this session (F=Sesi1 → col index 5, etc.)
-        const colIdx = ABS_COL_SESI1 - 1 + (nextSessAbs - 1); // 0-based
-        const cell   = absSheet.getRange(r + 1, colIdx + 1); // 1-based
+        rowIdxForNA = r;
 
-        if (!cell.getValue()) {
-          const dateObj = new Date(dateStr);
-          cell.setValue(dateObj);
-          cell.setNumberFormat("d MMM yyyy");
+        // Count how many are currently filled before we add the new ones
+        for (let s = 0; s < MAX_SESSIONS; s++) {
+          const val = absData[r][mapping.colSesi1 + s];
+          if (val !== "" && val !== null && val !== undefined && String(val).trim().toUpperCase() !== "N/A") {
+             newAttendedCount++;
+          }
         }
+
+        // Loop over sessionsToMark and fill them
+        for (const sessNum of sessionsToMark) {
+          if (isNaN(sessNum) || sessNum < 1 || sessNum > MAX_SESSIONS) continue;
+          
+          const colIdx = mapping.colSesi1 + (sessNum - 1); // 0-based
+          const cell   = absSheet.getRange(r + 1, colIdx + 1); // 1-based
+
+          if (!cell.getValue() || String(cell.getValue()).trim().toUpperCase() === "N/A") {
+            const dateObj = new Date(dateStr);
+            cell.setValue(dateObj);
+            cell.setNumberFormat("d MMM yyyy");
+            newAttendedCount++; // increment attended count
+          }
+        }
+        
         foundAbs = true;
         break;
       }
 
-      // The date log to Progress sheet has been moved to student side (code-student.gs)
-      if (foundAbs) savedFor.push(entry.name);
+      // 2. Check Budget (Max 15 hours/sessions)
+      if (foundAbs && rowIdxForNA !== -1) {
+        if ((newAttendedCount + skipCount) >= 15) {
+          // Fill remaining sessions with "N/A"
+          for (let s = 0; s < MAX_SESSIONS; s++) {
+             const colIdx = mapping.colSesi1 + s;
+             const cell = absSheet.getRange(rowIdxForNA + 1, colIdx + 1);
+             if (!cell.getValue()) {
+               cell.setValue("N/A");
+             }
+          }
+        }
+        savedFor.push(entry.name);
+      }
     }
 
 
@@ -434,6 +596,13 @@ function handleApproveProject(data) {
       }
     }
 
+    // Update total stars di tab Absensi kolom AA
+    updateTotalStarsInAbsensi(ss, studentCol, studentName);
+
+    if (sessionNum === 4 || sessionNum === 8) {
+      updateRubrikInAbsensi(ss, studentName, sessionNum, data.obsAktivitasScore, data.obsEngagementScore, data.obsNotes);
+    }
+
     updateSyncFlag(ss);
     return createJSONResponse({ success: true, message: `Persetujuan Sesi ${sessionNum} berhasil disimpan.` });
   } catch (err) {
@@ -484,6 +653,9 @@ function handleGiveBonus(data) {
       const newNote = existingNote ? existingNote + "\n" + todayStr + ": " + reason : todayStr + ": " + reason;
       cell.setNote(newNote);
     }
+
+    // Update total stars di tab Absensi kolom AA
+    updateTotalStarsInAbsensi(ss, studentCol, studentName);
 
     updateSyncFlag(ss);
     return createJSONResponse({ success: true, message: "Bonus bintang berhasil diberikan!" });
@@ -578,4 +750,198 @@ function handleCheckSync(classLink) {
 function createJSONResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── markBolos ───────────────────────────────────────────────────────────────
+function handleMarkBolos(e) {
+  try {
+    const classLink = e.parameter.classLink;
+    const studentName = e.parameter.studentName;
+    const sessionsSkipped = parseInt(e.parameter.sessionsSkipped || "1", 10);
+    if (!classLink || !studentName) return createJSONResponse({ success: false, message: "Missing params" });
+
+    // ── Pre-process URL ──
+    let spreadsheetId = "";
+    const idMatch = (classLink || "").match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (idMatch) {
+      spreadsheetId = idMatch[1];
+    } else {
+      let fallbackLink = String(classLink || "").trim();
+      if (fallbackLink.indexOf('?') > -1) fallbackLink = fallbackLink.split('?')[0];
+      const ss2 = SpreadsheetApp.openByUrl(fallbackLink);
+      spreadsheetId = ss2.getId();
+    }
+    
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const progSheet = ss.getSheetByName("Progress");
+    if (!progSheet) return createJSONResponse({ success: false, message: "Progress sheet not found" });
+
+    const progData = progSheet.getDataRange().getValues();
+    const nameNorm = normalize(studentName);
+    
+    const headerRows = [progData[0] || [], progData[1] || []];
+    const normHeaders = headerRows.map(row => row.map(h => normalize(h)));
+    
+    let colIdx = -1;
+    let headerRowIdx = -1;
+    for (let ri = 1; ri >= 0 && colIdx === -1; ri--) {
+      colIdx = normHeaders[ri].indexOf(nameNorm);
+      if (colIdx !== -1) headerRowIdx = ri;
+    }
+    
+    if (colIdx === -1) {
+      for (let ri = 1; ri >= 0 && colIdx === -1; ri--) {
+        for (let c = PROG_COL_FIRST_STUDENT - 1; c < normHeaders[ri].length; c++) {
+          const h = normHeaders[ri][c];
+          if (h && (nameNorm.includes(h) || h.includes(nameNorm))) {
+            colIdx = c;
+            headerRowIdx = ri;
+            break;
+          }
+        }
+      }
+    }
+
+    if (colIdx === -1) return createJSONResponse({ success: false, message: "Student not found in Progress" });
+
+    const headerCell = progSheet.getRange(headerRowIdx + 1, colIdx + 1);
+    const noteText = String(headerCell.getNote() || "");
+    
+    let currentSkipCount = 0;
+    const skipMatch = noteText.match(/\[BOLOS:\s*(\d+)\]/i);
+    if (skipMatch) {
+      currentSkipCount = parseInt(skipMatch[1], 10);
+    }
+    
+    const newSkipCount = currentSkipCount + sessionsSkipped;
+    const todayStr = Utilities.formatDate(new Date(), "Asia/Jakarta", "d MMM yyyy");
+    
+    // Replace old bolos tag or append new one
+    let newNoteText = noteText;
+    if (skipMatch) {
+      newNoteText = noteText.replace(/\[BOLOS:\s*\d+\]/gi, `[BOLOS: ${newSkipCount}]`);
+    } else {
+      newNoteText = noteText + (noteText ? "\n" : "") + `[BOLOS: ${newSkipCount}]`;
+    }
+    newNoteText += `\nBolos ditandai pada: ${todayStr} (+${sessionsSkipped} jam)`;
+    
+    headerCell.setNote(newNoteText);
+
+    return createJSONResponse({ success: true, skipCount: newSkipCount });
+  } catch (err) {
+    return createJSONResponse({ success: false, message: err.toString() });
+  }
+}
+
+// ── Helper to update Total Stars in Absensi ──────────────────────────────────
+function updateTotalStarsInAbsensi(ss, studentCol, studentName) {
+  try {
+    const progSheet = ss.getSheetByName("Progress");
+    if (!progSheet) return;
+    
+    const lastRow = Math.max(progSheet.getLastRow(), 100);
+    const matrixValues = progSheet.getRange(1, PROG_COL_MATRIX, lastRow, 1).getValues();
+    const colValues = progSheet.getRange(1, studentCol, lastRow, 1).getValues();
+    
+    let totalStars = 0;
+    
+    for (let r = 0; r < matrixValues.length; r++) {
+      const mval = String(matrixValues[r][0] || "").trim().toLowerCase();
+      if (mval.indexOf('star') > -1 || mval.indexOf('bintang') > -1) {
+        const val = String(colValues[r][0] || "").trim();
+        if (!val) continue;
+        
+        // Split by newline and parse each line
+        const lines = val.split('\n');
+        for (const line of lines) {
+          const l = line.trim();
+          if (/^\d+$/.test(l)) {
+            // Just a pure number
+            totalStars += parseInt(l, 10);
+          } else {
+            // E.g. "5 Star - Must do"
+            const match = l.match(/^(\d+)/);
+            if (match) {
+              totalStars += parseInt(match[1], 10);
+            }
+          }
+        }
+      }
+    }
+    
+    const absSheet = ss.getSheetByName("Absensi");
+    if (!absSheet) return;
+    
+    const absData = absSheet.getDataRange().getValues();
+    const mapping = getAbsensiMapping(absData);
+    const sNameNorm = normalize(studentName);
+    
+    for (let r = mapping.dataRowStart; r < absData.length; r++) {
+      const rowNameNorm = normalize(absData[r][mapping.colName]);
+      if (rowNameNorm === sNameNorm) {
+        absSheet.getRange(r + 1, mapping.colTotalStars + 1).setValue(totalStars).setNumberFormat('0');
+        break;
+      }
+    }
+  } catch(e) {
+    console.error("updateTotalStarsInAbsensi error: " + e.toString());
+  }
+}
+
+// ── getRubrics ───────────────────────────────────────────────────────────────
+function handleGetRubrics() {
+  try {
+    const rubricSSId = "1RutBjQo881tjyArM5TZFYs_1pWFySuNq7Fj_zj38bfU";
+    const ss = SpreadsheetApp.openById(rubricSSId);
+    const sheet = ss.getSheetByName("[4S] Mapping Indikator");
+    if (!sheet) return createJSONResponse({ success: false, message: "Sheet Rubrik tidak ditemukan." });
+
+    const data = sheet.getDataRange().getValues();
+    const rubrics = [];
+    
+    for (var i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (!row[0]) continue; // Skip empty rows
+      
+      rubrics.push({
+        program: String(row[0]).trim(),
+        level: String(row[1]).trim(),
+        pertemuan: String(row[2]).trim(),
+        nilai: parseInt(row[4], 10) || 0,
+        obsAktivitas: String(row[6]).trim(),
+        obsEngagement: String(row[7]).trim()
+      });
+    }
+
+    return createJSONResponse({ success: true, rubrics });
+  } catch (err) {
+    return createJSONResponse({ success: false, message: "getRubrics error: " + err.toString() });
+  }
+}
+
+function updateRubrikInAbsensi(ss, studentName, sessionNum, obsAktivitas, obsEngagement, obsNotes) {
+  try {
+    const absSheet = ss.getSheetByName("Absensi");
+    if (!absSheet) return;
+    
+    const absData = absSheet.getDataRange().getValues();
+    const mapping = getAbsensiMapping(absData);
+    const sNameNorm = normalize(studentName);
+    
+    for (let r = mapping.dataRowStart; r < absData.length; r++) {
+      const rowNameNorm = normalize(absData[r][mapping.colName]);
+      if (rowNameNorm === sNameNorm) {
+        let colAktivitas = sessionNum === 4 ? 19 : 22;
+        let colEngagement = sessionNum === 4 ? 20 : 23;
+        let colNotes = sessionNum === 4 ? 21 : 24;
+        
+        if (obsAktivitas) absSheet.getRange(r + 1, colAktivitas).setValue(obsAktivitas);
+        if (obsEngagement) absSheet.getRange(r + 1, colEngagement).setValue(obsEngagement);
+        if (obsNotes !== undefined) absSheet.getRange(r + 1, colNotes).setValue(obsNotes);
+        break;
+      }
+    }
+  } catch(e) {
+    console.error("updateRubrikInAbsensi error: " + e.toString());
+  }
 }

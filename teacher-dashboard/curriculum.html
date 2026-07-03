@@ -325,8 +325,9 @@
 
     <main class="max-w-7xl mx-auto w-full px-5 md:px-10 py-10">
         
-        <!-- Course Selection Tabs -->
-        <div class="flex flex-wrap justify-center gap-3 mb-12">
+        <!-- Course Selection Tabs + Shared Activity -->
+        <div class="flex flex-wrap justify-center items-center gap-3 mb-12">
+            <!-- Program tabs -->
             <button onclick="selectCourse('roblox')" id="tab-roblox" class="btn-secondary px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2">
                 <span>🎮</span> Roblox
             </button>
@@ -336,20 +337,31 @@
             <button onclick="selectCourse('python')" id="tab-python" class="btn-secondary px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2">
                 <span>🐍</span> Python
             </button>
-            <button onclick="selectCourse('scratchjr')" id="tab-scratchjr" class="btn-secondary px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2">
-                <span>👶</span> Scratch Jr
+
+            <!-- Divider -->
+            <div class="w-px h-8 rounded-full mx-2" style="background: var(--card-b);"></div>
+
+            <!-- Shared Activity (prominent tab) -->
+            <button
+                id="tab-shared"
+                onclick="document.getElementById('shared-activity-modal').classList.remove('hidden'); document.getElementById('shared-activity-modal').classList.add('flex');"
+                class="px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2 transition-all border-2 border-k-yellow/40 text-k-yellow hover:bg-k-yellow hover:text-white hover:border-k-yellow shadow-sm hover:shadow-[0_0_20px_rgba(249,192,19,0.35)] relative group"
+            >
+                <span class="text-lg">🤝</span>
+                <span>Shared Activity</span>
+                <span class="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-k-yellow border-2 border-white animate-pulse"></span>
             </button>
         </div>
 
         <!-- Curriculum Map Section -->
-        <div class="relative min-h-[1000px]">
+        <div class="relative min-h-[500px]">
             <div id="map-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-4 z-20 bg-black/10 backdrop-blur-sm rounded-[3rem] hidden">
                 <div class="w-16 h-16 border-4 border-k-yellow border-t-transparent rounded-full animate-spin"></div>
-                <p class="font-black mission-text uppercase tracking-widest">Menyiapkan Peta Kurikulum...</p>
+                <p class="font-black mission-text uppercase tracking-widest text-white">Menyiapkan Peta Kurikulum...</p>
             </div>
 
-            <div id="map-area" class="map-container slide-content-enter">
-                <!-- SVG path and Nodes will be injected here -->
+            <div id="map-area" class="slide-content-enter w-full pb-10">
+                <!-- Grid of levels and sessions will be injected here -->
             </div>
         </div>
     </main>
@@ -422,8 +434,7 @@
         const PROGRAMS = {
             roblox: { sheet: 'B2C_RobloxStudio_Modul', label: 'Roblox Studio', emoji: '🎮' },
             scratch: { sheet: 'B2C_Scratch_Modul', label: 'Scratch', emoji: '🐱' },
-            python: { sheet: 'B2C_Python_Modul', label: 'Python', emoji: '🐍' },
-            scratchjr: { sheet: 'B2C_ScratchJr_Modul', label: 'Scratch Jr', emoji: '👶' }
+            python: { sheet: 'B2C_Python_Modul', label: 'Python', emoji: '🐍' }
         };
 
         let currentProgram = 'roblox';
@@ -462,6 +473,21 @@
 
                 // Filter valid lesson rows (col_1 is session number)
                 curriculumData = data.filter(row => row.col_1 && !isNaN(parseInt(row.col_1)));
+
+                // FIX: Carry-forward level (col_0) for merged cells in Google Sheets
+                // In a spreadsheet, only the first row of a level group has the level value;
+                // subsequent rows leave col_0 blank. We fill those blanks here.
+                let lastLevel = '';
+                curriculumData = curriculumData.map(row => {
+                    const rawLevel = String(row.col_0 || '').trim();
+                    if (rawLevel && !isNaN(parseInt(rawLevel))) {
+                        lastLevel = rawLevel;
+                    } else if (lastLevel) {
+                        row = { ...row, col_0: lastLevel };
+                    }
+                    return row;
+                });
+
                 renderMap();
             } catch (err) {
                 console.error(err);
@@ -481,73 +507,84 @@
         function renderMap() {
             const container = document.getElementById('map-area');
             
-            // Calculate total sessions (at least 12, or the max session number rounded up to nearest 12)
-            const actualMax = curriculumData.length > 0 
-                ? Math.max(...curriculumData.map(l => parseInt(l.col_1) || 0)) 
-                : 12;
-            const sessionCount = Math.max(12, Math.ceil(actualMax / 12) * 12);
+            let levelCount = 1;
+            const hasLevels = curriculumData.some(l => parseInt(l.col_0) > 0);
             
-            // Dynamic Height Calculation: 100px per session + padding
-            const mapHeight = (sessionCount * 100) + 150;
-            container.style.height = `${mapHeight}px`;
-
-            // Generate Dynamic SVG Path
-            let pathD = `M 500,50`;
-            for (let i = 0; i < sessionCount / 2; i++) {
-                const y = 50 + (i * 200);
-                if (i % 2 === 0) {
-                    pathD += ` C 850,${y} 950,${y + 200} 500,${y + 200}`;
-                } else {
-                    pathD += ` C 50,${y} 150,${y + 200} 500,${y + 200}`;
-                }
+            if (hasLevels) {
+                levelCount = Math.max(...curriculumData.map(l => parseInt(l.col_0) || 1));
+            } else {
+                const actualMaxSession = curriculumData.length > 0 
+                    ? Math.max(...curriculumData.map(l => parseInt(l.col_1) || 0)) 
+                    : 12;
+                levelCount = Math.max(1, Math.ceil(actualMaxSession / 12));
             }
+            
+            container.className = 'flex flex-col gap-12 w-full max-w-5xl mx-auto mt-6';
+            container.style.height = 'auto';
+            container.innerHTML = '';
 
-            container.innerHTML = `
-                <svg class="absolute w-full h-full pointer-events-none overflow-visible">
-                    <path d="${pathD}" 
-                          fill="none" stroke="#F9C013" stroke-width="8" stroke-dasharray="20,20" opacity="0.2"/>
-                </svg>
-            `;
-
-            // Render Level Headers
-            for (let l = 1; l <= Math.ceil(sessionCount / 12); l++) {
-                const header = document.createElement('div');
-                header.className = 'map-section-title';
-                header.style.top = `${(l - 1) * 1200 + 400}px`;
-                header.innerText = `LEVEL ${l}`;
-                container.appendChild(header);
-            }
-
-            // Render Nodes
-            for (let i = 1; i <= sessionCount; i++) {
-                const lesson = curriculumData.find(l => parseInt(l.col_1) === i);
-                const node = document.createElement('div');
-                node.className = `node-container ${lesson ? '' : 'locked opacity-40'}`;
+            for (let l = 1; l <= levelCount; l++) {
+                const levelSection = document.createElement('div');
+                levelSection.className = 'w-full';
                 
-                // Positioning Logic (matching path)
-                let x = 500;
-                let y = 50 + (i - 1) * 100;
-
-                if (i % 4 === 2) x = 850;
-                if (i % 4 === 0) x = 150;
-
-                node.style.left = `${x - 70}px`;
-                node.style.top = `${y - 70}px`;
-                
-                node.innerHTML = `
-                    <div class="node-orbit">
-                        <div class="node-number">${i}</div>
-                        <span class="text-3xl">${PROGRAMS[currentProgram].emoji}</span>
-                    </div>
-                    <div class="node-label">Sesi ${i}</div>
+                // Level Header
+                const levelHeader = document.createElement('div');
+                levelHeader.className = 'mb-8 flex items-center gap-4';
+                levelHeader.innerHTML = `
+                    <div class="h-px flex-1 bg-k-blue-d/10"></div>
+                    <h2 class="font-black text-xl md:text-2xl uppercase tracking-widest text-k-blue-d bg-white/70 px-8 py-3 rounded-full border border-white/50 backdrop-blur-md shadow-sm">LEVEL ${l}</h2>
+                    <div class="h-px flex-1 bg-k-blue-d/10"></div>
                 `;
-                
-                if (lesson) {
-                    node.onclick = () => showDetail(lesson);
-                    node.classList.add('cursor-pointer', 'hover:scale-110', 'transition-transform');
+                levelSection.appendChild(levelHeader);
+
+                // Grid for 12 sessions
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5';
+
+                for (let i = 1; i <= 12; i++) {
+                    const sessionNumber = hasLevels ? i : ((l - 1) * 12) + i;
+                    
+                    let lesson;
+                    if (hasLevels) {
+                        lesson = curriculumData.find(d => parseInt(d.col_0) === l && parseInt(d.col_1) === sessionNumber);
+                    } else {
+                        lesson = curriculumData.find(d => parseInt(d.col_1) === sessionNumber);
+                    }
+                    
+                    const card = document.createElement('div');
+                    
+                    if (lesson) {
+                        card.className = 'planet-card rounded-[1.5rem] p-5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:-translate-y-2 hover:shadow-xl transition-all shadow-md border-2 border-white/40 hover:border-k-yellow group relative overflow-hidden bg-white/80';
+                        card.onclick = () => {
+                            const levelParam = hasLevels ? (lesson.col_0 || l) : 0;
+                            window.location.href = `curriculum-detail.html?program=${currentProgram}&level=${levelParam}&session=${sessionNumber}`;
+                        };
+                        card.innerHTML = `
+                            <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center text-3xl shadow-sm border border-k-blue/10 group-hover:scale-110 transition-transform">
+                                ${PROGRAMS[currentProgram].emoji}
+                            </div>
+                            <div class="text-center z-10">
+                                <p class="font-black text-sm uppercase text-k-blue-d group-hover:text-k-blue transition-colors">Sesi ${sessionNumber}</p>
+                            </div>
+                        `;
+                    } else {
+                        card.className = 'planet-card rounded-[1.5rem] p-5 flex flex-col items-center justify-center gap-3 opacity-60 shadow-sm border border-white/20 bg-white/40';
+                        card.innerHTML = `
+                            <div class="w-14 h-14 rounded-full bg-black/5 flex items-center justify-center text-2xl grayscale">
+                                🔒
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-sm uppercase text-k-blue-d/60">Sesi ${sessionNumber}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    grid.appendChild(card);
                 }
                 
-                container.appendChild(node);
+                levelSection.appendChild(grid);
+                container.appendChild(levelSection);
             }
         }
 
@@ -742,5 +779,16 @@
             selectCourse('roblox');
         });
     </script>
+    <!-- Shared Activity Modal -->
+    <div id="shared-activity-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden items-center justify-center p-4 md:p-10">
+        <div class="planet-card w-full h-full max-w-7xl rounded-[2rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative border-4 border-k-yellow">
+            <button onclick="document.getElementById('shared-activity-modal').classList.remove('flex'); document.getElementById('shared-activity-modal').classList.add('hidden');" class="absolute top-4 right-4 md:top-6 md:right-6 w-12 h-12 rounded-2xl bg-k-yellow text-k-blue-d hover:bg-yellow-300 hover:scale-105 flex items-center justify-center z-10 transition-all shadow-lg border-2 border-yellow-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <div class="w-full h-full bg-white relative">
+                <iframe src="https://docs.google.com/document/d/1kZWrsS_LPQdJbRaNezxAv0SdZ--_t8pfCtzMaHlXuUY/preview" class="w-full h-full border-0 absolute inset-0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

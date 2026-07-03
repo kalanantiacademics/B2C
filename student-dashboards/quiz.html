@@ -299,9 +299,19 @@
             const data=await res.json();
             const classCode = (localStorage.getItem('classCode') || '').toUpperCase();
             
-            // Find Lesson by exact Array Index mapping (Row 3 = Index 1 = activeLesson 1)
-            // This bypasses the duplicate 1-12 session numbers and works perfectly for overall session progression
-            const lesson = data[activeLesson];
+            const sesNumber = parseInt(activeLesson, 10);
+            
+            // Find all rows for this session
+            const sessionRows = data.filter(r => {
+                const s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                return s === sesNumber;
+            });
+            
+            if(!sessionRows.length) throw new Error('No lesson found for session ' + activeLesson);
+
+            // Find the row that actually contains the quiz data
+            let lesson = sessionRows.find(r => (r.quiz_questions || r.col_11 || '').toString().trim().length > 0);
+            if (!lesson) lesson = sessionRows[0];
 
             if(!lesson) throw new Error('No lesson found for session ' + activeLesson);
             // Primary parser follows the current sheet format used by the main quiz page:
@@ -346,12 +356,21 @@
         });
 
         const ansLines=rawAnswers.split(/\r?\n/).filter(l=>l.trim());
-        const ansParsed=ansLines.map(line=>{
-            const strict=line.match(/^\d+\.\s*([A-D])\./i);
-            if(strict) return strict[1].toUpperCase();
-            const loose=line.match(/\b([A-D])\b/i);
-            return loose?loose[1].toUpperCase():null;
-        });
+        let ansParsed = [];
+        
+        // Support inline format like "1(B), 2(B), 3(A),"
+        const inlineMatches = [...rawAnswers.matchAll(/\d+\s*[\(\.\-]?\s*([A-D])/gi)];
+        if (inlineMatches.length > 0 && inlineMatches.length >= qParsed.length / 2) {
+            ansParsed = inlineMatches.map(m => m[1].toUpperCase());
+        } else {
+            // Fallback for multiline format
+            ansParsed=ansLines.map(line=>{
+                const strict=line.match(/^\d+[\.\)]?\s*([A-D])/i);
+                if(strict) return strict[1].toUpperCase();
+                const loose=line.match(/\b([A-D])\b/i);
+                return loose?loose[1].toUpperCase():null;
+            });
+        }
 
         return qParsed.map((question,idx)=>{
             const options=optParsed[idx]||[];

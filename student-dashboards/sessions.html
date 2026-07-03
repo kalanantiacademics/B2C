@@ -262,7 +262,7 @@
     <script>
     const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
     const WEB_APP_BASE = STUDENT_API_URL;
-    const MAX_LESSONS=8;
+    let MAX_LESSONS=12;
     const COURSES={
         roblox:{sheet:'B2C_RobloxStudio_INS',label:'Roblox Studio',emoji:'🎮',desc:['Mengenal Roblox Studio dan membuat jalur Obby sederhana.','Menggunakan Plugin F3X, 3D Text, dan GapFill.','Membuat pemandangan terra menggunakan Terrain Tools.','Menciptakan efek pencahayaan dengan Lighting Tools.','Membuat sistem Teams dan Checkpoint tanpa coding!','Merancang rintangan seru & publish game ke Roblox.','Membuat pintu otomatis berengsel dengan Hinge Constraint.','Pintu otomatis dan Kincir Angin berputar terus!']},
         scratch:{sheet:'B2C_Scratch_INS',label:'Scratch',emoji:'🐱',desc:['Mengenal Scratch dan antarmuka editor yang seru.','Membuat Sprite, Kostum dan Gerakan dasar.','Belajar Variabel dan Kondisi if-then.','Membuat Loop, Animasi dan Efek keren.','Menambahkan Suara dan Efek visual.','Membuat Proyek Game Sederhanamu sendiri.','Interaksi dan Event handling antar karakter.','Publikasi dan Berbagi Proyekmu ke dunia!']}
@@ -303,9 +303,14 @@
 
     // Progress strip
     const currentSession=parseInt(localStorage.getItem('currentSession')||'1',10);
-    const progPct=Math.max(8,Math.round((currentSession-1)/MAX_LESSONS*100));
-    document.getElementById('top-prog-bar').style.width=progPct+'%';
-    document.getElementById('top-prog-text').textContent=`Orbit ${currentSession}/${MAX_LESSONS}`;
+    function updateProgressUI(totalLessons) {
+        const progPct = Math.max(8, Math.round((currentSession - 1) / totalLessons * 100));
+        const bar = document.getElementById('top-prog-bar');
+        const text = document.getElementById('top-prog-text');
+        if (bar) bar.style.width = progPct + '%';
+        if (text) text.textContent = `Orbit ${currentSession}/${totalLessons}`;
+    }
+    updateProgressUI(MAX_LESSONS);
 
     let lessonCache=null;
 
@@ -332,15 +337,27 @@
             const res=await fetch(WEB_APP_BASE+'?sheet='+courseData.sheet);
             const raw=await res.json();
             
-            const getSession = (r) => {
-                return parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+            const getSession = (r, idx) => {
+                let s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                if (isNaN(s)) s = idx + 1;
+                return s;
             };
 
-            const lessons=raw.filter(r=>{
-                const s = getSession(r);
-                return !isNaN(s) && s>=1 && s<=MAX_LESSONS;
-            }).sort((a,b)=>getSession(a)-getSession(b)).slice(0,MAX_LESSONS);
+            const uniqueMap = new Map();
+            raw.forEach((r, idx) => {
+                const s = getSession(r, idx);
+                if (!isNaN(s) && s >= 1) {
+                    if (!uniqueMap.has(s)) {
+                        r._sessNum = s;
+                        uniqueMap.set(s, r);
+                    }
+                }
+            });
+            const lessons = Array.from(uniqueMap.values()).sort((a,b)=>a._sessNum - b._sessNum);
             
+            MAX_LESSONS = lessons.length > 0 ? lessons.length : 12;
+            updateProgressUI(MAX_LESSONS);
+
             lessonCache=lessons;
             renderPath(lessons);
             loadEl.style.display='none';mapEl.style.display='block';
@@ -407,7 +424,8 @@
         const pathPts=pts.map(p=>({x:p.x,y:p.y}));
         let html=buildPath(pathPts,W,H);
 
-        const curSess=parseInt(localStorage.getItem('currentSession')||'1',10);
+        const attSessVal = parseInt(localStorage.getItem('attendanceSession'), 10);
+        const curSess = !isNaN(attSessVal) && attSessVal > 0 ? attSessVal : parseInt(localStorage.getItem('currentSession')||'1',10);
         const isAdmin=localStorage.getItem('isAdmin')==='true';
 
         // Add star decorations along path
@@ -463,10 +481,14 @@
     }
 
     function goToLesson(n){
-        const curSess=parseInt(localStorage.getItem('currentSession')||'1',10);
+        const attSessVal = parseInt(localStorage.getItem('attendanceSession'), 10);
+        const curSess = !isNaN(attSessVal) && attSessVal > 0 ? attSessVal : parseInt(localStorage.getItem('currentSession')||'1',10);
         const isAdm=localStorage.getItem('isAdmin')==='true';
-        if(n>curSess&&!isAdm){
-            showStatusPopup('warning', 'MASIH KE-GEMBOK! 🔒', 'Ayo selesaikan misi sebelumnya dulu dan minta Kakak Pengajar buat kasih nilai, supaya pintu materi ini kebuka! Semangat ya! 🚀');
+        
+        let isAllowed = (n <= curSess) || isAdm;
+        
+        if(!isAllowed){
+            showStatusPopup('warning', 'MASIH KE-GEMBOK! 🔒', 'Ayo selesaikan misi di sesi sebelumnya dulu bersama pengajar untuk membuka materi ini! Semangat ya! 🚀');
             return;
         }
         localStorage.setItem('activeLesson',n);

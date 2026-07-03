@@ -262,6 +262,26 @@
         .status-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #B28400, 0 20px 40px -10px rgba(249, 192, 19, 0.5); }
         .status-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #B28400, 0 5px 10px -2px rgba(249, 192, 19, 0.3); }
 
+        /* Image Popup Modal */
+        #image-modal {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 100000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        #image-modal.active {
+            display: flex; opacity: 1;
+        }
+        #image-modal img {
+            max-width: 90vw; max-height: 90vh; border-radius: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.8); transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); object-fit: contain;
+        }
+        #image-modal.active img {
+            transform: scale(1);
+        }
+        #image-modal-close {
+            position: absolute; top: 2rem; right: 2rem; color: white; font-size: 1.5rem; cursor: pointer; opacity: 0.6; transition: all 0.2s; background: rgba(255,255,255,0.1); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2); z-index: 100001;
+        }
+        #image-modal-close:hover {
+            opacity: 1; transform: scale(1.1); background: rgba(255,255,255,0.2);
+        }
+
         /* Mission Control Loader */
         #mission-loader {
             position: fixed; inset: 0;
@@ -357,6 +377,12 @@
             <p id="status-message" class="text-lg leading-relaxed mb-10 font-bold" style="color:#ddeeff">Pesan status di sini...</p>
             <button onclick="document.getElementById('status-modal').classList.remove('active')" class="status-btn px-10 py-5">SIAP, KAPTEN! 🛰️</button>
         </div>
+    </div>
+
+    <!-- Image Popup Modal -->
+    <div id="image-modal" onclick="closeImageModal()">
+        <div id="image-modal-close" onclick="closeImageModal(); event.stopPropagation();">✕</div>
+        <img id="image-modal-img" src="" alt="Popup Image" onclick="event.stopPropagation();">
     </div>
 
     <!-- Project Preview Modal -->
@@ -634,12 +660,10 @@
             };
 
             const kcData = getCol(['kamus coder'], 'col_9');
-            const fykData = getCol(['for your knowledge', 'tahukah kamu'], 'col_10');
-            const interactiveData = getCol(['Interactive slide'], 'col_14');
-            const scriptData = getCol(['Script HTML'], 'col_15') || interactiveData;
+            const interactiveData = getCol(['Interactive slide'], 'col_14') || '';
+            const scriptData = getCol(['Script HTML'], 'col_15') || '';
 
             kcBlocks = parseBlocks(kcData, 'kc');
-            fykBlocks = parseBlocks(fykData, 'fyk');
             sInteractiveBlocks = parseBlocks(interactiveData, 's', ':');
             sScriptBlocks = parseBlocks(scriptData, 's', '\\*');
 
@@ -651,11 +675,37 @@
                 materialsContent = 'H# Materi Belum Tersedia\n\nMaaf Captain, instruksi misi untuk sesi ini sedang dipersiapkan di Markas. Harap tunggu aba-aba selanjutnya dari komandan!';
             }
             
+            // Handle pure interactiveData without codes
+            if (Object.keys(sInteractiveBlocks).length === 0 && interactiveData.trim() && !interactiveData.match(/s\d+:/)) {
+                sInteractiveBlocks['raw_int'] = interactiveData;
+                materialsContent += '\n\n[s_raw_int:]';
+            }
+            
+            // Handle pure scriptData without codes
+            if (Object.keys(sScriptBlocks).length === 0 && scriptData.trim() && scriptData !== interactiveData && !scriptData.match(/s\d+\*/)) {
+                sScriptBlocks['raw_scr'] = scriptData;
+                materialsContent += '\n\n[s_raw_scr*]';
+            }
+
+            // Handle inline embedded HTML/iframe via ^...^ syntax
+            let customIdCounter = 1;
+            materialsContent = materialsContent.replace(/\^([\s\S]+?)\^/g, (match, code) => {
+                const id = 'custom_' + customIdCounter++;
+                sInteractiveBlocks[id] = code.trim();
+                return `\n\n[s${id}:]\n\n`;
+            });
+
+            // Normalizing sX* and sX: to force new slides
+            materialsContent = materialsContent.replace(/\n?\s*\[?s(\d+)([\*:])\]?\s*\n?/g, '\n---\n[s$1$2]\n---\n');
+            
             // split slides by --- or divide# (case insensitive, ignoring horizontal spacing)
             lessonSlides = materialsContent.split(/(?:\s*---\s*|\s*divide#\s*)/i);
             
-            // Format slides with placeholders injected
-            lessonSlides = lessonSlides.map(s => ({ content: injectPlaceholders(formatMaterialContent(s)) }));
+            // Format slides with placeholders injected, and remove empty slides
+            lessonSlides = lessonSlides
+                .map(s => s.trim())
+                .filter(s => s.length > 0)
+                .map(s => ({ content: injectPlaceholders(formatMaterialContent(s)) }));
             
             learningObjectives = getCol(['Objectives', 'Objective', 'Tujuan'], 'col_3');
 
@@ -718,6 +768,15 @@
             if (!raw) return '';
             let content = raw;
             
+            let codeBlocks = {};
+            let codeIdCounter = 0;
+            content = content.replace(/```([\s\S]*?)```/g, (match, code) => {
+                const id = `__CODE_BLOCK_${codeIdCounter}__`;
+                codeBlocks[id] = code.replace(/^[a-z]+\n/i, '').trim();
+                codeIdCounter++;
+                return `\n${id}\n`;
+            });
+            
             // Standard Markdown-like Headers (H#, H##, H###) - Premium Aesthetic
             content = content.replace(/^H###\s*(.*)$/gm, '<h3 class="text-xl font-black text-k-blue/90 dark:text-blue-200 mt-6 mb-3 flex items-center gap-3"><span class="w-2 h-6 bg-k-yellow/40 rounded-full"></span>$1</h3>');
             content = content.replace(/^H##\s*(.*)$/gm, '<h2 class="text-2xl font-black text-k-blue dark:text-white mt-8 mb-4 border-l-4 border-k-yellow pl-4 py-1 bg-k-yellow/10 rounded-r-xl shadow-sm">$1</h2>');
@@ -728,24 +787,36 @@
                 let trimmed = line.trim();
                 if (!trimmed) return '<br>';
                 
+                if (trimmed.match(/^__CODE_BLOCK_\d+__$/)) return trimmed;
+                
                 if (trimmed.startsWith('![')) {
                     const match = trimmed.match(/!\[(.*?)\]\((.*?)\)/);
-                    if (match) return `<div class="my-8 flex justify-center"><img src="${match[2]}" alt="${match[1]}" class="material-img w-full max-w-lg max-h-[400px] object-contain rounded-3xl border-4 border-k-blue/10 shadow-2xl"></div>`;
+                    if (match) return `<div class="my-8 flex justify-center"><img src="${match[2]}" alt="${match[1]}" class="material-img w-full max-w-lg max-h-[400px] object-contain rounded-3xl border-4 border-k-blue/10 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="openImageModal(this.src)"></div>`;
                 } else if (trimmed.match(/^https?:\/\/[^\s<"]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^"\s]+)?$/i)) {
                     // Raw image link fallback with max size limit
-                    return `<div class="my-8 flex justify-center"><img src="${trimmed}" alt="Material image" class="material-img max-w-[80%] max-h-[400px] object-contain rounded-3xl border-4 border-k-blue/10 shadow-2xl"></div>`;
+                    return `<div class="my-8 flex justify-center"><img src="${trimmed}" alt="Material image" class="material-img max-w-[80%] max-h-[400px] object-contain rounded-3xl border-4 border-k-blue/10 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="openImageModal(this.src)"></div>`;
                 }
 
-                if (trimmed.match(/^(kc\d+|fyk\d+|\[s\d+\*\]|\[s\d+:\])$/)) return trimmed;
+                if (trimmed.match(/^(kc\d+|fyk\d+|\[s[a-zA-Z0-9_]+[\*:]\])$/)) return trimmed;
                 if (trimmed.startsWith('<h1') || trimmed.startsWith('<h2') || trimmed.startsWith('<h3')) return line;
 
                 return `<p class="text-lg leading-relaxed text-[var(--text)] opacity-90 mb-4">${line}</p>`;
             });
-            return formattedLines.join('');
+            
+            let finalHtml = formattedLines.join('');
+            for (const [id, code] of Object.entries(codeBlocks)) {
+                finalHtml = finalHtml.replace(id, `<div class="my-6 relative"><div class="absolute top-0 left-0 px-4 py-1.5 bg-k-blue text-white text-[10px] font-black uppercase tracking-widest rounded-tl-2xl rounded-br-2xl z-10 shadow-sm border border-k-blue">CODE</div><pre class="bg-[#0f172a] text-[#e2e8f0] p-6 pt-10 rounded-3xl overflow-x-auto border-2 border-[#1e293b] shadow-xl relative"><code style="font-family: 'Courier New', Courier, monospace; font-size: 0.95em; line-height: 1.6;" class="block whitespace-pre">${escapeHtml(code)}</code></pre></div>`);
+            }
+            return finalHtml;
         }
 
         function escapeHtml(text) {
-            return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function injectPlaceholders(text) {
@@ -822,38 +893,46 @@
                     <div class="fyk-content">${formatMaterialContent(content)}</div>
                 </div>`;
             });
-            result = result.replace(/\[s(\d+)\*\]/g, (match, id) => {
-                if (sScriptBlocks[id]) {
-                    const sandboxAttrs = 'allow-scripts allow-forms allow-same-origin';
-                    return `<div class="s-script-container my-10 w-full relative group">
-                        <div class="absolute -inset-1 bg-gradient-to-r from-k-yellow to-orange-500 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
-                        <iframe srcdoc="${escapeHtml(sScriptBlocks[id])}" 
-                                sandbox="${sandboxAttrs}"
-                                class="relative w-full min-h-[500px] border-0 rounded-2xl shadow-2xl bg-white ring-1 ring-black/5"></iframe>
-                        <div class="mt-3 flex justify-between items-center px-4">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-muted/60 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 bg-k-yellow rounded-full animate-pulse"></span> Sandbox Active
-                            </span>
-                            <button onclick="this.closest('.s-script-container').querySelector('iframe').srcdoc = this.closest('.s-script-container').querySelector('iframe').srcdoc" 
-                                    class="text-[10px] font-black uppercase tracking-widest text-k-blue hover:text-k-yellow transition-colors flex items-center gap-1">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                                Reset
-                            </button>
-                        </div>
+            const renderContent = (content) => {
+                let trimmed = content.trim();
+                let lower = trimmed.toLowerCase();
+                
+                // If the user's content is simply an iframe embed (like Google Slides/Drive)
+                if (lower.startsWith('<iframe') && lower.endsWith('>')) {
+                    let iframeHtml = trimmed;
+                    if (!iframeHtml.includes('class=')) {
+                         iframeHtml = iframeHtml.replace('<iframe', '<iframe class="w-full min-h-[500px] border-0 rounded-2xl shadow-xl"');
+                    }
+                    return `<div class="s-interactive-wrapper my-8 w-full mx-auto flex justify-center">
+                        ${iframeHtml}
                     </div>`;
                 }
-                return match;
+
+                // If it is a full HTML page or contains custom scripts, it MUST go into a sandbox iframe!
+                const sandboxAttrs = 'allow-scripts allow-forms allow-same-origin allow-modals allow-popups allow-downloads';
+                return `<div class="s-script-container my-6 w-full relative group mx-auto">
+                    <iframe srcdoc="${escapeHtml(trimmed)}" 
+                            sandbox="${sandboxAttrs}"
+                            onload="this.style.height = Math.max(600, this.contentWindow.document.documentElement.scrollHeight + 40) + 'px';"
+                            class="relative w-full border-0 bg-transparent transition-all duration-300"></iframe>
+                    <div class="mt-2 flex justify-end px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="let f = this.closest('.s-script-container').querySelector('iframe'); let d = f.getAttribute('srcdoc'); f.removeAttribute('srcdoc'); setTimeout(() => { f.setAttribute('srcdoc', d); f.style.height = '600px'; }, 50);" 
+                                class="text-[10px] font-black uppercase tracking-widest text-muted hover:text-k-yellow transition-colors flex items-center gap-1">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            Reload Activity
+                        </button>
+                    </div>
+                </div>`;
+            };
+
+            result = result.replace(/\[s([a-zA-Z0-9_]+)\*\]/g, (match, id) => {
+                let content = sScriptBlocks[id] || sInteractiveBlocks[id];
+                return content ? renderContent(content) : match;
             });
 
-            result = result.replace(/\[s(\d+):\]/g, (match, id) => {
-                if (sInteractiveBlocks[id]) {
-                    return `<div class="s-interactive-wrapper my-10 w-full max-w-4xl mx-auto rounded-3xl p-1 bg-gradient-to-br from-k-blue/5 to-transparent border border-k-blue/10 shadow-sm overflow-hidden">
-                        <div class="bg-card/30 backdrop-blur-md rounded-[2.8rem] p-8">
-                            ${sInteractiveBlocks[id]}
-                        </div>
-                    </div>`;
-                }
-                return match;
+            result = result.replace(/\[s([a-zA-Z0-9_]+):\]/g, (match, id) => {
+                let content = sInteractiveBlocks[id] || sScriptBlocks[id];
+                return content ? renderContent(content) : match;
             });
 
 
@@ -1020,7 +1099,7 @@
             let imageHTML = '';
             if (images.length > 0) {
                 imageHTML = `<div class="flex flex-row flex-wrap gap-5 mt-6">
-                    ${images.map(img => `<img src="${img}" class="rounded-3xl border border-card-b bg-white/10 object-contain shadow-xl" style="max-height: 250px; ${images.length > 1 ? 'max-width: calc(50% - 1.25rem);' : 'max-width: 100%;'}">`).join('')}
+                    ${images.map(img => `<img src="${img}" onclick="openImageModal(this.src)" class="rounded-3xl border border-card-b bg-white/10 object-contain shadow-xl cursor-pointer hover:scale-105 transition-transform" style="max-height: 250px; ${images.length > 1 ? 'max-width: calc(50% - 1.25rem);' : 'max-width: 100%;'}">`).join('')}
                 </div>`;
             }
 
@@ -1032,7 +1111,22 @@
 
             if (splitIdx > -1) {
                 headerText = textOnly.substring(0, splitIdx + 1).trim();
-                bodyText = textOnly.substring(splitIdx + 1).trim().replace(/\n/g, '<br/>');
+                let rawBody = textOnly.substring(splitIdx + 1).trim();
+                
+                let tCodeBlocks = {};
+                let tCodeIdCounter = 0;
+                rawBody = rawBody.replace(/```([\s\S]*?)```/g, (match, code) => {
+                    const id = `__TCODE_BLOCK_${tCodeIdCounter}__`;
+                    tCodeBlocks[id] = code.replace(/^[a-z]+\n/i, '').trim();
+                    tCodeIdCounter++;
+                    return id;
+                });
+                
+                bodyText = rawBody.replace(/\n/g, '<br/>');
+                
+                for (const [id, code] of Object.entries(tCodeBlocks)) {
+                    bodyText = bodyText.replace(id, `<div class="my-4 relative"><div class="absolute top-0 left-0 px-3 py-1 bg-k-blue text-white text-[9px] font-black uppercase tracking-widest rounded-tl-xl rounded-br-xl z-10 shadow-sm">CODE</div><pre class="bg-[#0f172a] text-[#e2e8f0] p-4 pt-8 rounded-xl overflow-x-auto border-2 border-[#1e293b] shadow-lg relative text-left"><code style="font-family: 'Courier New', Courier, monospace; font-size: 0.9em; line-height: 1.5;" class="block whitespace-pre">${escapeHtml(code)}</code></pre></div>`);
+                }
             } else {
                 headerText = textOnly;
             }
@@ -1475,6 +1569,24 @@
                 document.getElementById('modal-project-iframe').src = 'about:blank';
                 modal.classList.add('hidden');
             }, 300);
+        }
+
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('image-modal-img');
+            img.src = src;
+            modal.style.display = 'flex';
+            // Force reflow
+            void modal.offsetWidth;
+            modal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300); // match transition duration
         }
 
         function attemptGoToQuiz() {

@@ -553,7 +553,7 @@
                         <div class="mt-5 pt-4" style="border-top:1px solid var(--card-b)">
                             <p class="text-xs font-bold flex items-center gap-1.5" style="color:var(--muted)">
                                 Coach:
-                                <span class="font-black px-2 py-0.5 rounded-lg text-k-blue" style="background:rgba(38,94,155,0.12); border:1px solid rgba(38,94,155,0.2)">Kak Alfan</span>
+                                <span id="teacher-name" class="font-black px-2 py-0.5 rounded-lg text-k-blue" style="background:rgba(38,94,155,0.12); border:1px solid rgba(38,94,155,0.2)">Memuat...</span>
                             </p>
                         </div>
                     </div>
@@ -719,7 +719,7 @@
     // ── Config ──────────────────────────────────────────────────────────────
     // Consolidated API URL (code-student.gs)
     const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
-    const MAX_LESSONS = 8;
+    let MAX_LESSONS = 12;
     const PLANET_PATH = [
         { name:'Planet Aurora', emoji:'🪐' }, { name:'Planet Ignis', emoji:'🔥' },
         { name:'Planet Aqua', emoji:'🌊' },   { name:'Planet Terra', emoji:'🌍' },
@@ -840,6 +840,10 @@
                     btnScratch.style.display = 'none';
                 }
                 
+                if (data.teacherName) {
+                    localStorage.setItem('teacherName', data.teacherName);
+                }
+                
                 // Simpan currentSession
                 if (data.currentSession) {
                     localStorage.setItem('currentSession', data.currentSession);
@@ -917,16 +921,23 @@
 
     async function initDashboard() {
         const course = COURSES[selectedCourse] || COURSES.roblox;
-        const currentSession = parseInt(localStorage.getItem('currentSession')||'1', 10);
+        // Match progress with attendance as requested
+        const attSess = parseInt(localStorage.getItem('attendanceSession'), 10);
+        const currentSession = !isNaN(attSess) && attSess > 0 ? attSess : parseInt(localStorage.getItem('currentSession')||'1', 10);
         const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
         const sess = clamp(currentSession, 1, MAX_LESSONS);
+
+        const coachName = localStorage.getItem('teacherName') || 'Kak Kalananti';
+        const coachEl = document.getElementById('teacher-name');
+        if (coachEl) coachEl.textContent = coachName;
 
         // Update star count (from backend, or fallback to localStorage cached value)
         const starVal = localStorage.getItem('totalStars');
         const starEl = document.getElementById('star-count');
         if (starEl) starEl.textContent = (starVal !== null && starVal !== undefined) ? starVal : '–';
-        const planet = PLANET_PATH[sess-1] || PLANET_PATH[0];
-        const pct = Math.round((sess-1)/MAX_LESSONS*100) || 8;
+        const planet = PLANET_PATH[(sess-1) % PLANET_PATH.length] || PLANET_PATH[0];
+        // Adjust pct to be based on attendance and clamped
+        const pct = !isNaN(attSess) ? Math.round(clamp(attSess, 1, MAX_LESSONS)/MAX_LESSONS*100) : (Math.round((sess-1)/MAX_LESSONS*100) || 8);
 
         // Progress bar
         document.getElementById('progress-title').textContent = `${course.emoji} ${course.label} – Planet ${sess}`;
@@ -957,16 +968,18 @@
             const res = await fetch(`${STUDENT_API_URL}?sheet=${course.sheet}`);
             const raw = await res.json();
             
-            const getSession = (r) => {
-                return parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+            const getSession = (r, idx) => {
+                let s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                if (isNaN(s)) s = idx + 1;
+                return s;
             };
 
-            const lessons = raw.filter(r => {
-                const s = getSession(r);
-                return !isNaN(s) && s >= 1 && s <= MAX_LESSONS;
-            }).sort((a,b) => getSession(a) - getSession(b)).slice(0, MAX_LESSONS);
+            const lessons = raw.map((r, idx) => {
+                r._sessNum = getSession(r, idx);
+                return r;
+            }).filter(r => r._sessNum >= 1 && r._sessNum <= MAX_LESSONS).sort((a,b) => a._sessNum - b._sessNum).slice(0, MAX_LESSONS);
             
-            const upcoming = lessons.filter(l => getSession(l) >= sess).slice(0, 4);
+            const upcoming = lessons.filter(l => l._sessNum >= sess).slice(0, 4);
 
             listEl.innerHTML = '';
             if (!upcoming.length) {
@@ -974,8 +987,8 @@
                 return;
             }
             upcoming.forEach((l, i) => {
-                const n = getSession(l);
-                const pl = PLANET_PATH[n-1] || PLANET_PATH[0];
+                const n = l._sessNum;
+                const pl = PLANET_PATH[(n-1) % PLANET_PATH.length] || PLANET_PATH[0];
                 const desc = (course.desc[n-1]||`Sesi ${n}`);
                 const shortDesc = desc.length > 35 ? desc.slice(0,32)+'…' : desc;
                 const isActive = n === sess;

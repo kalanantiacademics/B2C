@@ -132,12 +132,14 @@ function handleGetStudentProgress(classCode, studentName) {
     var dbData = dbSheet.getDataRange().getValues();
     
     var programName = '';
+    var teacherName = '';
     var classLink = '';
     var searchCode = String(classCode).trim().toUpperCase();
     
     for (var i = 1; i < dbData.length; i++) {
       if (String(dbData[i][1]).trim().toUpperCase() === searchCode) {
          programName = String(dbData[i][3]).trim();
+         teacherName = String(dbData[i][7]).trim();
          classLink = String(dbData[i][9]).trim();
          break;
       }
@@ -201,7 +203,6 @@ function handleGetStudentProgress(classCode, studentName) {
     var MAX_SESSIONS = 12;
     var PROG_ROWS_PER_SESSION = 5;
     var currentSession = 1;
-    var isCalculatingUnlocked = true;
     var totalStars = 0;
     var sessionProgress = []; // [{session, progress, isComplete, stars, rawStars}]
     
@@ -262,20 +263,35 @@ function handleGetStudentProgress(classCode, studentName) {
         uploadedLink = String(progData[baseRowIdx + linkOff][studentCol] || '').trim();
       }
       
-      // Check if teacher has graded (stars awarded for tasks)
-      var hasTeacherStars = rawStarsText.toLowerCase().indexOf('must do') > -1 || 
-                           rawStarsText.toLowerCase().indexOf('should do') > -1 ||
-                           rawStarsText.toLowerCase().indexOf('aspire') > -1;
+      var uploadedLinkLower = uploadedLink.toLowerCase();
+      var rawStarsTextLower = rawStarsText.toLowerCase();
+
+      var submittedMustDo = uploadedLinkLower.indexOf('[must do]') > -1;
+      var submittedShouldDo = uploadedLinkLower.indexOf('[should do]') > -1;
+      var submittedAspire = uploadedLinkLower.indexOf('[aspire') > -1;
+
+      var gradedMustDo = rawStarsTextLower.indexOf('must do') > -1;
+      var gradedShouldDo = rawStarsTextLower.indexOf('should do') > -1;
+      var gradedAspire = rawStarsTextLower.indexOf('aspire') > -1;
+
+      var hasTeacherStars = false;
+
+      if (submittedMustDo || submittedShouldDo || submittedAspire) {
+          // Harus dinilai sesuai dengan apa yang dikumpulkan
+          hasTeacherStars = true;
+          if (submittedMustDo && !gradedMustDo) hasTeacherStars = false;
+          if (submittedShouldDo && !gradedShouldDo) hasTeacherStars = false;
+          if (submittedAspire && !gradedAspire) hasTeacherStars = false;
+      } else {
+          // Fallback jika tidak ada label spesifik di link
+          hasTeacherStars = sSessionStars > 0 || gradedMustDo || gradedShouldDo || gradedAspire;
+      }
 
       sessionProgress.push({ session: s, progress: strVal || '0%', isComplete: isComplete, stars: sSessionStars, rawStars: rawStarsText, link: uploadedLink, graded: hasTeacherStars });
       
-      // Unlock next session logic (Stop incrementing currentSession if any previous is not complete/graded)
-      if (isCalculatingUnlocked) {
-          if (isComplete && hasTeacherStars) {
-              currentSession = s + 1; 
-          } else {
-              isCalculatingUnlocked = false; 
-          }
+      // Unlock next session logic (Always take the highest completed session + 1)
+      if (isComplete && hasTeacherStars) {
+          currentSession = Math.max(currentSession, s + 1);
       }
     }
     
@@ -287,19 +303,40 @@ function handleGetStudentProgress(classCode, studentName) {
       var absSheet = ssClass.getSheetByName('Absensi');
       if (absSheet) {
         var absData = absSheet.getDataRange().getValues();
-        // Cari nama siswa di kolom B (index 1), mulai dari baris 16 (index 15)
-        var ABS_DATA_ROW_IDX = 15; // row 16 (0-indexed)
-        var ABS_SESI1_COL = 5;     // col F = index 5 = Sesi 1
+        
+        // Dynamically find correct header rows instead of hardcoding row 16 / col F
+        var absDataRowStart = 15;
+        var colNameIdx = 1;
+        var colSesi1Idx = 5;
+        
+        for (var i = 0; i < absData.length; i++) {
+           var rowNorm = absData[i].map(function(v) { return String(v).trim().toLowerCase(); });
+           var foundNameIdx = -1;
+           for (var c = 0; c < rowNorm.length; c++) {
+               if (rowNorm[c] === "students name" || rowNorm[c] === "student's name" || rowNorm[c] === "nama siswa") {
+                   foundNameIdx = c;
+                   break;
+               }
+           }
+           if (foundNameIdx !== -1) {
+               absDataRowStart = i + 1;
+               colNameIdx = foundNameIdx;
+               var sesi1Idx = rowNorm.indexOf("sesi 1");
+               if (sesi1Idx !== -1) colSesi1Idx = sesi1Idx;
+               break;
+           }
+        }
+
         var MAX_ABS_SESSIONS = 12;
         
-        for (var r = ABS_DATA_ROW_IDX; r < absData.length; r++) {
-          var absName = normalizeStr(absData[r][1]); // col B
+        for (var r = absDataRowStart; r < absData.length; r++) {
+          var absName = normalizeStr(absData[r][colNameIdx]);
           if (!absName) continue;
           if (absName === searchName || (searchName.length > 3 && (absName.indexOf(searchName) > -1 || searchName.indexOf(absName) > -1))) {
-            // Hitung berapa sesi yang ada tanggalnya
+            // Hitung berapa sesi yang ada tanggalnya, pastikan bukan N/A
             for (var sIdx = 0; sIdx < MAX_ABS_SESSIONS; sIdx++) {
-              var sVal = absData[r][ABS_SESI1_COL + sIdx];
-              if (sVal !== '' && sVal !== null && sVal !== undefined) {
+              var sVal = absData[r][colSesi1Idx + sIdx];
+              if (sVal !== '' && sVal !== null && sVal !== undefined && String(sVal).trim().toUpperCase() !== 'N/A') {
                 attendanceSession = Math.max(attendanceSession, sIdx + 1);
               }
             }
@@ -361,6 +398,7 @@ function handleGetStudentProgress(classCode, studentName) {
     return createJsonResponse({
       success: true,
       programName: programName,
+      teacherName: teacherName,
       currentSession: currentSession,
       attendanceSession: attendanceSession,
       totalStars: totalStars,
@@ -399,6 +437,7 @@ function getClassInfo(classCode) {
        var idMatch = link.match(/\/d\/([a-zA-Z0-9-_]+)/);
        return {
          programName: String(dbData[i][3]).trim(),
+         teacherName: String(dbData[i][7]).trim(),
          classLink: link,
          ssId: idMatch ? idMatch[1] : null
        };

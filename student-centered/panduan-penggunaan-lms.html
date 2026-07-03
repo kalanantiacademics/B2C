@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Penggunaan LMS B2C SCL Kalananti</title>
+  <style>
+    :root {
+      --blue: #17457a;
+      --blue-2: #265e9b;
+      --cyan: #339d9d;
+      --yellow: #f9c013;
+      --ink: #14233f;
+      --muted: #60718f;
+      --line: #dbe5f2;
+      --paper: #ffffff;
+      --soft: #f4f8fd;
+      --soft-yellow: #fff7da;
+      --green: #128064;
+      --red: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background: #eef4fb;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.55;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(38, 94, 155, .12), transparent 30%),
+        linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .cover {
+      padding: 42px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(38, 94, 155, .96), rgba(23, 69, 122, .96)),
+        var(--blue);
+      color: white;
+      box-shadow: 0 22px 60px rgba(18, 44, 78, .22);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: rgba(249, 192, 19, .22);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--yellow);
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.2;
+      color: var(--blue);
+    }
+
+    .cover h1 {
+      max-width: 760px;
+      color: white;
+      font-size: 40px;
+      letter-spacing: -.02em;
+    }
+
+    .cover .subtitle {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: rgba(255, 255, 255, .86);
+      font-size: 17px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .meta {
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, .20);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .10);
+    }
+
+    .meta span {
+      display: block;
+      color: rgba(255, 255, 255, .66);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .meta strong {
+      display: block;
+      margin-top: 5px;
+      color: white;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .section {
+      margin-top: 28px;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--paper);
+      box-shadow: 0 12px 36px rgba(24, 44, 79, .07);
+    }
+
+    .section h2 {
+      margin-bottom: 16px;
+      font-size: 26px;
+    }
+
+    .section h3 {
+      margin: 22px 0 10px;
+      font-size: 18px;
+    }
+
+    p { margin: 0 0 12px; }
+
+    a {
+      color: var(--blue-2);
+      font-weight: 700;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .link-card, .info-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .link-card strong, .info-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--blue);
+    }
+
+    .steps {
+      margin: 12px 0 0;
+      padding-left: 22px;
+    }
+
+    .steps li { margin: 8px 0; }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #eaf3ff;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid #cfe1f7;
+    }
+
+    .note {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-left: 5px solid var(--yellow);
+      background: var(--soft-yellow);
+      border-radius: 10px;
+    }
+
+    .warning {
+      border-left-color: var(--red);
+      background: #fff0ed;
+    }
+
+    figure {
+      margin: 18px 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f6f8fb;
+      break-inside: avoid;
+    }
+
+    figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    figcaption {
+      padding: 10px 14px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+      break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 11px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--blue);
+      background: #eaf3ff;
+      font-weight: 800;
+    }
+
+    td code, p code, li code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #edf2f8;
+      color: #102642;
+      font-family: Consolas, Menlo, monospace;
+      font-size: .92em;
+    }
+
+    .callout-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .callout {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .callout b {
+      display: block;
+      color: var(--blue);
+      margin-bottom: 5px;
+    }
+
+    .manual-block {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfdff;
+      break-inside: avoid;
+    }
+
+    .manual-block h3 {
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .mini-title {
+      margin: 14px 0 6px;
+      color: var(--blue);
+      font-weight: 800;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .click-steps {
+      margin: 8px 0 0;
+      padding-left: 22px;
+    }
+
+    .click-steps li {
+      margin: 7px 0;
+    }
+
+    .button-name {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 7px;
+      border: 1px solid #cadcf1;
+      background: #eef6ff;
+      color: var(--blue);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .screen-path {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 2px;
+      align-items: center;
+    }
+
+    .screen-path span {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #eef6ff;
+      border: 1px solid #cadcf1;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .screen-path i {
+      color: var(--muted);
+      font-style: normal;
+      font-weight: 800;
+    }
+
+    .code-map {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .code-map div {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .code-map div:nth-child(odd) {
+      background: #f2f7fd;
+      color: var(--blue);
+      font-weight: 800;
+      border-right: 1px solid var(--line);
+    }
+
+    .code-map div:nth-last-child(-n+2) { border-bottom: 0; }
+
+    .footer {
+      margin-top: 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    @media (max-width: 820px) {
+      .page { width: min(100% - 24px, 1120px); }
+      .cover, .section { padding: 22px; }
+      .cover h1 { font-size: 30px; }
+      .meta-grid, .grid-2, .callout-grid { grid-template-columns: 1fr; }
+      .code-map { grid-template-columns: 1fr; }
+      .code-map div:nth-child(odd) { border-right: 0; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      html, body { background: white; }
+      .page { width: 100%; padding: 0; }
+      .cover, .section {
+        box-shadow: none;
+        border-color: #cfd8e6;
+        page-break-inside: avoid;
+      }
+      .section { margin-top: 16px; }
+      a { color: #17457a; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="cover">
+      <p class="eyebrow">Panduan Operasional LMS</p>
+      <h1>Panduan Penggunaan LMS B2C SCL Kalananti</h1>
+      <p class="subtitle">
+        Dokumen ini dibuat sebagai panduan operasional: login klik apa, masuk halaman mana, buka materi dari mana,
+        cara kerjakan quiz, cara upload bukti/project, cara teacher absensi, dan cara teacher memberi bintang.
+      </p>
+      <div class="meta-grid">
+        <div class="meta"><span>Kode Kelas</span><strong>SCLMTA201</strong></div>
+        <div class="meta"><span>Akses Teacher</span><strong>yazid@kalananti.id</strong></div>
+        <div class="meta"><span>Akses Siswa</span><strong>Kode kelas + random names</strong></div>
+        <div class="meta"><span>Contoh DB</span><strong>Absensi dan Progress</strong></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>1. Link Utama dan Kredensial Review</h2>
+      <div class="grid-2">
+        <div class="link-card">
+          <strong>Deck Teacher Guidelines</strong>
+          <a href="https://kalanantiacademics.github.io/B2C/teacher-dashboard/panduan-scl.html" target="_blank">https://kalanantiacademics.github.io/B2C/teacher-dashboard/panduan-scl.html</a>
+        </div>
+        <div class="link-card">
+          <strong>Deck SA</strong>
+          <a href="https://kalanantiacademics.github.io/B2C/student-centered/panduan-scl-cabang.html" target="_blank">https://kalanantiacademics.github.io/B2C/student-centered/panduan-scl-cabang.html</a>
+        </div>
+        <div class="link-card">
+          <strong>LMS Siswa</strong>
+          <a href="https://kalanantiacademics.github.io/B2C/student-dashboards" target="_blank">https://kalanantiacademics.github.io/B2C/student-dashboards</a>
+        </div>
+        <div class="link-card">
+          <strong>LMS Teacher</strong>
+          <a href="https://kalanantiacademics.github.io/B2C/teacher-dashboard" target="_blank">https://kalanantiacademics.github.io/B2C/teacher-dashboard</a>
+        </div>
+        <div class="link-card">
+          <strong>Spreadsheet Contoh</strong>
+          <a href="https://docs.google.com/spreadsheets/d/1HTGmY-pwhq-U-UuAk4YF3mqeBC2e6mVFAYDxfhciTq8/edit?usp=sharing" target="_blank">Spreadsheet kelas SCLMTA201</a>
+        </div>
+        <div class="info-card">
+          <strong>Akses yang dipakai untuk review</strong>
+          Siswa: <code>SCLMTA201</code> lalu pilih nama acak dari daftar. Teacher: login email <code>yazid@kalananti.id</code>, lalu pilih kelas <code>SCLMTA201</code>.
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. Panduan Lengkap LMS Siswa</h2>
+      <p>
+        Bagian ini menjelaskan alur yang dilakukan siswa dari awal sampai tugas terkirim. Ikuti urutannya dari atas ke bawah.
+      </p>
+
+      <div class="screen-path">
+        <span>Login siswa</span><i>→</i><span>Pilih nama</span><i>→</i><span>Dashboard</span><i>→</i><span>Materi</span><i>→</i><span>Must Do / Should Do / Aspire</span><i>→</i><span>Upload bukti</span><i>→</i><span>Quiz</span><i>→</i><span>Tunggu nilai teacher</span>
+      </div>
+
+      <div class="manual-block">
+        <h3>2.1 Login Siswa</h3>
+        <p class="mini-title">Yang diklik siswa</p>
+        <ol class="click-steps">
+          <li>Buka link <a href="https://kalanantiacademics.github.io/B2C/student-dashboards" target="_blank">LMS Siswa</a>.</li>
+          <li>Di kotak input kode kelas, ketik <code>SCLMTA201</code>.</li>
+          <li>Klik tombol <span class="button-name">Cari Kelasku</span>.</li>
+          <li>Jika kode benar, halaman berubah ke pilihan nama dan muncul label kelas <code>SCLMTA201</code>.</li>
+          <li>Klik dropdown nama, pilih salah satu nama siswa yang tersedia.</li>
+          <li>Klik tombol <span class="button-name">Menuju Dashboard</span>.</li>
+        </ol>
+        <p class="mini-title">Yang terjadi di sistem</p>
+        <p>Dashboard mengecek kode kelas, mengambil daftar siswa aktif, lalu menyimpan <code>classCode</code> dan <code>studentName</code> di browser agar halaman dashboard bisa terbuka.</p>
+        <p class="mini-title">Yang tersimpan di spreadsheet</p>
+        <p>
+          Login dan pilih nama tidak menulis data baru ke spreadsheet. Sistem hanya membaca master database tab <code>Student Active</code>
+          untuk mencari kode kelas di kolom <code>V</code>, nama siswa di kolom <code>B</code>, dan status siswa di kolom <code>W</code>.
+        </p>
+        <div class="note warning">
+          Jika muncul pesan kode tidak ditemukan, cek lagi penulisan kode kelas. Untuk review ini gunakan <code>SCLMTA201</code>, huruf besar semua.
+        </div>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/f91d53c1-5f43-434c-9ade-6ca909c3d9f5.png" alt="Screenshot halaman login LMS siswa">
+        <figcaption>Halaman awal LMS Siswa: input kode kelas.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/d1b3629c-b0ed-4ef1-b4d1-5a84ef81e5b4.png" alt="Screenshot pilih nama siswa">
+        <figcaption>Setelah kode kelas valid, siswa memilih nama dari daftar kelas.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.2 Membaca Dashboard Siswa</h3>
+        <p class="mini-title">Bagian yang perlu dilihat</p>
+        <ol class="click-steps">
+          <li><strong>Kelas Kamu</strong>: menampilkan kode kelas siswa, contoh <code>SCLMTA201</code>.</li>
+          <li><strong>Orbit Progress</strong>: menampilkan sesi aktif siswa, contoh <code>Orbit 3 / 12</code>.</li>
+          <li><strong>Bintang</strong>: menampilkan total stars yang sudah dikumpulkan siswa.</li>
+          <li><strong>Status Orbit</strong>: menampilkan persentase progress belajar.</li>
+          <li><strong>Rute Selanjutnya</strong>: menunjukkan sesi aktif dan sesi yang masih terkunci.</li>
+        </ol>
+        <p class="mini-title">Tombol penting</p>
+        <ol class="click-steps">
+          <li>Klik <span class="button-name">Menuju Planet!</span> untuk membuka materi sesi aktif.</li>
+          <li>Klik <span class="button-name">Semua Sesi</span> di kanan atas untuk melihat daftar semua sesi.</li>
+          <li>Klik kartu <strong>Bintang</strong> untuk melihat rincian bintang per sesi.</li>
+          <li>Klik nama/profil di kanan atas jika ingin membuka menu akun atau logout.</li>
+        </ol>
+        <p class="mini-title">Yang tersimpan di spreadsheet</p>
+        <p>
+          Saat dashboard siswa berhasil dibuka, sistem membaca tab <code>Progress</code> dan <code>Absensi</code>.
+          Jika sesi aktif belum selesai, sistem dapat menambahkan tanggal akses hari ini ke tab <code>Progress</code>,
+          baris <code>Date</code> pada sesi aktif, di kolom nama siswa tersebut.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/f88ee233-4d02-434f-a3f0-c92f6cca4b70.png" alt="Screenshot fungsi kartu dashboard siswa">
+        <figcaption>Dashboard siswa: kartu kelas, orbit progress, total bintang, status orbit, tombol Semua Sesi, dan tombol Menuju Planet.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9ae02c4f-7690-41a7-9f62-af3c8008a948.png" alt="Screenshot daftar sesi siswa">
+        <figcaption>Halaman daftar sesi: sesi yang belum terbuka akan terkunci mengikuti progress dan attendance.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.3 Membuka Materi Sesi</h3>
+        <p class="mini-title">Dari Dashboard</p>
+        <ol class="click-steps">
+          <li>Klik tombol <span class="button-name">Menuju Planet!</span>.</li>
+          <li>Siswa akan masuk ke halaman <strong>Materi</strong> untuk sesi aktif.</li>
+          <li>Di halaman materi, baca bagian utama <strong>Intip Materi</strong> atau konten slide yang tampil di tengah halaman.</li>
+          <li>Gunakan tombol navigasi slide, biasanya tombol panah atau tombol lanjut, untuk membaca semua instruksi.</li>
+          <li>Jika ada gambar atau contoh project, klik gambar/project tersebut untuk melihat lebih jelas.</li>
+        </ol>
+        <p class="mini-title">Dari Semua Sesi</p>
+        <ol class="click-steps">
+          <li>Klik <span class="button-name">Semua Sesi</span>.</li>
+          <li>Pilih kartu sesi yang tidak terkunci.</li>
+          <li>Jika sesi masih terkunci, siswa harus menyelesaikan sesi sebelumnya dan menunggu penilaian teacher.</li>
+        </ol>
+        <p class="mini-title">Yang tersimpan di spreadsheet</p>
+        <p>
+          Membuka materi biasanya hanya membaca data. Tetapi saat siswa masuk ke materi dan progress lokal tersinkron,
+          sistem bisa menjalankan <code>updateProgress</code> untuk menulis persentase terbaru ke tab <code>Progress</code>,
+          baris <code>Progress</code> pada sesi aktif, di kolom nama siswa.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/8411c14b-07bc-40ce-8b0c-5cbde6f3eed8.png" alt="Screenshot halaman materi siswa">
+        <figcaption>Halaman materi: siswa membaca instruksi di area utama dan melihat daftar misi di panel kanan.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.4 Mengerjakan Must Do, Should Do, dan Aspire</h3>
+        <p>
+          Di halaman materi, siswa akan menemukan panel misi seperti <strong>Must Do</strong>, <strong>Should Do</strong>, dan <strong>Aspire Do</strong>.
+          Urutannya sebaiknya dikerjakan dari Must Do terlebih dahulu.
+        </p>
+        <ol class="click-steps">
+          <li>Baca instruksi pada tab <strong>Must Do</strong>.</li>
+          <li>Kerjakan tugas di Scratch, Roblox, atau tools lain sesuai instruksi sesi.</li>
+          <li>Centang checklist tugas yang sudah dikerjakan.</li>
+          <li>Jika checklist sudah cukup, tombol submit misi akan aktif.</li>
+          <li>Klik tombol submit/kumpulkan misi yang muncul di panel tersebut.</li>
+          <li>Setelah Must Do selesai, siswa bisa lanjut ke <span class="button-name">Should Do</span> lalu <span class="button-name">Aspire Do</span> jika tersedia.</li>
+        </ol>
+        <div class="note">
+          Must Do adalah bagian utama. Should Do dan Aspire dapat dipakai untuk tambahan tantangan dan tambahan stars.
+        </div>
+        <p class="mini-title">Yang tersimpan di spreadsheet</p>
+        <p>
+          Checklist yang diklik siswa disimpan dulu di browser siswa. Saat sistem melakukan sinkronisasi progress,
+          angka progress seperti <code>50%</code>, <code>75%</code>, atau progress yang lebih tinggi akan ditulis ke tab <code>Progress</code>,
+          baris <code>Progress</code> pada sesi aktif, di kolom siswa. Jika nilai lama lebih tinggi, script tidak menurunkannya.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/6653dba3-1854-4eff-9fd7-7d5da0797d2b.png" alt="Screenshot checklist Must Do siswa">
+        <figcaption>Panel misi Must Do: siswa mencentang checklist, lalu tombol kumpulkan/quiz akan muncul jika syarat sudah terpenuhi.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.5 Upload Bukti atau Link Project</h3>
+        <p class="mini-title">Yang diklik siswa</p>
+        <ol class="click-steps">
+          <li>Di halaman materi, buka bagian misi yang ingin dikumpulkan: <strong>Must Do</strong>, <strong>Should Do</strong>, atau <strong>Aspire Do</strong>.</li>
+          <li>Klik tombol submit/kumpulkan misi.</li>
+          <li>Pop-up <strong>Kumpulkan bukti misimu</strong> akan terbuka.</li>
+          <li>Jika tugas berbentuk link, isi kolom <strong>Link Project (Roblox / Scratch)</strong> dengan URL project.</li>
+          <li>Jika tugas berbentuk bukti file/screenshot, klik area upload file lalu pilih file dari komputer.</li>
+          <li>Boleh mengisi link saja, upload file saja, atau keduanya.</li>
+          <li>Klik tombol <span class="button-name">Kirim Misi</span>.</li>
+          <li>Tunggu sampai muncul status berhasil, biasanya pesan <strong>Mantap! Terkirim!</strong>.</li>
+        </ol>
+        <p class="mini-title">Yang tersimpan</p>
+        <p>
+          Saat siswa klik <span class="button-name">Kirim Misi</span>, link project dan/atau folder bukti masuk ke tab <code>Progress</code>,
+          baris <code>Project Uploaded</code> pada sesi yang sedang dikerjakan, di kolom nama siswa.
+          Formatnya diberi label seperti <code>[Must Do][Link]</code>, <code>[Should Do][Screenshot]</code>, atau <code>[Aspire][Link]</code>.
+          File/screenshot fisiknya disimpan di Google Drive folder kelas/siswa/sesi/phase; spreadsheet menyimpan URL-nya.
+        </p>
+        <div class="note warning">
+          Kalau tombol kirim tidak mau jalan, biasanya karena belum ada link dan belum ada file. Isi minimal salah satu dulu.
+        </div>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/1849adb8-a40d-4525-9351-47468ed1ed6f.png" alt="Screenshot modal upload bukti siswa">
+        <figcaption>Pop-up upload bukti: siswa bisa mengisi link project, upload screenshot/file, lalu klik Kirim Misi.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.6 Mengerjakan Quiz</h3>
+        <ol class="click-steps">
+          <li>Quiz biasanya muncul setelah siswa menyelesaikan atau submit <strong>Must Do</strong>.</li>
+          <li>Klik tombol <span class="button-name">Quiz</span> atau <span class="button-name">Mulai Quiz Kemenangan</span>.</li>
+          <li>Baca pertanyaan yang tampil di halaman quiz.</li>
+          <li>Klik salah satu jawaban untuk setiap pertanyaan.</li>
+          <li>Setelah semua pertanyaan terjawab, tombol <span class="button-name">Kumpulkan!</span> akan muncul.</li>
+          <li>Klik <span class="button-name">Kumpulkan!</span>.</li>
+          <li>Hasil quiz akan disimpan dan siswa kembali bisa melihat status progress di LMS.</li>
+        </ol>
+        <p class="mini-title">Yang tersimpan</p>
+        <p>
+          Saat siswa klik <span class="button-name">Kumpulkan!</span>, nilai quiz masuk ke tab <code>Progress</code>,
+          baris <code>Quiz Score</code> pada sesi quiz, di kolom nama siswa. Sistem juga menulis <code>100%</code>
+          ke baris <code>Progress</code> dan menambah/memperbarui entry <code>X Star - Quiz</code> di baris <code>Star gained</code>.
+          Setelah itu <code>Progress!Z1</code> diperbarui agar dashboard tahu ada data baru.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/94de2f3e-4b14-4cb6-b08b-a8f729525b4c.png" alt="Screenshot halaman quiz siswa">
+        <figcaption>Halaman quiz: setelah semua soal dijawab, siswa klik tombol Kumpulkan! untuk menyimpan hasil quiz.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.7 Melihat Nilai dan Stars</h3>
+        <ol class="click-steps">
+          <li>Masuk ke dashboard siswa.</li>
+          <li>Klik kartu <strong>Bintang</strong>.</li>
+          <li>Pop-up rincian stars akan menampilkan sesi mana yang sudah dinilai.</li>
+          <li>Jika project sudah dikirim tetapi belum ada stars, statusnya berarti masih menunggu teacher memeriksa.</li>
+        </ol>
+        <p class="mini-title">Yang dibaca dari spreadsheet</p>
+        <p>
+          Pop-up bintang membaca tab <code>Progress</code>, baris <code>Star gained</code> per sesi, di kolom nama siswa.
+          Total bintang di kartu dashboard membaca hasil penjumlahan stars yang juga disalin ke tab <code>Absensi</code> kolom total stars.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/d13daac2-7b8f-490f-8ff5-71839a6c943e.png" alt="Screenshot detail bintang siswa">
+        <figcaption>Detail bintang: siswa bisa melihat stars yang sudah didapat per sesi dan status project yang belum diperiksa.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>2.8 Keluar dari Akun Siswa</h3>
+        <ol class="click-steps">
+          <li>Klik nama/profil siswa di kanan atas.</li>
+          <li>Pilih menu keluar/logout jika tersedia.</li>
+          <li>Browser akan kembali ke halaman login siswa.</li>
+        </ol>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/63876e9b-600b-4bb4-ad35-017316b06a8d.png" alt="Screenshot menu profil siswa">
+        <figcaption>Menu profil siswa berada di kanan atas. Dari area ini siswa dapat membuka menu akun dan keluar/logout.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section">
+      <h2>3. Panduan Lengkap LMS Teacher</h2>
+      <p>
+        Bagian ini menjelaskan alur teacher dari login sampai absensi dan penilaian project siswa.
+      </p>
+
+      <div class="screen-path">
+        <span>Login teacher</span><i>→</i><span>Pilih kelas</span><i>→</i><span>Absensi</span><i>→</i><span>Progress siswa</span><i>→</i><span>Buka project</span><i>→</i><span>Beri bintang</span><i>→</i><span>Simpan nilai</span>
+      </div>
+
+      <div class="manual-block">
+        <h3>3.1 Login Teacher</h3>
+        <ol class="click-steps">
+          <li>Buka link <a href="https://kalanantiacademics.github.io/B2C/teacher-dashboard" target="_blank">LMS Teacher</a>.</li>
+          <li>Masukkan email teacher di kolom <strong>Email Akademia</strong>. Untuk review gunakan <code>yazid@kalananti.id</code>.</li>
+          <li>Klik tombol <span class="button-name">Masuk ke Orbit</span>.</li>
+          <li>Tunggu sampai dashboard teacher terbuka.</li>
+        </ol>
+        <p class="mini-title">Jika gagal login</p>
+        <p>Pastikan email terdaftar di master <code>Class Database</code>, kelas berstatus active, dan kode kelas diawali <code>SCL</code>.</p>
+        <p class="mini-title">Yang dibaca dari spreadsheet</p>
+        <p>
+          Login teacher membaca master database tab <code>Class Database</code>. Email teacher dicek di kolom <code>I</code>,
+          kode kelas di kolom <code>B</code>, status kelas di kolom <code>C</code>, nama teacher di kolom <code>H</code>,
+          dan link spreadsheet kelas di kolom <code>J</code>. Login tidak menulis data baru ke spreadsheet.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/14bcb0be-ed35-477e-b526-7951d66c9697.png" alt="Screenshot login teacher">
+        <figcaption>Halaman login Teacher: input email akademia yang terdaftar.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.2 Memilih Kelas</h3>
+        <ol class="click-steps">
+          <li>Setelah login, teacher melihat daftar kelas SCL aktif.</li>
+          <li>Cari kartu kelas <code>SCLMTA201</code>.</li>
+          <li>Klik tombol <span class="button-name">Lihat Kelas</span> atau klik area kartu kelas.</li>
+          <li>Teacher akan masuk ke halaman detail kelas.</li>
+        </ol>
+        <p class="mini-title">Tombol lain di dashboard teacher</p>
+        <ol class="click-steps">
+          <li>Klik <span class="button-name">Buka Panduan</span> untuk membuka deck/panduan SCL teacher.</li>
+          <li>Klik <span class="button-name">Lihat Kurikulum SCL</span> untuk melihat kurikulum.</li>
+          <li>Klik <span class="button-name">Link Playlist</span> di kartu kelas untuk menyimpan link playlist recording kelas.</li>
+          <li>Klik <span class="button-name">Hubungi Tim Akademik</span> jika ingin membuka form kontak/kendala.</li>
+        </ol>
+        <p class="mini-title">Yang dibaca dari spreadsheet</p>
+        <p>
+          Saat teacher memilih kelas, sistem membuka link spreadsheet kelas dari <code>Class Database</code> kolom <code>J</code>,
+          lalu membaca tab <code>Absensi</code> dan <code>Progress</code> milik kelas tersebut.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/359d46a1-36ca-4f8e-9892-775b113ef809.png" alt="Screenshot dashboard teacher">
+        <figcaption>Dashboard Teacher: daftar kelas SCL aktif milik teacher.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.3 Absensi Siswa</h3>
+        <p class="mini-title">Masuk tab absensi</p>
+        <ol class="click-steps">
+          <li>Di halaman detail kelas, pastikan tab <span class="button-name">Absensi Hari Ini</span> aktif.</li>
+          <li>Setiap siswa tampil sebagai satu kartu.</li>
+          <li>Lihat bagian <strong>Hadir Ke-</strong> untuk mengetahui sesi berikutnya yang akan ditandai hadir.</li>
+        </ol>
+        <p class="mini-title">Menandai siswa hadir atau tidak hadir</p>
+        <ol class="click-steps">
+          <li>Jika siswa hadir, pastikan toggle di kanan kartu siswa dalam posisi aktif/hijau.</li>
+          <li>Jika siswa tidak hadir, klik toggle sampai berubah nonaktif/abu-abu.</li>
+          <li>Jika ingin melihat riwayat siswa dulu, klik ikon mata pada kartu siswa.</li>
+          <li>Setelah semua siswa sudah benar, klik tombol <span class="button-name">Simpan Absensi</span>.</li>
+          <li>Tunggu pesan berhasil, misalnya <strong>Absensi Tersimpan!</strong>.</li>
+        </ol>
+        <p class="mini-title">Yang tersimpan</p>
+        <p>
+          Saat teacher klik <span class="button-name">Simpan Absensi</span>, tanggal hadir masuk ke tab <code>Absensi</code>,
+          kolom sesi siswa: <code>Sesi 1</code> sampai <code>Sesi 12</code> berada di area kolom <code>F</code> sampai <code>Q</code>.
+          Barisnya mengikuti nama siswa di kolom <code>B</code>. Jika budget sesi sudah habis, cell sesi kosong bisa ditandai <code>N/A</code>.
+          Setelah absensi tersimpan, <code>Progress!Z1</code> diperbarui sebagai tanda sync.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/aabd6be8-9030-4916-9b02-ceac2a9ce77d.png" alt="Screenshot halaman absensi teacher">
+        <figcaption>Halaman detail kelas: teacher mencentang siswa hadir lalu menyimpan absensi.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.4 Melihat Progress Siswa</h3>
+        <ol class="click-steps">
+          <li>Klik tab <span class="button-name">Progress Siswa</span>.</li>
+          <li>Teacher melihat daftar siswa, sesi aktif, project link, quiz score, dan status penilaian.</li>
+          <li>Jika ada tombol <span class="button-name">Nilai S...</span> atau <span class="button-name">Beri Nilai</span>, artinya siswa punya project yang bisa diperiksa.</li>
+          <li>Jika siswa belum upload project, biasanya akan muncul informasi seperti <strong>Belum ada link</strong>.</li>
+        </ol>
+        <p class="mini-title">Yang dibaca dari spreadsheet</p>
+        <p>
+          Tab ini membaca <code>Absensi</code> untuk daftar siswa, sesi hadir, dan total stars.
+          Detail project, progress, quiz score, dan stars dibaca dari tab <code>Progress</code> di kolom nama masing-masing siswa.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/fb8d4382-daf4-4277-8500-dc6dfa9b4827.png" alt="Screenshot tab progress siswa teacher">
+        <figcaption>Tab Progress Siswa: teacher melihat sesi siswa, status progress, tombol nilai, tombol S12, dan ikon riwayat.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.5 Membuka Project atau Bukti Siswa</h3>
+        <ol class="click-steps">
+          <li>Dari tab <strong>Absensi Hari Ini</strong> atau <strong>Progress Siswa</strong>, klik tombol <span class="button-name">Project S...</span>, <span class="button-name">Nilai S...</span>, atau <span class="button-name">Beri Nilai Sesi Ini</span>.</li>
+          <li>Pop-up penilaian akan terbuka.</li>
+          <li>Di bagian preview project, klik tombol <span class="button-name">Lihat Project</span> untuk membuka link project siswa.</li>
+          <li>Jika siswa mengupload file/screenshot, klik <span class="button-name">Lihat Bukti</span>.</li>
+          <li>Periksa apakah project sesuai instruksi Must Do, Should Do, atau Aspire.</li>
+        </ol>
+        <div class="note">
+          Untuk link Scratch, sistem bisa mengubah link project menjadi mode embed/preview agar lebih mudah diperiksa.
+        </div>
+        <p class="mini-title">Yang dibaca dari spreadsheet</p>
+        <p>
+          Tombol <span class="button-name">Lihat Project</span> dan <span class="button-name">Lihat Bukti</span> mengambil URL dari tab <code>Progress</code>,
+          baris <code>Project Uploaded</code> pada sesi yang dipilih, di kolom siswa tersebut.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/7ee8b7fa-cd77-46f9-8008-8764f56e269b.png" alt="Screenshot modal penilaian teacher">
+        <figcaption>Pop-up Beri Nilai: teacher membuka link/bukti project di kiri dan memilih rating Must Do, Should Do, Aspire di kanan.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.6 Memberi Bintang / Nilai Project</h3>
+        <p class="mini-title">Di pop-up Beri Nilai</p>
+        <ol class="click-steps">
+          <li>Lihat judul pop-up <strong>Beri Nilai Sesi X</strong> untuk memastikan sesi yang dinilai sudah benar.</li>
+          <li>Bagian <strong>1. Must Do</strong>: pilih jumlah bintang sesuai kualitas pengerjaan Must Do.</li>
+          <li>Bagian <strong>2. Should Do</strong>: pilih jumlah bintang jika siswa mengerjakan Should Do.</li>
+          <li>Bagian <strong>3. Aspire To</strong>: pilih jumlah bintang jika siswa mengerjakan Aspire.</li>
+          <li>Bagian <strong>Quiz Stars</strong> otomatis membaca hasil quiz siswa, tidak perlu diisi manual.</li>
+          <li>Jika sesi 4 atau sesi 8, isi rubrik observasi jika field rubrik muncul.</li>
+          <li>Klik tombol <span class="button-name">Konfirmasi Nilai</span>.</li>
+          <li>Tunggu sampai muncul notifikasi berhasil.</li>
+        </ol>
+        <p class="mini-title">Yang tersimpan</p>
+        <p>
+          Saat teacher klik <span class="button-name">Konfirmasi Nilai</span>, tab <code>Progress</code> terisi <code>100%</code>
+          di baris <code>Progress</code> pada sesi yang dinilai, detail bintang masuk ke baris <code>Star gained</code>,
+          dan tanggal penilaian masuk ke baris <code>Date</code>. Semua ditulis di kolom nama siswa yang dinilai.
+          Setelah itu total bintang di tab <code>Absensi</code> ikut diperbarui di kolom total stars, biasanya kolom <code>AA</code>.
+          Untuk sesi 4 dan 8, rubrik observasi juga ditulis ke kolom observasi di tab <code>Absensi</code>.
+        </p>
+      </div>
+
+      <div class="manual-block">
+        <h3>3.7 Memberi Bonus Bintang</h3>
+        <ol class="click-steps">
+          <li>Buka pop-up penilaian/riwayat siswa.</li>
+          <li>Pilih fitur bonus jika tersedia.</li>
+          <li>Masukkan jumlah bonus stars.</li>
+          <li>Tulis alasan bonus pada kolom alasan/catatan.</li>
+          <li>Klik <span class="button-name">Kirim Bintang</span>.</li>
+        </ol>
+        <p>
+          Saat teacher klik <span class="button-name">Kirim Bintang</span>, bonus ditambahkan ke tab <code>Progress</code>,
+          baris <code>Star gained</code> pada sesi yang dipilih, di kolom siswa. Alasan bonus masuk sebagai note/catatan pada cell yang sama.
+          Total stars siswa di tab <code>Absensi</code> kolom total stars juga dihitung ulang.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/f9da8217-b650-4b20-9190-6e40a3911229.png" alt="Screenshot bonus bintang teacher">
+        <figcaption>Modal bonus bintang: pilih jumlah bonus, tulis alasan, lalu klik Kirim Bintang.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.8 Melihat Leaderboard</h3>
+        <ol class="click-steps">
+          <li>Klik tab <span class="button-name">Leaderboard</span>.</li>
+          <li>Siswa akan diurutkan berdasarkan total stars.</li>
+          <li>Gunakan halaman ini untuk melihat ringkasan pencapaian kelas.</li>
+        </ol>
+        <p class="mini-title">Yang dibaca dari spreadsheet</p>
+        <p>
+          Leaderboard membaca total stars dari tab <code>Absensi</code>, kolom total stars siswa, biasanya kolom <code>AA</code>.
+          Tidak ada data baru yang ditulis saat teacher hanya membuka leaderboard.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/676420ba-cbe7-432c-9622-3ff4110c5fa0.png" alt="Screenshot leaderboard teacher">
+        <figcaption>Leaderboard: daftar siswa diurutkan dari total stars tertinggi.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.9 Menyimpan Link Playlist Recording</h3>
+        <ol class="click-steps">
+          <li>Dari dashboard teacher, pada kartu kelas klik <span class="button-name">Link Playlist</span>.</li>
+          <li>Isi kolom link playlist YouTube/Drive.</li>
+          <li>Isi catatan jika perlu, misalnya recording sesi tertentu belum lengkap.</li>
+          <li>Klik <span class="button-name">Simpan Link</span>.</li>
+        </ol>
+        <p>
+          Saat teacher klik <span class="button-name">Simpan Link</span>, link playlist disimpan ke tab <code>Absensi</code> cell <code>B3</code>
+          pada spreadsheet kelas. Script juga mencoba mencatat log ke master database tab <code>Playlists</code>
+          dengan kolom <code>Timestamp</code>, <code>Class Code</code>, <code>Teacher Name</code>, <code>Teacher Email</code>, <code>Playlist Link</code>, dan <code>Notes</code>.
+        </p>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/54568bdd-b752-4b41-a4f2-04b860bc25fd.png" alt="Screenshot simpan playlist teacher">
+        <figcaption>Isi link playlist dan catatan, lalu klik Simpan Link.</figcaption>
+      </figure>
+
+      <div class="manual-block">
+        <h3>3.10 Logout Teacher</h3>
+        <ol class="click-steps">
+          <li>Klik profil teacher di kanan atas.</li>
+          <li>Pilih menu logout/keluar.</li>
+          <li>Dashboard akan menghapus data login teacher dari browser dan kembali ke halaman login.</li>
+        </ol>
+      </div>
+
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/6d526108-6896-4616-af56-c7f53ea3f0fe.png" alt="Screenshot menu profil teacher">
+        <figcaption>Menu profil teacher berada di kanan atas. Dari sini teacher bisa membuka menu akun dan logout.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section">
+      <h2>4. Di Mana Data Tersimpan</h2>
+      <p>
+        Spreadsheet kelas contoh berada di
+        <a href="https://docs.google.com/spreadsheets/d/1HTGmY-pwhq-U-UuAk4YF3mqeBC2e6mVFAYDxfhciTq8/edit?usp=sharing" target="_blank">SCLMTA201</a>.
+        Dua tab yang paling penting untuk LMS adalah <code>Absensi</code> dan <code>Progress</code>.
+      </p>
+
+      <h3>Peta Trigger Penyimpanan</h3>
+      <p>
+        Tabel ini menjelaskan setiap aksi utama: kapan script terpicu, tab mana yang dipakai, dan kolom/baris mana yang berubah.
+        Untuk tab <code>Progress</code>, kolom siswa bersifat dinamis: script mencari nama siswa di baris 1 atau 2, mulai dari kolom <code>C</code>.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Aksi / Trigger</th>
+            <th>Tab Sheet</th>
+            <th>Kolom / Cell Tujuan</th>
+            <th>Yang disimpan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Siswa klik <span class="button-name">Cari Kelasku</span></td>
+            <td>Master DB: <code>Student Active</code></td>
+            <td>Dibaca: kolom <code>V</code> kode kelas, kolom <code>B</code> nama siswa, kolom <code>W</code> status.</td>
+            <td>Tidak menulis data baru; hanya mengambil daftar nama aktif.</td>
+          </tr>
+          <tr>
+            <td>Teacher klik <span class="button-name">Masuk ke Orbit</span></td>
+            <td>Master DB: <code>Class Database</code></td>
+            <td>Dibaca: kolom <code>I</code> email, <code>B</code> kode kelas, <code>C</code> status, <code>H</code> nama teacher, <code>J</code> link class sheet.</td>
+            <td>Tidak menulis data baru; hanya mengambil daftar kelas aktif teacher.</td>
+          </tr>
+          <tr>
+            <td>Teacher klik <span class="button-name">Lihat Kelas</span></td>
+            <td><code>Absensi</code> dan <code>Progress</code></td>
+            <td>Dibaca dari spreadsheet kelas yang link-nya berasal dari <code>Class Database</code> kolom <code>J</code>.</td>
+            <td>Tidak menulis data baru; hanya menampilkan daftar siswa, absensi, progress, project, quiz, dan stars.</td>
+          </tr>
+          <tr>
+            <td>Siswa membuka dashboard</td>
+            <td><code>Progress</code></td>
+            <td>Baris <code>Date</code> pada sesi aktif, kolom nama siswa.</td>
+            <td>Tanggal akses hari ini dapat ditambahkan jika sesi belum selesai.</td>
+          </tr>
+          <tr>
+            <td>Siswa membuka materi / progress tersinkron</td>
+            <td><code>Progress</code></td>
+            <td>Baris <code>Progress</code> pada sesi aktif, kolom nama siswa.</td>
+            <td>Persentase progress terbaru, misalnya <code>50%</code> atau <code>75%</code>, hanya jika nilainya naik.</td>
+          </tr>
+          <tr>
+            <td>Siswa klik <span class="button-name">Kirim Misi</span></td>
+            <td><code>Progress</code></td>
+            <td>Baris <code>Project Uploaded</code> pada sesi aktif, kolom nama siswa.</td>
+            <td>URL project atau URL folder Drive dengan label <code>[Must Do]</code>, <code>[Should Do]</code>, atau <code>[Aspire]</code>.</td>
+          </tr>
+          <tr>
+            <td>Siswa klik <span class="button-name">Kumpulkan!</span> quiz</td>
+            <td><code>Progress</code></td>
+            <td>Baris <code>Quiz Score</code>, <code>Progress</code>, dan <code>Star gained</code> pada sesi quiz, kolom nama siswa.</td>
+            <td>Nilai quiz, progress <code>100%</code>, dan entry <code>X Star - Quiz</code>.</td>
+          </tr>
+          <tr>
+            <td>Teacher klik <span class="button-name">Simpan Absensi</span></td>
+            <td><code>Absensi</code></td>
+            <td>Kolom sesi <code>F</code>-<code>Q</code> sesuai sesi yang ditandai, baris nama siswa di kolom <code>B</code>.</td>
+            <td>Tanggal hadir. Jika kuota sesi habis, sisa cell sesi dapat diisi <code>N/A</code>.</td>
+          </tr>
+          <tr>
+            <td>Teacher menandai bolos/izin</td>
+            <td><code>Progress</code></td>
+            <td>Note/catatan pada cell header nama siswa di baris 1 atau 2.</td>
+            <td>Tag <code>[BOLOS: n]</code> dan tanggal penandaan bolos.</td>
+          </tr>
+          <tr>
+            <td>Teacher klik <span class="button-name">Konfirmasi Nilai</span></td>
+            <td><code>Progress</code></td>
+            <td>Baris <code>Date</code>, <code>Progress</code>, dan <code>Star gained</code> pada sesi yang dinilai, kolom nama siswa.</td>
+            <td>Tanggal approval, progress <code>100%</code>, dan detail stars Must/Should/Aspire/Quiz.</td>
+          </tr>
+          <tr>
+            <td>Teacher mengisi rubrik sesi 4 atau sesi 8</td>
+            <td><code>Absensi</code></td>
+            <td>Sesi 4: kolom <code>S</code>-<code>U</code>. Sesi 8: kolom <code>V</code>-<code>X</code>.</td>
+            <td>Skor aktivitas, skor engagement, dan catatan observasi.</td>
+          </tr>
+          <tr>
+            <td>Teacher klik <span class="button-name">Kirim Bintang</span> bonus</td>
+            <td><code>Progress</code></td>
+            <td>Baris <code>Star gained</code> pada sesi yang dipilih, kolom nama siswa.</td>
+            <td>Tambahan bonus stars dan alasan bonus sebagai note cell.</td>
+          </tr>
+          <tr>
+            <td>Total stars dihitung ulang setelah nilai/bonus</td>
+            <td><code>Absensi</code></td>
+            <td>Kolom total stars, biasanya <code>AA</code>, baris nama siswa.</td>
+            <td>Jumlah total semua stars dari tab <code>Progress</code>.</td>
+          </tr>
+          <tr>
+            <td>Teacher klik <span class="button-name">Simpan Link</span> playlist</td>
+            <td><code>Absensi</code> dan master DB <code>Playlists</code></td>
+            <td><code>Absensi!B3</code>; master DB ditambahkan sebagai baris baru.</td>
+            <td>Link playlist kelas, catatan, teacher email, class code, dan timestamp.</td>
+          </tr>
+          <tr>
+            <td>Setelah absensi/progress/nilai/bonus berubah</td>
+            <td><code>Progress</code></td>
+            <td><code>Z1</code></td>
+            <td>Timestamp sync version agar dashboard siswa/teacher bisa refresh data terbaru.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Tab Absensi</h3>
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/f1eb5fe9-6d80-48f1-b7b5-6e4b1d780b7f.png" alt="Screenshot tab Absensi spreadsheet dengan nomor row dan huruf kolom">
+        <figcaption>Tab Absensi dari data asli spreadsheet SCLMTA201: terlihat huruf kolom, nomor row, identitas kelas, data siswa, sesi hadir, observasi, dan total stars.</figcaption>
+      </figure>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Area / Kolom</th>
+            <th>Dipakai untuk</th>
+            <th>Catatan penggunaan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>B3</code></td>
+            <td>Link playlist/recording kelas.</td>
+            <td><code>handleSubmitPlaylist()</code> menulis link playlist ke cell ini.</td>
+          </tr>
+          <tr>
+            <td>Header siswa</td>
+            <td>Mendeteksi baris awal data siswa.</td>
+            <td>Script mencari header seperti <code>Students Name</code>, <code>Student's Name</code>, atau <code>Nama Siswa</code>.</td>
+          </tr>
+          <tr>
+            <td>Kolom B</td>
+            <td>Nama siswa.</td>
+            <td>Fallback di <code>code-teacher.gs</code>: <code>FALLBACK_ABS_COL_NAME = 1</code> atau kolom B.</td>
+          </tr>
+          <tr>
+            <td>Kolom C</td>
+            <td>Usia siswa.</td>
+            <td>Fallback: <code>FALLBACK_ABS_COL_AGE = 2</code>.</td>
+          </tr>
+          <tr>
+            <td>Kolom F sampai Q</td>
+            <td>Sesi 1 sampai Sesi 12.</td>
+            <td>Ketika hadir, cell diisi tanggal. Jika sudah melewati budget tertentu, sisa sesi dapat ditandai <code>N/A</code>.</td>
+          </tr>
+          <tr>
+            <td>Kolom S-U dan V-X</td>
+            <td>Rubrik observasi sesi 4 dan sesi 8.</td>
+            <td><code>updateRubrikInAbsensi()</code> menulis aktivitas, engagement, dan catatan tambahan.</td>
+          </tr>
+          <tr>
+            <td>Kolom AA</td>
+            <td>Total stars siswa.</td>
+            <td><code>updateTotalStarsInAbsensi()</code> menjumlahkan star dari tab <code>Progress</code> lalu menulis totalnya ke Absensi.</td>
+          </tr>
+          <tr>
+            <td>Kolom AE</td>
+            <td>Jumlah jam/sesi atau sesi per meeting.</td>
+            <td>Dipakai untuk menentukan apakah satu pertemuan menandai 1 sesi atau 2 sesi.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Tab Progress</h3>
+      <figure>
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/be0e8d02-0049-4ec1-ba9b-d74d12869622.png" alt="Screenshot tab Progress spreadsheet dengan nomor row dan huruf kolom">
+        <figcaption>Tab Progress dari data asli spreadsheet SCLMTA201: terlihat huruf kolom, nomor row, dan blok 5 baris per sesi untuk Date, Progress, Quiz Score, Star gained, dan Project Uploaded.</figcaption>
+      </figure>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Posisi</th>
+            <th>Isi</th>
+            <th>Cara data masuk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Baris 1</td>
+            <td>Header umum: <code>Materi</code>, <code>Matrix</code>, <code>Students</code>, dan sync flag.</td>
+            <td>Cell <code>Z1</code> dipakai sebagai sync version timestamp oleh <code>updateSyncFlag()</code>.</td>
+          </tr>
+          <tr>
+            <td>Baris 2, kolom C dan seterusnya</td>
+            <td>Nama siswa.</td>
+            <td>Script mencari nama siswa pada baris 1 dan 2, lalu mencocokkan secara normalisasi agar spasi/karakter khusus tidak mengganggu.</td>
+          </tr>
+          <tr>
+            <td>Setiap sesi = 5 baris</td>
+            <td><code>Date</code>, <code>Progress</code>, <code>Quiz Score</code>, <code>Star gained</code>, <code>Project Uploaded</code>.</td>
+            <td>Script scan label di kolom B, jadi tetap aman jika label sedikit berbeda seperti <code>Progress</code>/<code>Progres</code> atau <code>Star</code>/<code>Bintang</code>.</td>
+          </tr>
+          <tr>
+            <td>Baris <code>Progress</code></td>
+            <td>Status penyelesaian sesi.</td>
+            <td>Teacher approval atau quiz completion dapat menulis <code>100%</code>.</td>
+          </tr>
+          <tr>
+            <td>Baris <code>Quiz Score</code></td>
+            <td>Nilai quiz.</td>
+            <td><code>handleSaveQuiz()</code> menulis score dan dapat menambah entry <code>X Star - Quiz</code>.</td>
+          </tr>
+          <tr>
+            <td>Baris <code>Star gained</code></td>
+            <td>Detail star per kategori.</td>
+            <td>Contoh format: <code>5 Star - Must do</code>, <code>5 Star - Should do</code>, <code>3 Star - Quiz</code>.</td>
+          </tr>
+          <tr>
+            <td>Baris <code>Project Uploaded</code></td>
+            <td>Link project atau folder screenshot/file siswa.</td>
+            <td>Contoh format: <code>[Must Do][Link] https://...</code> atau <code>[Should Do][Screenshot] https://drive.google.com/...</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>5. Lampiran Singkat: Cara Kerja Backend Siswa</h2>
+      <p>
+        File <code>student-dashboards/code-student.gs</code> adalah backend Google Apps Script untuk LMS Siswa.
+        Script ini dideploy sebagai Web App dan dipanggil dari HTML lewat parameter <code>action</code>.
+      </p>
+
+      <div class="code-map">
+        <div><code>doGet(e)</code></div>
+        <div>Router untuk <code>getStudents</code>, <code>getStudentProgress</code>, <code>checkSync</code>, dan fetch kurikulum lama lewat parameter <code>sheet</code>.</div>
+
+        <div><code>getStudentsByClassCode(code)</code></div>
+        <div>Membaca master spreadsheet <code>1Dfm4RUOBbz3bvHT0nLnEIkYUoGxRRbC6fFqrZfKa8kQ</code>, tab <code>Student Active</code>. Kode kelas dicari di kolom V, nama siswa di kolom B, status di kolom W. Siswa dengan status <code>graduated</code> tidak ditampilkan.</div>
+
+        <div><code>handleGetStudentProgress(classCode, studentName)</code></div>
+        <div>Mencari class code di <code>Class Database</code>, mengambil class spreadsheet link, membuka tab <code>Progress</code>, lalu menghitung <code>currentSession</code>, <code>attendanceSession</code>, <code>totalStars</code>, dan detail progress tiap sesi.</div>
+
+        <div><code>handleSubmitProject(data)</code></div>
+        <div>Menyimpan link project dan/atau file upload. File masuk ke Google Drive pada folder kelas/siswa/sesi/phase, lalu URL ditulis ke baris <code>Project Uploaded</code> di tab <code>Progress</code>.</div>
+
+        <div><code>handleUploadScreenshot(data)</code></div>
+        <div>Menerima file base64, membuat file di Google Drive, lalu menulis URL folder sesi ke <code>Progress</code> dengan tag <code>[Screenshot]</code>.</div>
+
+        <div><code>updateProgressSheet(...)</code></div>
+        <div>Mencari kolom siswa dari baris 1/2, mencari blok sesi, lalu menulis entry project ke baris <code>Project Uploaded</code>. Entry lama pada phase dan type yang sama akan di-update, bukan diduplikasi.</div>
+
+        <div><code>handleSaveQuiz(data)</code></div>
+        <div>Menulis nilai quiz ke baris <code>Quiz Score</code>, menulis <code>100%</code> ke baris <code>Progress</code>, dan menambah/memperbarui <code>X Star - Quiz</code> di baris <code>Star gained</code>.</div>
+
+        <div><code>handleCheckSync(classCode)</code></div>
+        <div>Membaca <code>Progress!Z1</code> untuk mengetahui apakah data spreadsheet berubah dan dashboard perlu refresh.</div>
+      </div>
+
+      <div class="note">
+        Alur unlock siswa tidak hanya berdasarkan project upload. Script mengecek progress 100% dan star dari teacher agar sesi berikutnya benar-benar terbuka setelah dinilai.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>6. Lampiran Singkat: Cara Kerja Backend Teacher</h2>
+      <p>
+        File <code>teacher-dashboard/code-teacher.gs</code> adalah backend Google Apps Script untuk Teacher Dashboard.
+        Script ini membaca master database teacher, spreadsheet kelas, dan menulis hasil absensi/penilaian.
+      </p>
+
+      <div class="code-map">
+        <div><code>doGet(e)</code></div>
+        <div>Router untuk <code>getClasses</code>, <code>getStudents</code>, <code>saveAbsensi</code>, <code>markBolos</code>, <code>checkSync</code>, dan <code>getRubrics</code>.</div>
+
+        <div><code>doPost(e)</code></div>
+        <div>Router untuk aksi yang mengubah data besar: <code>approveProject</code>, <code>giveBonus</code>, dan <code>submitPlaylist</code>.</div>
+
+        <div><code>handleLogin(email)</code></div>
+        <div>Membaca tab <code>Class Database</code> di master spreadsheet. Kelas ditampilkan jika email cocok, kode kelas diawali <code>SCL</code>, dan status kelas <code>active</code>.</div>
+
+        <div><code>handleGetStudents(classLink)</code></div>
+        <div>Membuka spreadsheet kelas, membaca tab <code>Absensi</code> untuk daftar siswa dan attendance, lalu membaca tab <code>Progress</code> untuk project links, progress, quiz, stars, dan total stars.</div>
+
+        <div><code>handleSaveAbsensi(e)</code></div>
+        <div>Menerima daftar siswa hadir, lalu menulis tanggal ke kolom sesi berikutnya di tab <code>Absensi</code>. Jika budget sesi sudah habis, cell kosong berikutnya dapat ditulis <code>N/A</code>.</div>
+
+        <div><code>handleMarkBolos(e)</code></div>
+        <div>Menyimpan jumlah bolos ke note cell header siswa di tab <code>Progress</code> dengan format <code>[BOLOS: n]</code>. Ini membuat status bolos tidak merusak struktur tabel utama.</div>
+
+        <div><code>handleApproveProject(data)</code></div>
+        <div>Mencari kolom siswa dan baris sesi, lalu menulis <code>100%</code>, detail star per kategori, dan tanggal approval ke tab <code>Progress</code>. Setelah itu total stars di <code>Absensi</code> ikut diperbarui.</div>
+
+        <div><code>handleGiveBonus(data)</code></div>
+        <div>Menambahkan bonus star ke baris <code>Star gained</code> dan menyimpan alasan bonus di note cell.</div>
+
+        <div><code>handleSubmitPlaylist(data)</code></div>
+        <div>Menyimpan link playlist kelas ke <code>Absensi!B3</code> dan juga mencoba mencatatnya ke tab <code>Playlists</code> di master database.</div>
+
+        <div><code>updateRubrikInAbsensi(...)</code></div>
+        <div>Untuk sesi 4 dan 8, menulis skor observasi aktivitas, engagement, dan catatan tambahan ke kolom observasi di tab <code>Absensi</code>.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. Checklist Review Tim Tech</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Yang perlu dicek</th>
+            <th>Ekspektasi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Akses siswa</td>
+            <td>Login kode <code>SCLMTA201</code> dan pilih nama.</td>
+            <td>Daftar nama muncul, dashboard terbuka, sesi aktif dan stars terbaca.</td>
+          </tr>
+          <tr>
+            <td>Akses teacher</td>
+            <td>Login <code>yazid@kalananti.id</code>.</td>
+            <td>Kelas aktif <code>SCLMTA201</code> muncul di dashboard teacher.</td>
+          </tr>
+          <tr>
+            <td>Absensi</td>
+            <td>Teacher menyimpan kehadiran.</td>
+            <td>Tanggal masuk ke kolom sesi yang benar di tab <code>Absensi</code>; <code>Progress!Z1</code> berubah.</td>
+          </tr>
+          <tr>
+            <td>Submit project</td>
+            <td>Siswa submit link atau screenshot.</td>
+            <td>URL masuk ke baris <code>Project Uploaded</code> dengan tag phase/type yang benar.</td>
+          </tr>
+          <tr>
+            <td>Approval teacher</td>
+            <td>Teacher approve dan memberi star.</td>
+            <td><code>Progress</code> menjadi <code>100%</code>, star tertulis, total stars di <code>Absensi</code> ikut update.</td>
+          </tr>
+          <tr>
+            <td>Sync dashboard</td>
+            <td>Cek <code>Progress!Z1</code>.</td>
+            <td>Dashboard siswa/teacher bisa mendeteksi perubahan data terbaru.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="footer">Dokumen dibuat untuk review LMS B2C SCL Kalananti. Semua screenshot pada dokumen ini memakai link CDN.</p>
+    </section>
+  </main>
+</body>
+</html>

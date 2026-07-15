@@ -526,15 +526,6 @@
                 </div>
 
 
-                <!-- Session 12 Confirmation -->
-                <div id="appr-confirmation-group" class="hidden phase-group mt-4">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-[#F9C013] mb-3">Konfirmasi Project (Sesi 12)</h4>
-                    <label class="flex items-center gap-3 text-sm cursor-pointer p-3 border border-white/10 rounded-xl hover:bg-white/5">
-                        <input type="checkbox" id="appr-project-collected" class="w-5 h-5 rounded border-white/20 bg-transparent text-[#F9C013]">
-                        <span style="color: var(--text)">Project dikumpulkan dan disimpan di sheet</span>
-                    </label>
-                </div>
-
                 <!-- Quiz Stars -->
                 <div class="quiz-group">
                    <h4 class="text-xs font-black uppercase tracking-widest mb-3" style="color: var(--text); opacity: 0.6;">4. Quiz Results (Automatic)</h4>
@@ -1372,17 +1363,6 @@ async function openApprovalModal(idx, sNum) {
             : '✨ Beri Bonus Bintang';
     }
 
-    // Sesi 12 specific
-    const confGroup = document.getElementById('appr-confirmation-group');
-    if (confGroup) {
-        if (sNum === 12) {
-            confGroup.classList.remove('hidden');
-            document.getElementById('appr-project-collected').checked = sessInfo.projectCollected || false;
-        } else {
-            confGroup.classList.add('hidden');
-        }
-    }
-
     // Dynamic Rubrics for Sesi 4 & 8
     const rubricCont = document.getElementById('appr-rubric-container');
     if (rubricCont) {
@@ -1633,7 +1613,6 @@ async function submitApproval() {
             aspireStars: phaseRatings.aspire,
             quizStars: document.getElementById('appr-quiz-stars').value,
             bonusStars: bonusStarsStored, // Will be summed in backend or added here
-            projectCollected: currentApprSession === 12 ? document.getElementById('appr-project-collected').checked : false,
             obsAktivitasScore: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-aktivitas').value : '',
             obsEngagementScore: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-engagement').value : '',
             obsNotes: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-notes').value : ''

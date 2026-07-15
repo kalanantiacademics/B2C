@@ -1,5 +1,37 @@
 # Log Perbaikan Teacher Dashboard
 
+## 16 Juli 2026 - Menghapus konfirmasi manual penyimpanan project Sesi 12
+
+### Masalah
+
+- Form penilaian Sesi 12 menampilkan checkbox **Project dikumpulkan dan disimpan di sheet**.
+- Guru tidak memiliki akses langsung ke spreadsheet, sehingga tidak mungkin memverifikasi atau melakukan penyimpanan manual ke sheet.
+- Nilai checkbox dikirim sebagai `projectCollected`, tetapi backend tidak membaca atau menyimpannya. Checkbox hanya memberikan kesan seolah-olah ada proses konfirmasi, padahal tidak menghasilkan perubahan data.
+- Project siswa sebenarnya sudah masuk otomatis melalui alur upload/link student dashboard dan terdeteksi dari data sesi pada tab Progress.
+
+### Cara perbaikan
+
+- Menghapus seluruh blok UI checkbox konfirmasi khusus Sesi 12.
+- Menghapus JavaScript yang menampilkan, menyembunyikan, dan mengisi nilai checkbox.
+- Menghapus field `projectCollected` dari payload `approveProject` karena tidak memiliki penerima atau tempat penyimpanan di backend.
+- Mempertahankan alur otomatis yang sudah ada: penilaian tersedia berdasarkan link/upload project yang terdeteksi pada sesi terkait.
+
+### Hasil
+
+- Guru tidak lagi diminta mengonfirmasi pekerjaan yang tidak dapat mereka lakukan.
+- Form penilaian Sesi 12 hanya berisi kontrol yang benar-benar berfungsi.
+- Deteksi pengumpulan final project tetap otomatis dari data project siswa.
+
+### File yang diubah
+
+- `teacher-dashboard/class-detail.html`
+- `teacher-dashboard/log-edit.md`
+
+### Deployment
+
+- Perubahan hanya pada frontend teacher dashboard dan tidak memerlukan deployment ulang Apps Script.
+- Setelah GitHub Pages selesai build, lakukan hard refresh.
+
 ## 15 Juli 2026 - Menghapus shortcut penilaian Sesi 12 yang prematur
 
 ### Masalah

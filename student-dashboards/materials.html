@@ -561,6 +561,7 @@
         scratch: 'B2C_Scratch_INS'
     };
         const _selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+        const _studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
         const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
         let activeLesson = parseInt(localStorage.getItem('activeLesson') || '1');
         let currentSyncVersion = 0;
@@ -593,20 +594,25 @@
                 const res = await fetch(`${STUDENT_API_URL}?sheet=${sheet}`);
                 const rawData = await res.json();
                 
-                lessonData = rawData.find(r => {
+                const levelMatches = value => {
+                    const levels = String(value || '').match(/\d+/g) || [];
+                    return levels.length === 0 || levels.map(Number).includes(_studentLevel);
+                };
+                const levelData = rawData.filter(r => levelMatches(r['Level'] || r['level'] || r.col_1));
+                lessonData = levelData.find(r => {
                     const s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
                     return s === activeLesson;
                 });
                 
                 if (!lessonData) {
-                    lessonData = rawData[activeLesson - 1];
+                    lessonData = levelData[activeLesson - 1];
                 }
                 
                 if (!lessonData) {
                     throw new Error('Lesson material not found for session ' + activeLesson);
                 }
 
-                document.getElementById('nav-title').innerHTML = `${_selectedCourse.toUpperCase()} <span class="text-gray-300 mx-2">/</span> Sesi ${activeLesson}`;
+                document.getElementById('nav-title').innerHTML = `${_selectedCourse.toUpperCase()} LEVEL ${_studentLevel} <span class="text-gray-300 mx-2">/</span> Sesi ${activeLesson}`;
                 
                 processLessonData(lessonData);
                 loadSavedState();

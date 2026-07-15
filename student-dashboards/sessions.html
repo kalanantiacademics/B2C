@@ -290,6 +290,7 @@
     }
 
     const selectedCourse=localStorage.getItem('selectedCourse')||'roblox';
+    const studentLevel=Math.max(1,parseInt(localStorage.getItem('studentLevel')||'1',10)||1);
     const courseData=COURSES[selectedCourse]||COURSES.roblox;
     applyTheme(document.documentElement.getAttribute('data-theme')||'light',false);
 
@@ -344,7 +345,11 @@
             };
 
             const uniqueMap = new Map();
-            raw.forEach((r, idx) => {
+            const levelMatches = value => {
+                const levels=String(value||'').match(/\d+/g)||[];
+                return levels.length===0||levels.map(Number).includes(studentLevel);
+            };
+            raw.filter(r=>levelMatches(r['Level']||r['level']||r.col_1)).forEach((r, idx) => {
                 const s = getSession(r, idx);
                 if (!isNaN(s) && s >= 1) {
                     if (!uniqueMap.has(s)) {
@@ -424,8 +429,7 @@
         const pathPts=pts.map(p=>({x:p.x,y:p.y}));
         let html=buildPath(pathPts,W,H);
 
-        const attSessVal = parseInt(localStorage.getItem('attendanceSession'), 10);
-        const curSess = !isNaN(attSessVal) && attSessVal > 0 ? attSessVal : parseInt(localStorage.getItem('currentSession')||'1',10);
+        const curSess = parseInt(localStorage.getItem('currentSession')||'1',10);
         const isAdmin=localStorage.getItem('isAdmin')==='true';
 
         // Add star decorations along path
@@ -481,8 +485,7 @@
     }
 
     function goToLesson(n){
-        const attSessVal = parseInt(localStorage.getItem('attendanceSession'), 10);
-        const curSess = !isNaN(attSessVal) && attSessVal > 0 ? attSessVal : parseInt(localStorage.getItem('currentSession')||'1',10);
+        const curSess = parseInt(localStorage.getItem('currentSession')||'1',10);
         const isAdm=localStorage.getItem('isAdmin')==='true';
         
         let isAllowed = (n <= curSess) || isAdm;

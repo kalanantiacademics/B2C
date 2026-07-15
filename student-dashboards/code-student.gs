@@ -299,6 +299,7 @@ function handleGetStudentProgress(classCode, studentName) {
     
     // 5. Baca Absensi sheet untuk attendanceSession (berapa sesi yang sudah dihadiri)
     var attendanceSession = 1;
+    var studentLevel = 1;
     try {
       var absSheet = ssClass.getSheetByName('Absensi');
       if (absSheet) {
@@ -307,6 +308,7 @@ function handleGetStudentProgress(classCode, studentName) {
         // Dynamically find correct header rows instead of hardcoding row 16 / col F
         var absDataRowStart = 15;
         var colNameIdx = 1;
+        var colLevelIdx = -1;
         var colSesi1Idx = 5;
         
         for (var i = 0; i < absData.length; i++) {
@@ -321,6 +323,7 @@ function handleGetStudentProgress(classCode, studentName) {
            if (foundNameIdx !== -1) {
                absDataRowStart = i + 1;
                colNameIdx = foundNameIdx;
+               colLevelIdx = rowNorm.indexOf("level");
                var sesi1Idx = rowNorm.indexOf("sesi 1");
                if (sesi1Idx !== -1) colSesi1Idx = sesi1Idx;
                break;
@@ -333,6 +336,10 @@ function handleGetStudentProgress(classCode, studentName) {
           var absName = normalizeStr(absData[r][colNameIdx]);
           if (!absName) continue;
           if (absName === searchName || (searchName.length > 3 && (absName.indexOf(searchName) > -1 || searchName.indexOf(absName) > -1))) {
+            if (colLevelIdx !== -1) {
+              var parsedLevel = parseInt(String(absData[r][colLevelIdx]).replace(/[^0-9]/g, ''), 10);
+              if (!isNaN(parsedLevel) && parsedLevel > 0) studentLevel = parsedLevel;
+            }
             // Hitung berapa sesi yang ada tanggalnya, pastikan bukan N/A
             for (var sIdx = 0; sIdx < MAX_ABS_SESSIONS; sIdx++) {
               var sVal = absData[r][colSesi1Idx + sIdx];
@@ -399,6 +406,7 @@ function handleGetStudentProgress(classCode, studentName) {
       success: true,
       programName: programName,
       teacherName: teacherName,
+      studentLevel: studentLevel,
       currentSession: currentSession,
       attendanceSession: attendanceSession,
       totalStars: totalStars,
@@ -698,9 +706,6 @@ function updateProgressSheet(ssId, studentName, sessionNum, url, phase, type) {
 }
 
 function getStudentsByClassCode(code) {
-  var SPREADSHEET_ID = '1Dfm4RUOBbz3bvHT0nLnEIkYUoGxRRbC6fFqrZfKa8kQ';
-  var SHEET_NAME = 'Student Active';
-
   try {
     if (!code) {
       return createJsonResponse({ success: false, message: 'Kode Kelas tidak boleh kosong.' });
@@ -716,42 +721,39 @@ function getStudentsByClassCode(code) {
       });
     }
 
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = ss.getSheetByName(SHEET_NAME);
-    
-    if (!sheet) {
-      return createJsonResponse({ success: false, message: 'Sheet "Student Active" tidak ditemukan di Spreadsheet!' });
+    // Gunakan spreadsheet kelas sebagai source of truth. Dengan begitu nama
+    // yang dipilih saat login pasti sama dengan kolom tujuan upload/progress.
+    var info = getClassInfo(uppercaseCode);
+    if (!info || !info.ssId) {
+      return createJsonResponse({
+        success: false,
+        message: 'Kode Kelas "' + uppercaseCode + '" tidak ditemukan atau link spreadsheet kelas belum valid.'
+      });
     }
 
-    var codeCol = 22; 
-    var nameCol = 2;  
-    var statusCol = 23; 
-    
-    var lastRow = sheet.getLastRow() || 2;
-    var searchRange = sheet.getRange(2, codeCol, lastRow, 1);
-    
-    var ranges = searchRange.createTextFinder(uppercaseCode).matchEntireCell(false).findAll();
-    
+    var ssClass = SpreadsheetApp.openById(info.ssId);
+    var progressSheet = ssClass.getSheetByName('Progress');
+    if (!progressSheet) {
+      return createJsonResponse({ success: false, message: 'Sheet "Progress" tidak ditemukan pada spreadsheet kelas.' });
+    }
+
+    var lastCol = progressSheet.getLastColumn();
+    var headerRows = progressSheet.getRange(1, 1, 2, lastCol).getDisplayValues();
     var students = [];
-    var rowNumbers = [];
-    
-    for (var i = 0; i < ranges.length; i++) {
-        var r = ranges[i].getRow();
-        if (rowNumbers.indexOf(r) === -1) {
-            rowNumbers.push(r);
-        }
-    }
+    var seenNames = {};
 
-    for (var i = 0; i < rowNumbers.length; i++) {
-      var r = rowNumbers[i];
-      var name = sheet.getRange(r, nameCol).getValue();
-      var status = sheet.getRange(r, statusCol).getValue();
-      
-      var strName = String(name).trim();
-      var strStatus = String(status).toLowerCase().trim();
-      
-      if (strName !== "" && strStatus.indexOf('graduated') === -1) {
-          students.push(strName);
+    // Kolom A-B adalah Materi/Matrix. Nama siswa dimulai dari kolom C.
+    for (var c = 2; c < lastCol; c++) {
+      // Baris 2 adalah header utama nama; baris 1 menjadi fallback untuk
+      // template lama yang menaruh nama di baris pertama.
+      var name = String(headerRows[1][c] || headerRows[0][c] || '').trim();
+      var normalizedName = normalizeStr(name);
+      var isPlaceholder = /^student\s*[a-z0-9]+$/i.test(name) ||
+                          /^(students?|nama\s*siswa|note|catatan)$/i.test(name);
+
+      if (name && normalizedName && !isPlaceholder && !seenNames[normalizedName]) {
+        students.push(name);
+        seenNames[normalizedName] = true;
       }
     }
 
@@ -760,12 +762,13 @@ function getStudentsByClassCode(code) {
         success: true,
         isAdmin: false,
         className: uppercaseCode,
+        source: 'class-progress-sheet',
         students: students
       });
     } else {
       return createJsonResponse({
         success: false,
-        message: 'Kode Kelas "' + uppercaseCode + '" tidak ditemukan atau belum ada siswa terdaftar.'
+        message: 'Belum ada nama siswa pada header sheet Progress untuk kelas "' + uppercaseCode + '".'
       });
     }
 

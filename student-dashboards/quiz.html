@@ -272,6 +272,7 @@
     // ── Config ────────────────────────────────────────────────────────────────
     const COURSE_SHEETS={roblox:'B2C_RobloxStudio_INS',scratch:'B2C_Scratch_INS'};
     const selectedCourse=localStorage.getItem('selectedCourse')||'roblox';
+    const studentLevel=Math.max(1,parseInt(localStorage.getItem('studentLevel')||'1',10)||1);
     const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
     const WEB_APP_URL = `${STUDENT_API_URL}?sheet=${(COURSE_SHEETS[selectedCourse] || 'B2C_RobloxStudio_INS')}`;
     const THEME_KEY='kalanantiTheme';
@@ -302,9 +303,13 @@
             const sesNumber = parseInt(activeLesson, 10);
             
             // Find all rows for this session
+            const levelMatches = value => {
+                const levels=String(value||'').match(/\d+/g)||[];
+                return levels.length===0||levels.map(Number).includes(studentLevel);
+            };
             const sessionRows = data.filter(r => {
                 const s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
-                return s === sesNumber;
+                return s === sesNumber && levelMatches(r['Level'] || r['level'] || r.col_1);
             });
             
             if(!sessionRows.length) throw new Error('No lesson found for session ' + activeLesson);

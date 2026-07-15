@@ -843,6 +843,8 @@
                 if (data.teacherName) {
                     localStorage.setItem('teacherName', data.teacherName);
                 }
+                const parsedStudentLevel = parseInt(data.studentLevel, 10);
+                localStorage.setItem('studentLevel', (!isNaN(parsedStudentLevel) && parsedStudentLevel > 0) ? parsedStudentLevel : 1);
                 
                 // Simpan currentSession
                 if (data.currentSession) {
@@ -869,11 +871,27 @@
             if (isSilent) {
                 showSyncToast();
             } else {
+                // Fail closed: jika identitas/progress server tidak ditemukan,
+                // jangan gunakan sesi milik login lama dari localStorage.
+                if (!isAdmin) {
+                    localStorage.setItem('currentSession', '1');
+                    localStorage.setItem('attendanceSession', '1');
+                    localStorage.setItem('activeLesson', '1');
+                    localStorage.setItem('sessionProgress', '[]');
+                    localStorage.setItem('totalStars', '0');
+                }
                 fetchSyncVersion();
             }
         } catch (err) {
             console.error('[Dashboard] Error fetching student data:', err);
-            if (!isSilent) initDashboard(); // Fallback
+            if (!isAdmin) {
+                localStorage.setItem('currentSession', '1');
+                localStorage.setItem('attendanceSession', '1');
+                localStorage.setItem('activeLesson', '1');
+                localStorage.setItem('sessionProgress', '[]');
+                localStorage.setItem('totalStars', '0');
+            }
+            if (!isSilent) initDashboard(); // Fallback aman: hanya Sesi 1
         } finally {
             if (!isSilent) {
                 setTimeout(() => {
@@ -921,9 +939,9 @@
 
     async function initDashboard() {
         const course = COURSES[selectedCourse] || COURSES.roblox;
-        // Match progress with attendance as requested
-        const attSess = parseInt(localStorage.getItem('attendanceSession'), 10);
-        const currentSession = !isNaN(attSess) && attSess > 0 ? attSess : parseInt(localStorage.getItem('currentSession')||'1', 10);
+        const studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
+        // Session gate follows completed progress, not attendance alone.
+        const currentSession = parseInt(localStorage.getItem('currentSession')||'1', 10);
         const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
         const sess = clamp(currentSession, 1, MAX_LESSONS);
 
@@ -936,8 +954,8 @@
         const starEl = document.getElementById('star-count');
         if (starEl) starEl.textContent = (starVal !== null && starVal !== undefined) ? starVal : '–';
         const planet = PLANET_PATH[(sess-1) % PLANET_PATH.length] || PLANET_PATH[0];
-        // Adjust pct to be based on attendance and clamped
-        const pct = !isNaN(attSess) ? Math.round(clamp(attSess, 1, MAX_LESSONS)/MAX_LESSONS*100) : (Math.round((sess-1)/MAX_LESSONS*100) || 8);
+        // Progress UI follows the highest unlocked session.
+        const pct = Math.round((sess-1)/MAX_LESSONS*100) || 8;
 
         // Progress bar
         document.getElementById('progress-title').textContent = `${course.emoji} ${course.label} – Planet ${sess}`;
@@ -950,7 +968,7 @@
         document.getElementById('ring-progress').style.strokeDashoffset = cir - (cir * pct / 100);
         document.getElementById('circle-pct').innerHTML = `${pct}<span style="font-size:1.25rem">%</span>`;
         document.getElementById('orbit-course-title').textContent = `${course.label} Adventure`;
-        document.getElementById('orbit-level-label').textContent = `Level ${Math.ceil(sess/2)}`;
+        document.getElementById('orbit-level-label').textContent = `Level ${studentLevel}`;
 
         // Active mission
         document.getElementById('active-session-badge').textContent =
@@ -974,7 +992,11 @@
                 return s;
             };
 
-            const lessons = raw.map((r, idx) => {
+            const levelMatches = value => {
+                const levels = String(value || '').match(/\d+/g) || [];
+                return levels.length === 0 || levels.map(Number).includes(studentLevel);
+            };
+            const lessons = raw.filter(r => levelMatches(r['Level'] || r['level'] || r.col_1)).map((r, idx) => {
                 r._sessNum = getSession(r, idx);
                 return r;
             }).filter(r => r._sessNum >= 1 && r._sessNum <= MAX_LESSONS).sort((a,b) => a._sessNum - b._sessNum).slice(0, MAX_LESSONS);

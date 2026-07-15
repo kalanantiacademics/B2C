@@ -361,15 +361,40 @@
         }
 
         function simpanLogin(kelas, nama) {
+            const previousIdentity = localStorage.getItem('loginIdentity');
+            const nextIdentity = `${kelas}::${nama}`;
+
+            // Jangan membawa progress, sesi, quiz, atau submisi milik login lain.
+            if (previousIdentity !== nextIdentity) {
+                const exactKeys = [
+                    'currentSession', 'attendanceSession', 'activeLesson',
+                    'sessionProgress', 'totalStars', 'teacherName', 'studentLevel'
+                ];
+                exactKeys.forEach(key => localStorage.removeItem(key));
+
+                const perStudentPrefixes = [
+                    'quiz_', 'kalanantiTaskProgress_', 'kalanantiSubmitted_'
+                ];
+                Object.keys(localStorage).forEach(key => {
+                    if (perStudentPrefixes.some(prefix => key.startsWith(prefix))) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            }
+
             localStorage.setItem('studentName', nama);
             localStorage.setItem('className', kelas);
             localStorage.setItem('classCode', kelas);
-            // Default Session = 1 ketika baru pertama kali login
-            if (!localStorage.getItem('currentSession')) {
-                localStorage.setItem('currentSession', '1'); 
-            }
+            localStorage.setItem('loginIdentity', nextIdentity);
+            // Selalu mulai aman dari Sesi 1; dashboard kemudian menggantinya
+            // dengan progress terbaru dari server jika siswa sudah berjalan.
+            localStorage.setItem('currentSession', '1');
+            localStorage.setItem('attendanceSession', '1');
+            localStorage.setItem('activeLesson', '1');
             if (kelas === 'ADMIN001') {
                 localStorage.setItem('isAdmin', 'true');
+            } else {
+                localStorage.removeItem('isAdmin');
             }
             
             // Auto select course kalau namanya scratch atau rblx

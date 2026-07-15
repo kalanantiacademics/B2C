@@ -18,6 +18,12 @@ const FALLBACK_ABS_COL_TOTAL_STARS = 26;
 
 const MAX_SESSIONS   = 12;
 
+function cleanClassDatabaseValue(value) {
+  const text = String(value === null || value === undefined ? "" : value).trim();
+  if (!text || /^#(REF|N\/A|VALUE|NAME\?|DIV\/0|NUM|NULL)!?$/i.test(text)) return "";
+  return text;
+}
+
 function getAbsensiMapping(absData) {
   let mapping = {
     dataRowStart: FALLBACK_ABS_DATA_ROW,
@@ -173,11 +179,11 @@ function handleLogin(email) {
         classes.push({
           classCode:   classCode,
           classStatus: classStatus,
-          branchName:  String(row[0]).trim(),
-          programName: String(row[3]).trim(),
-          classLink:   String(row[9]).trim(),
-          day:         String(row[17]).trim(),
-          time:        String(row[20]).trim()
+          branchName:  cleanClassDatabaseValue(row[0]),
+          programName: cleanClassDatabaseValue(row[3]),
+          classLink:   cleanClassDatabaseValue(row[9]),
+          day:         cleanClassDatabaseValue(row[17]),
+          time:        cleanClassDatabaseValue(row[20])
         });
       }
     }

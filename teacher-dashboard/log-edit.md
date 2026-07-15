@@ -1,5 +1,39 @@
 # Log Perbaikan Teacher Dashboard
 
+## 15 Juli 2026 - Detail dan tombol kelas hilang pada lebar layar tertentu
+
+### Masalah
+
+- Kartu kelas berubah menjadi layout horizontal mulai breakpoint `md`, padahal area konten dashboard pada laptop/tablet masih dipersempit sidebar.
+- Bagian kanan kartu yang berisi tombol **Lihat Kelas** dan **Link Playlist** terdorong keluar area layar, sehingga beberapa kartu tampak tidak memiliki detail atau tombol.
+- Nilai formula error dari Class Database seperti `#REF!` ditampilkan mentah sebagai hari dan jam (`#REF!, #REF! WIB`).
+- Nilai cabang atau link yang kosong menggunakan fallback yang terlalu umum atau menghasilkan navigasi detail yang tidak valid.
+
+### Cara perbaikan
+
+- Menahan layout kartu tetap vertikal sampai breakpoint `xl`; layout horizontal hanya digunakan ketika lebar konten benar-benar cukup.
+- Membuat area tombol selebar kartu pada layar kecil/menengah dan baru kembali auto-width pada layar lebar.
+- Menambahkan sanitasi nilai Class Database untuk error `#REF!`, `#N/A`, `#VALUE!`, `#NAME?`, `#DIV/0!`, `#NUM!`, dan `#NULL!` pada backend dan frontend.
+- Mengganti data jadwal error/kosong menjadi **Hari belum tersedia** dan **Jam belum tersedia**, serta cabang kosong menjadi **Cabang belum tersedia**.
+- Hanya membuat URL dan tombol detail jika link spreadsheet kelas tersedia. Jika tidak, kartu menampilkan **Link kelas belum tersedia** dan tidak mengarahkan guru ke halaman detail rusak.
+
+### Hasil
+
+- Tombol kelas tetap terlihat pada tablet, laptop kecil, dan desktop.
+- Formula error tidak lagi tampil sebagai `#REF!` pada kartu.
+- Kelas dengan data belum lengkap tetap ditampilkan dengan status yang jelas, sementara kelas dengan link valid dapat dibuka seperti biasa.
+
+### File yang diubah
+
+- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/dashboard.html`
+- `teacher-dashboard/log-edit.md`
+
+### Deployment
+
+- `code-teacher.gs` perlu dipasang sebagai versi baru pada deployment Apps Script teacher.
+- Perubahan layout HTML aktif setelah GitHub Pages selesai build dan browser di-hard refresh.
+
 ## 15 Juli 2026 - Kelas Postponed tetap dapat dibuka guru
 
 ### Masalah

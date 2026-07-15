@@ -2,6 +2,26 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-15 — Tombol kembali dari materi ke dashboard
+
+### Masalah
+
+- Tombol header pada halaman materi masih bertuliskan `Intip Materi` dan hanya memanggil fase learning, padahal siswa sudah berada di halaman materi.
+- Siswa membutuhkan navigasi yang jelas untuk kembali ke dashboard utama.
+
+### File yang diubah
+
+#### `materials.html`
+
+- Mengubah label tombol header menjadi `← Kembali ke Dashboard`.
+- Mengubah aksi tombol menjadi navigasi langsung ke `dashboard.html`.
+- Logo di sisi kiri tetap memiliki fungsi kembali ke dashboard seperti sebelumnya.
+
+### Deployment
+
+- Perubahan hanya pada HTML dan tidak memerlukan deployment ulang Apps Script.
+- Setelah push, tunggu GitHub Pages selesai build lalu lakukan hard refresh.
+
 ## 2026-07-15 — Planet mengikuti Level dan judul sesi mengikuti Academic Spreadsheet
 
 ### Masalah

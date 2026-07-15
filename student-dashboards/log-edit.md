@@ -186,3 +186,10 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 - Push ke `kalanantiacademics/B2C` branch `main` berhasil pada 15 Juli 2026.
 - Rentang commit yang dipublikasikan: `701a966..95de5c9`.
 - Status HTML GitHub Pages diverifikasi terpisah setelah proses build/caching selesai.
+
+### Hasil verifikasi live
+
+- GitHub Pages build untuk commit `6ac9a64` selesai dengan status `built` pada 15 Juli 2026.
+- `dashboard.html` live sudah memuat `studentLevel` dan gerbang sesi berbasis `currentSession`; rumus lama `Math.ceil(sess/2)` sudah tidak ada.
+- `index.html` live sudah memuat `loginIdentity` dan pembersihan state lintas siswa.
+- Deployment Google Apps Script yang aktif masih mengembalikan `Buidana` dari endpoint `getStudents` untuk `SCLWER222`. Ini membuktikan backend Web App belum memakai versi lokal `code-student.gs` yang baru.

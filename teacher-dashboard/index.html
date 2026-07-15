@@ -249,12 +249,12 @@
                             teacherName: 'Kak Demo', 
                             teacherEmail: email,
                             classes: [
-                                { classCode: 'SCL100-ROB', programName: 'Roblox Adventure', classLink: '#', day: 'Sabtu', time: '14:00 - 15:30 WIB' },
-                                { classCode: 'SCL102-SCR', programName: 'Scratch Basic', classLink: '#', day: 'Minggu', time: '10:00 - 11:30 WIB' }
+                                { classCode: 'SCL100-ROB', classStatus: 'Active', programName: 'Roblox Adventure', classLink: '#', day: 'Sabtu', time: '14:00 - 15:30 WIB' },
+                                { classCode: 'SCL102-SCR', classStatus: 'Postponed', programName: 'Scratch Basic', classLink: '#', day: 'Minggu', time: '10:00 - 11:30 WIB' }
                             ]
                         };
                     } else {
-                        data = { success: false, message: 'Email tidak terdaftar atau tidak ada kelas SCL aktif.' };
+                        data = { success: false, message: 'Email tidak terdaftar atau tidak ada kelas SCL Active/Postponed.' };
                     }
                 } else {
                     // LIVE FETCH

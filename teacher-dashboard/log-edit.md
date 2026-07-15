@@ -1,5 +1,39 @@
 # Log Perbaikan Teacher Dashboard
 
+## 15 Juli 2026 - Kelas Postponed tetap dapat dibuka guru
+
+### Masalah
+
+- Login teacher hanya mengambil baris Class Database dengan status persis `Active`.
+- Kelas berstatus `Postponed` tidak dikirim ke dashboard meskipun guru perlu membuka kelas sebelum tanggal mulai untuk mengecek materi, data siswa, dan kesiapan kelas.
+- Pemeriksaan frontend menunjukkan tidak ada filter tambahan berdasarkan start date; kelas hilang sepenuhnya karena filter status pada backend login.
+
+### Cara perbaikan
+
+- Mengubah izin akses teacher agar menerima status `Active` atau `Postponed` secara case-insensitive.
+- Tetap membatasi kelas pada kode yang diawali `SCL` dan email guru yang sesuai, sehingga status lain seperti `Graduated` tidak ikut terbuka.
+- Menambahkan `classStatus` ke data kelas yang dikirim backend.
+- Menambahkan badge **Postponed · Tetap Bisa Dicek** pada kartu agar guru tahu kelas belum aktif tetapi tetap dapat dibuka.
+- Memperbarui data mock dan pesan ketika tidak ada kelas agar menyebut `Active/Postponed`.
+
+### Hasil
+
+- Guru dapat login dan membuka kelas SCL berstatus Postponed sebelum start date.
+- Kelas Active tetap tampil seperti sebelumnya.
+- Kelas Graduated dan status selain Active/Postponed tetap tidak ditampilkan.
+
+### File yang diubah
+
+- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/dashboard.html`
+- `teacher-dashboard/index.html`
+- `teacher-dashboard/log-edit.md`
+
+### Deployment
+
+- `code-teacher.gs` perlu disalin ke project Apps Script teacher dan deployment Web App yang sama dibuatkan versi baru.
+- Perubahan HTML aktif setelah GitHub Pages selesai build dan browser di-hard refresh.
+
 ## 15 Juli 2026 - Memperjelas pilihan bonus bintang
 
 ### Masalah

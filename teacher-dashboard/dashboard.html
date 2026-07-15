@@ -543,6 +543,7 @@
             
             classes.forEach(c => {
                 const progUpper = c.programName.toUpperCase();
+                const isPostponed = String(c.classStatus || '').trim().toLowerCase() === 'postponed';
                 const isRoblox = progUpper.includes('ROBLOX') || progUpper.includes('RBLX');
                 const isScratch = progUpper.includes('SCRATCH');
                 
@@ -571,6 +572,11 @@
 
                     <div class="relative z-10 pl-3 md:pl-4">
                         <div class="flex flex-wrap gap-2 mb-4">
+                            ${isPostponed ? `
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style="background: rgba(249,192,19,0.14); border: 1px solid rgba(249,192,19,0.4);">
+                                <span class="text-xs">⏳</span>
+                                <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-k-yellow">Postponed · Tetap Bisa Dicek</span>
+                            </div>` : ''}
                             <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px);">
                                 <span class="text-sm">${emoji}</span>
                                 <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest inline-block pt-0.5" style="color: ${themeColor}">${c.programName}</span>

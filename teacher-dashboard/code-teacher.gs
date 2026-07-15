@@ -165,11 +165,14 @@ function handleLogin(email) {
       var rowEmail    = String(row[8]).trim().toLowerCase();
       var classCode   = String(row[1]).trim();
       var classStatus = String(row[2]).trim();
+      var normalizedStatus = classStatus.toLowerCase();
+      var canTeacherAccess = normalizedStatus === "active" || normalizedStatus === "postponed";
 
-      if (rowEmail === searchEmail && classCode.startsWith("SCL") && classStatus.toLowerCase() === "active") {
+      if (rowEmail === searchEmail && classCode.startsWith("SCL") && canTeacherAccess) {
         if (!teacherNameRaw) teacherNameRaw = String(row[7]).trim();
         classes.push({
           classCode:   classCode,
+          classStatus: classStatus,
           branchName:  String(row[0]).trim(),
           programName: String(row[3]).trim(),
           classLink:   String(row[9]).trim(),
@@ -185,7 +188,7 @@ function handleLogin(email) {
       return createJSONResponse({ success: true, teacherName, teacherEmail: searchEmail, classes });
     }
 
-    return createJSONResponse({ success: false, message: "Email tidak terdaftar atau tidak ada kelas SCL aktif." });
+    return createJSONResponse({ success: false, message: "Email tidak terdaftar atau tidak ada kelas SCL Active/Postponed." });
   } catch (err) {
     return createJSONResponse({ success: false, message: "Terjadi kesalahan sistem: " + err.toString() });
   }

@@ -164,6 +164,41 @@
             box-shadow: 0 6px 15px rgba(249, 192, 19, 0.45);
             z-index: 10;
         }
+
+        /* Bonus star selector: make the chosen amount unmistakable. */
+        .bonus-btn-item {
+            position: relative;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+        .bonus-btn-item[aria-pressed="true"] {
+            background: linear-gradient(145deg, #FFD84D, #F9C013) !important;
+            border: 2px solid #FFF2A8 !important;
+            color: #4A3200 !important;
+            transform: translateY(-3px) scale(1.12);
+            box-shadow: 0 0 0 4px rgba(249, 192, 19, 0.22), 0 8px 0 #9A7100, 0 14px 24px rgba(249, 192, 19, 0.35);
+        }
+        .bonus-btn-item[aria-pressed="true"]::after {
+            content: '✓';
+            position: absolute;
+            top: -9px;
+            right: -9px;
+            width: 22px;
+            height: 22px;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            background: #22C55E;
+            border: 2px solid var(--card);
+            color: white;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: 900;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+        }
+        .bonus-btn-item:focus-visible {
+            outline: 3px solid #7DD3FC;
+            outline-offset: 4px;
+        }
     </style>
 </head>
 <body class="pb-20 overflow-x-hidden">
@@ -531,11 +566,12 @@
         <h3 class="font-display font-black text-2xl tracking-tight mb-2" style="color: var(--text)">Beri Bonus Bintang</h3>
         <p class="text-[10px] font-bold uppercase tracking-widest mb-6" style="color: var(--muted)">Penghargaan atas keaktifan siswa</p>
         
-        <div class="flex justify-center gap-2 mb-6">
-            <button onclick="setBonus(1)" class="bonus-btn-item w-12 h-12 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 transition-all border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)">+1</button>
-            <button onclick="setBonus(2)" class="bonus-btn-item w-12 h-12 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 transition-all border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)">+2</button>
-            <button onclick="setBonus(3)" class="bonus-btn-item w-12 h-12 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 transition-all border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)">+3</button>
+        <div class="flex justify-center gap-3 mb-3" role="group" aria-label="Pilih jumlah bonus bintang">
+            <button type="button" onclick="setBonus(1)" class="bonus-btn-item w-14 h-14 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" aria-pressed="false" aria-label="Pilih bonus 1 bintang">+1</button>
+            <button type="button" onclick="setBonus(2)" class="bonus-btn-item w-14 h-14 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" aria-pressed="false" aria-label="Pilih bonus 2 bintang">+2</button>
+            <button type="button" onclick="setBonus(3)" class="bonus-btn-item w-14 h-14 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" aria-pressed="false" aria-label="Pilih bonus 3 bintang">+3</button>
         </div>
+        <p id="bonus-selection-status" class="min-h-5 mb-6 text-xs font-black text-k-yellow" role="status" aria-live="polite">Belum ada jumlah yang dipilih</p>
 
         <div class="text-left mb-8">
             <label class="text-[10px] font-black uppercase tracking-widest mb-2 block ml-1" style="color: var(--muted)">Alasan Pemberian Bonus</label>
@@ -1480,10 +1516,14 @@ function openBonusModal() {
 function updateBonusUI(val) {
     document.querySelectorAll('.bonus-btn-item').forEach((btn, i) => {
         const btnVal = i + 1;
-        btn.classList.toggle('bg-k-yellow/30', btnVal === val);
-        btn.classList.toggle('border-k-yellow', btnVal === val);
-        btn.classList.toggle('scale-110', btnVal === val);
+        btn.setAttribute('aria-pressed', String(btnVal === val));
     });
+    const status = document.getElementById('bonus-selection-status');
+    if (status) {
+        status.textContent = val > 0
+            ? `✓ Bonus +${val} bintang dipilih`
+            : 'Belum ada jumlah yang dipilih';
+    }
 }
 
 let tempBonus = 0;

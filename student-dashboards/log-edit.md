@@ -171,3 +171,10 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 
 - Setelah GitHub Pages dan Apps Script sama-sama terbarui, lakukan logout lalu login ulang. Ini diperlukan agar `studentName` lama (`Buidana`) diganti dengan pilihan resmi dari header `Progress` (`Budiyana`).
 - Jika browser masih menampilkan data lama, lakukan hard refresh atau uji melalui incognito.
+
+### Status publikasi
+
+- Commit lokal berhasil dibuat: `d3205f8` (`Fix student login identity, level, and session gating`).
+- Push menggunakan SSH key akademik gagal karena akun GitHub yang terdeteksi (`mds-academic`) tidak memiliki izin menulis ke `kalanantiacademics/B2C`.
+- Fingerprint `SHA256:Dns6nijOYoN1tAeOkmLncMERfUN+0LOZ9mU0CdQ2VAQ` yang dicatat di `knowledge-scl.md` tidak cocok dengan tiga public key yang saat ini tersedia di folder `~/.ssh`.
+- Karena push belum berhasil, GitHub Pages masih menyajikan versi lama. Commit lokal tetap aman dan siap dipush setelah credential dengan akses tulis tersedia.

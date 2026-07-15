@@ -1,5 +1,37 @@
 # Log Perbaikan Teacher Dashboard
 
+## 15 Juli 2026 - Menghapus shortcut penilaian Sesi 12 yang prematur
+
+### Masalah
+
+- Tabel Progress Siswa selalu menampilkan tombol `🏆 S12` selama sesi target bukan Sesi 12.
+- Tombol tersebut langsung menjalankan `openApprovalModal(..., 12)` tanpa memeriksa sesi siswa atau keberadaan link final project.
+- Akibatnya siswa yang baru berada di Sesi 1 atau Sesi 2 terlihat seolah-olah sudah harus diberi nilai Sesi 12, dan modal Sesi 12 terbuka tanpa link project.
+- Shortcut tersebut juga sebenarnya duplikat karena tombol penilaian utama sudah otomatis mengikuti `targetSess` dan hanya muncul ketika link project tersedia.
+
+### Cara perbaikan
+
+- Menghapus tombol shortcut `🏆 S12` yang di-hardcode dari tabel Progress Siswa.
+- Mempertahankan tombol penilaian dinamis `Nilai S{targetSess}` sebagai satu-satunya jalur penilaian dari tabel.
+- Sesi 12 akan otomatis menjadi target dan tombol `Nilai S12` akan muncul ketika final project Sesi 12 benar-benar memiliki link.
+- Riwayat siswa tetap menyediakan akses Edit Nilai untuk sesi yang memang sudah memiliki data.
+
+### Hasil
+
+- Siswa di Sesi 1 atau Sesi 2 tidak lagi menampilkan aksi penilaian Sesi 12.
+- Guru tidak dapat membuka form Sesi 12 kosong dari shortcut prematur.
+- Ketika final project Sesi 12 tersedia, alur penilaian tetap muncul melalui tombol dinamis yang sama dengan sesi lain.
+
+### File yang diubah
+
+- `teacher-dashboard/class-detail.html`
+- `teacher-dashboard/log-edit.md`
+
+### Deployment
+
+- Perubahan hanya pada frontend teacher dashboard dan tidak memerlukan deployment ulang Apps Script.
+- Setelah GitHub Pages selesai build, lakukan hard refresh.
+
 ## 15 Juli 2026 - Jadwal kartu kelas mengambil sumber dari tab Absensi
 
 ### Masalah

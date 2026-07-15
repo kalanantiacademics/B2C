@@ -1009,7 +1009,6 @@ function renderProgress() {
             <td>
                 <div class="flex items-center gap-2">
                     ${hasLink ? `<button onclick="event.stopPropagation(); openApprovalModal(${idx}, ${targetSess})" class="text-[11px] font-black px-3 py-1.5 rounded-lg bg-k-yellow text-[#5A3F00] hover:-translate-y-0.5 transition-all shadow-md cursor-pointer whitespace-nowrap">🌟 Nilai S${targetSess}</button>` : `<span class="text-[10px] italic" style="color: var(--text); opacity: 0.4;">Belum ada link</span>`}
-                    ${targetSess !== 12 ? `<button onclick="event.stopPropagation(); openApprovalModal(${idx}, 12)" class="text-[11px] font-black px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all border border-emerald-500/20 cursor-pointer whitespace-nowrap shadow-sm hover:-translate-y-0.5" title="Akses Langsung Final Project Sesi 12">🏆 S12</button>` : ''}
                     <button onclick="event.stopPropagation(); openHistoryModal(${idx})" class="p-2 rounded-lg transition-colors border cursor-pointer hover:bg-k-blue/10 shrink-0" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" title="Lihat Riwayat">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>

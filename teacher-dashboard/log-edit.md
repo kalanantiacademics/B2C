@@ -1,5 +1,49 @@
 # Log Perbaikan Teacher Dashboard
 
+## 16 Juli 2026 - Layout mobile dan favicon seluruh teacher dashboard
+
+### Kebutuhan
+
+- Teacher dashboard harus tetap dapat dibuka melalui HP.
+- Seluruh alur teacher perlu memiliki layout yang siap digunakan pada mobile, bukan hanya halaman login atau dashboard utama.
+- Seluruh halaman teacher perlu memakai ikon web Kalananti yang sama dengan student dashboard.
+
+### Cara perbaikan
+
+- Menambahkan stylesheet bersama `mobile-ready.css` dan memuatnya pada enam halaman utama teacher dashboard: login, dashboard, detail kelas, daftar kurikulum, detail kurikulum, dan panduan SCL.
+- Menyesuaikan navigasi, ukuran tombol sentuh, padding, radius kartu, grid, form, modal, serta elemen media untuk viewport HP.
+- Membuat kelompok tombol tab dapat digeser horizontal pada layar sempit.
+- Mempertahankan tabel lebar sebagai area scroll horizontal agar kolom tidak dipaksa mengecil dan tetap dapat dibaca.
+- Mengubah curriculum detail dari split view desktop berketinggian tetap menjadi dokumen mobile yang dapat di-scroll, dengan navigasi slide tetap mudah dijangkau.
+- Mengubah sidebar tetap 280 px pada Panduan SCL menjadi pemilih topik horizontal di bagian atas layar HP.
+- Menyembunyikan dekorasi planet yang keluar viewport pada mobile untuk menghapus overflow horizontal.
+- Menyimpan ikon Kalananti 900×900 di `assets/kalananti-web-icon.jpg` dan memasangnya sebagai favicon serta Apple touch icon pada keenam halaman teacher.
+
+### Verifikasi browser
+
+- Keenam halaman teacher diuji pada viewport HP 390×844.
+- `class-detail.html`, `curriculum.html`, `curriculum-detail.html`, dan `panduan-scl.html` memiliki lebar dokumen sama dengan lebar viewport.
+- Overflow tipis pada `index.html` dan `dashboard.html` ditelusuri ke dekorasi planet, lalu dibersihkan hingga `scrollWidth` sama dengan `clientWidth` (390 px).
+- Link `mobile-ready.css` terkonfirmasi tersedia pada seluruh halaman teacher.
+
+### File yang diubah
+
+- `teacher-dashboard/mobile-ready.css`
+- `teacher-dashboard/index.html`
+- `teacher-dashboard/dashboard.html`
+- `teacher-dashboard/class-detail.html`
+- `teacher-dashboard/curriculum.html`
+- `teacher-dashboard/curriculum-detail.html`
+- `teacher-dashboard/panduan-scl.html`
+- `assets/kalananti-web-icon.jpg`
+- `knowledge-scl.md`
+
+### Deployment
+
+- Tidak memerlukan deployment ulang Apps Script.
+- Perubahan telah di-push ke `b2c/main` melalui commit `afef01e` dan `f3f329f`.
+- Setelah GitHub Pages selesai build, lakukan hard refresh agar stylesheet dan favicon terbaru tidak tertahan cache browser.
+
 ## 16 Juli 2026 - Menghapus konfirmasi manual penyimpanan project Sesi 12
 
 ### Masalah

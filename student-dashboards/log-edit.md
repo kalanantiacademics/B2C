@@ -2,6 +2,56 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-16 — Pembatasan HP, dukungan iPad, dan favicon dashboard
+
+### Kebutuhan
+
+- Student dashboard hanya boleh digunakan melalui tablet, laptop, atau desktop/PC.
+- HP harus tetap ditolak ketika portrait, landscape, maupun memakai mode **Situs desktop**.
+- iPad Air dan iPad Pro harus dikenali sebagai tablet dan tidak boleh ikut terblokir.
+- Seluruh halaman student perlu memakai ikon web Kalananti yang sama.
+
+### Perbaikan akses perangkat
+
+- Menambahkan `device-guard.js` sebagai aturan perangkat bersama untuk seluruh student dashboard.
+- Menambahkan `device-guard.css` untuk menutup konten dashboard dan menampilkan pemberitahuan perangkat ketika halaman dibuka melalui HP.
+- Memasang kedua file tersebut pada `index.html`, `dashboard.html`, `sessions.html`, `materials.html`, dan `quiz.html`, sehingga pembatasan tidak dapat dilewati dengan membuka URL halaman dalam secara langsung.
+- Deteksi HP menggabungkan `navigator.userAgentData.mobile`, user-agent, jenis pointer, dan ukuran sisi pendek layar.
+- Perangkat dengan sisi pendek layar minimal 600 CSS px diperlakukan sebagai tablet. Perbaikan ini diperlukan karena Chrome Device Mode dan beberapa versi iPadOS dapat melaporkan iPad sebagai perangkat mobile tanpa nama tablet yang konsisten.
+- HP landscape tetap ditolak karena sisi pendek layar HP tidak berubah menjadi ukuran tablet saat layar diputar.
+
+### Favicon
+
+- Menyimpan ikon Kalananti 900×900 di `assets/kalananti-web-icon.jpg` agar dashboard tidak bergantung pada URL gambar eksternal.
+- Menambahkan favicon dan Apple touch icon pada kelima halaman student.
+
+### Verifikasi browser
+
+- iPhone portrait 390×844: diblokir.
+- iPhone landscape 844×390: diblokir.
+- iPad Air portrait dan landscape: diizinkan.
+- iPad Pro 11 inci dan iPad Pro 12,9 inci: diizinkan.
+- Kelima halaman student diuji menggunakan profil iPad Air dan seluruhnya tidak menampilkan layar penolakan.
+- Desktop 1366×768 tetap diizinkan.
+
+### File yang diubah
+
+- `student-dashboards/device-guard.js`
+- `student-dashboards/device-guard.css`
+- `student-dashboards/index.html`
+- `student-dashboards/dashboard.html`
+- `student-dashboards/sessions.html`
+- `student-dashboards/materials.html`
+- `student-dashboards/quiz.html`
+- `assets/kalananti-web-icon.jpg`
+- `knowledge-scl.md`
+
+### Deployment
+
+- Tidak memerlukan deployment ulang Apps Script.
+- Perubahan telah di-push ke `b2c/main` melalui commit `afef01e`, `f3f329f`, dan perbaikan iPad `362b003`.
+- Setelah GitHub Pages selesai build, lakukan hard refresh karena browser dapat menyimpan JavaScript dan favicon lama di cache.
+
 ## 2026-07-15 — Bonus tampil pada popup Detail Bintang
 
 ### Masalah

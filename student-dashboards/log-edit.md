@@ -193,3 +193,20 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 - `dashboard.html` live sudah memuat `studentLevel` dan gerbang sesi berbasis `currentSession`; rumus lama `Math.ceil(sess/2)` sudah tidak ada.
 - `index.html` live sudah memuat `loginIdentity` dan pembersihan state lintas siswa.
 - Deployment Google Apps Script yang aktif masih mengembalikan `Buidana` dari endpoint `getStudents` untuk `SCLWER222`. Ini membuktikan backend Web App belum memakai versi lokal `code-student.gs` yang baru.
+
+## 2026-07-15 — Indikator jumlah slide dan transisi otomatis ke Must Do
+
+### Masalah
+
+- Navigasi materi hanya menampilkan satu bentuk indikator aktif tanpa keterangan posisi, sehingga siswa tidak mengetahui jumlah slide dan sedang berada di slide ke berapa.
+- Tombol kanan dinonaktifkan pada slide terakhir. Siswa harus mencari tombol lain di sidebar untuk masuk ke `Must Do`.
+
+### Perubahan di `materials.html`
+
+- Menambahkan label `Slide X dari Y` di atas indikator.
+- Menampilkan satu titik untuk setiap slide; titik aktif berbentuk lebih panjang dan berwarna kuning.
+- Setiap titik dapat diklik untuk langsung membuka slide terkait.
+- Area titik dapat digeser horizontal jika jumlah slide banyak.
+- Tombol kanan tetap aktif pada slide terakhir, berubah warna kuning, dan memiliki label aksesibilitas `Lanjut ke Must Do`.
+- Menekan tombol kanan pada slide terakhir otomatis menjalankan `setPhase('must-do')`.
+- Perpindahan ke `Must Do` tetap memakai alur yang sudah ada, termasuk pencatatan progress awal melalui `syncProgress()`.

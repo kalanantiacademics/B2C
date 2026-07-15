@@ -178,3 +178,11 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 - Push menggunakan SSH key akademik gagal karena akun GitHub yang terdeteksi (`mds-academic`) tidak memiliki izin menulis ke `kalanantiacademics/B2C`.
 - Fingerprint `SHA256:Dns6nijOYoN1tAeOkmLncMERfUN+0LOZ9mU0CdQ2VAQ` yang dicatat di `knowledge-scl.md` tidak cocok dengan tiga public key yang saat ini tersedia di folder `~/.ssh`.
 - Karena push belum berhasil, GitHub Pages masih menyajikan versi lama. Commit lokal tetap aman dan siap dipush setelah credential dengan akses tulis tersedia.
+
+### Penyelesaian autentikasi dan push
+
+- SSH agent tidak memuat identity `new-yazid-mac`, tetapi GitHub CLI sudah login melalui keyring sebagai akun organisasi `kalanantiacademics` dengan scope `repo`.
+- Git remote `b2c` dikembalikan ke HTTPS dan autentikasi Git dikonfigurasi melalui `gh auth setup-git`.
+- Push ke `kalanantiacademics/B2C` branch `main` berhasil pada 15 Juli 2026.
+- Rentang commit yang dipublikasikan: `701a966..95de5c9`.
+- Status HTML GitHub Pages diverifikasi terpisah setelah proses build/caching selesai.

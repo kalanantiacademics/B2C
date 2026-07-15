@@ -3,13 +3,10 @@
 
 # Keep this ignore file tracked.
 !.gitignore
+!404.html
 
-# Track only the specific folders inside student-centered
+# Legacy dashboards under student-centered are intentionally ignored.
 !student-centered/
-!student-centered/student-dashboards/
-!student-centered/student-dashboards/**
-!student-centered/teacher-dashboard/
-!student-centered/teacher-dashboard/**
 !student-centered/panduan-scl-cabang.html
 
 *.py
@@ -29,3 +26,6 @@ student-centered/book-editor-slides/server.log
 !student-dashboards/**
 !teacher-dashboard/
 !teacher-dashboard/**
+
+
+knowledge-scl.md

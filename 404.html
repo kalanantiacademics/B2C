@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mengalihkan ke Dashboard Kalananti</title>
+  <script>
+    (() => {
+      const routes = [
+        {
+          legacy: '/B2C/student-centered/student-dashboards',
+          current: '/B2C/student-dashboards'
+        },
+        {
+          legacy: '/B2C/student-centered/teacher-dashboard',
+          current: '/B2C/teacher-dashboard'
+        }
+      ];
+
+      const route = routes.find(({ legacy }) =>
+        location.pathname === legacy || location.pathname.startsWith(`${legacy}/`)
+      );
+
+      if (route) {
+        const suffix = location.pathname.slice(route.legacy.length);
+        location.replace(`${route.current}${suffix}${location.search}${location.hash}`);
+      }
+    })();
+  </script>
+</head>
+<body>
+  <main>
+    <h1>Halaman tidak ditemukan</h1>
+    <p>Periksa kembali alamat halaman yang Anda buka.</p>
+  </main>
+</body>
+</html>

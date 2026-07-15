@@ -300,10 +300,26 @@ function handleGetStudentProgress(classCode, studentName) {
     // 5. Baca Absensi sheet untuk attendanceSession (berapa sesi yang sudah dihadiri)
     var attendanceSession = 1;
     var studentLevel = 1;
+    var classStartTime = '';
+    var classEndTime = '';
     try {
       var absSheet = ssClass.getSheetByName('Absensi');
       if (absSheet) {
         var absData = absSheet.getDataRange().getValues();
+        var absDisplayData = absSheet.getDataRange().getDisplayValues();
+
+        // Jadwal kelas berada di area informasi atas sheet Absensi. Cari label
+        // secara dinamis agar tidak bergantung pada nomor sel tertentu.
+        for (var infoRow = 0; infoRow < absData.length; infoRow++) {
+          for (var infoCol = 0; infoCol < absData[infoRow].length - 1; infoCol++) {
+            var infoLabel = String(absData[infoRow][infoCol] || '').trim().toLowerCase().replace(/:$/, '');
+            if (infoLabel === 'jam mulai') {
+              classStartTime = formatClassTime(absData[infoRow][infoCol + 1], absDisplayData[infoRow][infoCol + 1]);
+            } else if (infoLabel === 'jam selesai') {
+              classEndTime = formatClassTime(absData[infoRow][infoCol + 1], absDisplayData[infoRow][infoCol + 1]);
+            }
+          }
+        }
         
         // Dynamically find correct header rows instead of hardcoding row 16 / col F
         var absDataRowStart = 15;
@@ -407,6 +423,8 @@ function handleGetStudentProgress(classCode, studentName) {
       programName: programName,
       teacherName: teacherName,
       studentLevel: studentLevel,
+      classStartTime: classStartTime,
+      classEndTime: classEndTime,
       currentSession: currentSession,
       attendanceSession: attendanceSession,
       totalStars: totalStars,
@@ -419,6 +437,23 @@ function handleGetStudentProgress(classCode, studentName) {
       message: 'Server error: ' + error.toString()
     });
   }
+}
+
+function formatClassTime(rawValue, displayValue) {
+  if (rawValue instanceof Date) {
+    return Utilities.formatDate(rawValue, 'Asia/Jakarta', 'HH:mm');
+  }
+
+  var text = String(displayValue || rawValue || '').trim();
+  var match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+  if (!match) return text;
+
+  var hours = parseInt(match[1], 10);
+  var minutes = match[2];
+  var meridiem = String(match[3] || '').toUpperCase();
+  if (meridiem === 'PM' && hours < 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+  return ('0' + hours).slice(-2) + ':' + minutes;
 }
 
 // Normalisasi string: hapus karakter non-alphanumeric, lowercase

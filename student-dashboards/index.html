@@ -368,7 +368,8 @@
             if (previousIdentity !== nextIdentity) {
                 const exactKeys = [
                     'currentSession', 'attendanceSession', 'activeLesson',
-                    'sessionProgress', 'totalStars', 'teacherName', 'studentLevel'
+                    'sessionProgress', 'totalStars', 'teacherName', 'studentLevel',
+                    'classStartTime', 'classEndTime'
                 ];
                 exactKeys.forEach(key => localStorage.removeItem(key));
 

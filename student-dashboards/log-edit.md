@@ -210,3 +210,23 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 - Tombol kanan tetap aktif pada slide terakhir, berubah warna kuning, dan memiliki label aksesibilitas `Lanjut ke Must Do`.
 - Menekan tombol kanan pada slide terakhir otomatis menjalankan `setPhase('must-do')`.
 - Perpindahan ke `Must Do` tetap memakai alur yang sudah ada, termasuk pencatatan progress awal melalui `syncProgress()`.
+
+## 2026-07-15 — Sinkronisasi jam kelas dari tab Absensi
+
+### Masalah
+
+- Kartu kelas pada dashboard menampilkan jam hardcoded `17:00 – 18:00`, sehingga tidak mengikuti jadwal kelas pada spreadsheet.
+
+### Perubahan
+
+- `code-student.gs` mencari label `Jam Mulai` dan `Jam Selesai` secara dinamis di tab `Absensi`.
+- Nilai waktu dinormalisasi ke format 24 jam `HH:mm` menggunakan zona waktu `Asia/Jakarta`.
+- Respons `getStudentProgress` sekarang menyertakan `classStartTime` dan `classEndTime`.
+- `dashboard.html` menyimpan jadwal dari server dan menampilkannya pada kartu kelas.
+- Jika jadwal kosong/tidak ditemukan, dashboard menampilkan `Jadwal belum tersedia`, bukan jam palsu.
+- `index.html` membersihkan cache jadwal ketika siswa atau kelas login berubah.
+
+### Hasil yang diharapkan untuk SCLWER222
+
+- Tab `Absensi` berisi Jam Mulai `7:30 AM` dan Jam Selesai `8:00 AM`.
+- Dashboard harus menampilkan `07:30 – 08:00` setelah Apps Script versi terbaru dideploy.

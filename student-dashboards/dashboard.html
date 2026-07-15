@@ -547,7 +547,7 @@
                             <h3 id="class-display" class="font-black text-2xl mission-text">Memuat...</h3>
                             <p class="text-sm font-bold mt-1 flex items-center gap-1.5" style="color:var(--muted)">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                17:00 – 18:00
+                                <span id="class-time-display">Memuat jadwal...</span>
                             </p>
                         </div>
                         <div class="mt-5 pt-4" style="border-top:1px solid var(--card-b)">
@@ -843,6 +843,10 @@
                 if (data.teacherName) {
                     localStorage.setItem('teacherName', data.teacherName);
                 }
+                if (data.classStartTime) localStorage.setItem('classStartTime', data.classStartTime);
+                else localStorage.removeItem('classStartTime');
+                if (data.classEndTime) localStorage.setItem('classEndTime', data.classEndTime);
+                else localStorage.removeItem('classEndTime');
                 const parsedStudentLevel = parseInt(data.studentLevel, 10);
                 localStorage.setItem('studentLevel', (!isNaN(parsedStudentLevel) && parsedStudentLevel > 0) ? parsedStudentLevel : 1);
                 
@@ -948,6 +952,14 @@
         const coachName = localStorage.getItem('teacherName') || 'Kak Kalananti';
         const coachEl = document.getElementById('teacher-name');
         if (coachEl) coachEl.textContent = coachName;
+        const classStartTime = localStorage.getItem('classStartTime') || '';
+        const classEndTime = localStorage.getItem('classEndTime') || '';
+        const classTimeEl = document.getElementById('class-time-display');
+        if (classTimeEl) {
+            classTimeEl.textContent = classStartTime && classEndTime
+                ? `${classStartTime} – ${classEndTime}`
+                : 'Jadwal belum tersedia';
+        }
 
         // Update star count (from backend, or fallback to localStorage cached value)
         const starVal = localStorage.getItem('totalStars');

@@ -1,4 +1,48 @@
-# Log Perbaikan Teacher Dashboard
+> **Fungsi dokumen:** mencatat perubahan Teacher Dashboard berdasarkan tanggal, file, verifikasi, dan kebutuhan deployment.
+>
+> **Baca ketika:** ingin mengetahui apa yang berubah atau mencari riwayat perbaikan.
+>
+> **Aturan:** perubahan baru ditambahkan di bagian paling atas setelah judul dan pengantar.
+
+# Changelog Teacher Dashboard
+
+## 16 Juli 2026 — Refactor struktur tanpa mengubah logika produksi
+
+### Tujuan
+
+- Memisahkan halaman produksi, asset, source Apps Script, dokumentasi, script aktif, dan arsip maintenance.
+- Membuat dokumentasi mudah ditemukan dan menjelaskan fungsi setiap MD pada bagian atas.
+
+### Perubahan
+
+- Mempertahankan enam HTML produksi di root agar URL publik dan navigasi tidak berubah.
+- Memindahkan `mobile-ready.css` ke `assets/css/mobile-ready.css` dan memperbarui seluruh halaman produksi.
+- Memindahkan source backend lokal ke `apps-script/code-teacher.gs` serta menambahkan peringatan deployment manual.
+- Mengganti `knowledge-tcr-dbr.md` menjadi `docs/ARCHITECTURE.md`, `log-edit.md` menjadi `docs/CHANGELOG.md`, dan `notes-teacher.md` menjadi `docs/DEVELOPMENT.md`.
+- Menambahkan README utama, `DATA-FLOW.md`, `SPREADSHEET-SCHEMA.md`, `DEPLOYMENT.md`, `TROUBLESHOOTING.md`, dan `TEACHER-GUIDE.md`.
+- Memindahkan seluruh folder `unused` ke `archive/legacy-maintenance` tanpa menghapus file.
+- Menambahkan README pada `archive/` dan `scripts/` agar status runtime file jelas.
+- Memperbarui absolute path pada `archive/legacy-maintenance/patch_gs.js` ke lokasi Apps Script baru.
+- Memperbarui seluruh referensi dokumentasi ke struktur baru.
+
+### Temuan dan alternatif
+
+- Folder maintenance lama berisi patch historis yang berpotensi tidak cocok dengan source terbaru. File dipindahkan ke archive, bukan dihapus atau dianggap script aktif.
+- Browser lokal mencatat `Failed to fetch` pada halaman yang mencoba API eksternal menggunakan data uji. Endpoint teacher diverifikasi terpisah melalui request read-only dan merespons JSON dengan benar.
+- Fallback apabila stylesheet baru gagal adalah mengembalikan `mobile-ready.css` ke root. Fallback tidak dipakai karena seluruh halaman berhasil memuat stylesheet baru.
+
+### Verifikasi
+
+- `node --check` berhasil untuk source Apps Script teacher yang disalin sementara sebagai `.js` dan patch Apps Script yang path-nya diperbarui.
+- Validator memastikan seluruh target lokal `href` dan `src` tersedia.
+- Chromium headless membuka seluruh enam halaman teacher dengan HTTP 200.
+- Seluruh halaman memuat `assets/css/mobile-ready.css`; tidak ada request asset lokal yang gagal.
+- Endpoint Apps Script teacher aktif merespons request login read-only dengan pesan email uji tidak terdaftar, sehingga endpoint dapat dijangkau tanpa menulis data.
+
+### Deployment
+
+- Tidak memerlukan deployment ulang Apps Script karena logika backend tidak diubah.
+- Struktur frontend harus diterbitkan dalam satu deployment bersama seluruh path dan file baru.
 
 ## 16 Juli 2026 - Layout mobile dan favicon seluruh teacher dashboard
 
@@ -28,7 +72,7 @@
 
 ### File yang diubah
 
-- `teacher-dashboard/mobile-ready.css`
+- `teacher-dashboard/assets/css/mobile-ready.css`
 - `teacher-dashboard/index.html`
 - `teacher-dashboard/dashboard.html`
 - `teacher-dashboard/class-detail.html`
@@ -69,7 +113,7 @@
 ### File yang diubah
 
 - `teacher-dashboard/class-detail.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ### Deployment
 
@@ -101,7 +145,7 @@
 ### File yang diubah
 
 - `teacher-dashboard/class-detail.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ### Deployment
 
@@ -134,9 +178,9 @@
 
 ### File yang diubah
 
-- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/apps-script/code-teacher.gs`
 - `teacher-dashboard/dashboard.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ### Deployment
 
@@ -168,13 +212,13 @@
 
 ### File yang diubah
 
-- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/apps-script/code-teacher.gs`
 - `teacher-dashboard/dashboard.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ### Deployment
 
-- `code-teacher.gs` perlu dipasang sebagai versi baru pada deployment Apps Script teacher.
+- `apps-script/code-teacher.gs` perlu dipasang sebagai versi baru pada deployment Apps Script teacher.
 - Perubahan layout HTML aktif setelah GitHub Pages selesai build dan browser di-hard refresh.
 
 ## 15 Juli 2026 - Kelas Postponed tetap dapat dibuka guru
@@ -201,14 +245,14 @@
 
 ### File yang diubah
 
-- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/apps-script/code-teacher.gs`
 - `teacher-dashboard/dashboard.html`
 - `teacher-dashboard/index.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ### Deployment
 
-- `code-teacher.gs` perlu disalin ke project Apps Script teacher dan deployment Web App yang sama dibuatkan versi baru.
+- `apps-script/code-teacher.gs` perlu disalin ke project Apps Script teacher dan deployment Web App yang sama dibuatkan versi baru.
 - Perubahan HTML aktif setelah GitHub Pages selesai build dan browser di-hard refresh.
 
 ## 15 Juli 2026 - Memperjelas pilihan bonus bintang
@@ -236,7 +280,7 @@
 ### File yang diubah
 
 - `teacher-dashboard/class-detail.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ## 15 Juli 2026 - Total teacher lebih besar dan bonus tidak tampil di rincian
 
@@ -264,7 +308,7 @@
 ### File yang diubah
 
 - `teacher-dashboard/class-detail.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
 
 ## 15 Juli 2026 - Bonus menimpa nilai utama dan tidak bisa diedit
 
@@ -294,6 +338,25 @@
 
 ### File yang diubah
 
-- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/apps-script/code-teacher.gs`
 - `teacher-dashboard/class-detail.html`
-- `teacher-dashboard/log-edit.md`
+- `teacher-dashboard/docs/CHANGELOG.md`
+## 2026-07-16 — Mencegah tanggal persetujuan masuk ke header siswa
+
+### Masalah
+
+- Saat guru menyetujui bintang Sesi 1, tanggal dapat ditulis ke row 2 yang merupakan header nama siswa.
+- Penulisan tersebut menghalangi formula array `TRANSPOSE` di `Progress!C2` dan menghasilkan `#REF!`.
+- Penelusuran Git menunjukkan logika `sessionStartRow - 1` berasal dari commit `0f2f4f7` tanggal 30 April 2026.
+
+### Perbaikan
+
+- `handleApproveProject()` sekarang menulis tanggal ke `sessionStartRow`, yaitu baris `Date`, tanpa mengurangi satu baris.
+- Fallback `findStudentAndSession()` diselaraskan agar Sesi 1 dimulai dari row 3 dan setiap sesi berikutnya berjarak lima baris.
+- Data progress, quiz, star, dan project tetap dicari secara dinamis dari blok sesi yang sama.
+
+## 2026-07-16 — Memindahkan metadata sinkronisasi ke Absensi AQ1
+
+- Backend guru sekarang menulis dan membaca versi sinkronisasi melalui `Absensi!AQ1`.
+- Lokasi lama `Progress!Z1` tidak lagi digunakan oleh backend guru.
+- Kontrak API `syncVersion` tetap sama sehingga frontend teacher tidak memerlukan perubahan.

@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="../../assets/css/device-guard.css">
+    <script src="../../assets/js/device-guard.js" defer></script>
+    <title>Kalananti Learning - Materi Belajar Console</title>
+    <script>
+        if (!localStorage.getItem('studentName')) {
+            window.location.href = 'index.html';
+        } else if (!localStorage.getItem('classCode') && localStorage.getItem('className')) {
+            localStorage.setItem('classCode', localStorage.getItem('className'));
+        } else if (!localStorage.getItem('classCode')) {
+            window.location.href = 'index.html';
+        } else {
+            const curSess = parseInt(localStorage.getItem('currentSession') || '1', 10);
+            const isAdm = localStorage.getItem('isAdmin') === 'true';
+            if (!localStorage.getItem('activeLesson')) {
+                localStorage.setItem('activeLesson', curSess);
+            }
+            let activeLesson = parseInt(localStorage.getItem('activeLesson') || '1', 10);
+            if (activeLesson > curSess && !isAdm) {
+                localStorage.setItem('activeLesson', curSess);
+                window.location.href = 'dashboard.html';
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], display: ['Orbitron', 'sans-serif'] },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                        'k-purple': '#8B5CF6',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (() => {
+            const THEME_KEY = 'kalanantiTheme';
+            let initialTheme = 'dark';
+            try {
+                const saved = localStorage.getItem(THEME_KEY);
+                if (saved === 'dark' || saved === 'light') initialTheme = saved;
+            } catch (err) { }
+            document.documentElement.setAttribute('data-theme', initialTheme);
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #091326;
+            --bg-accent: #0f1d38;
+            --sidebar-bg: rgba(10, 20, 42, 0.85);
+            --card-bg: rgba(14, 28, 56, 0.7);
+            --card-border: rgba(138, 180, 248, 0.15);
+            --text-main: #f0f6ff;
+            --text-muted: #8ba2c2;
+            --chip-bg: rgba(255, 255, 255, 0.05);
+            --chip-border: rgba(255, 255, 255, 0.1);
+            --stars-opacity: 0.4;
+        }
+
+        html[data-theme="light"] {
+            --bg: #f3f8fe;
+            --bg-accent: #e1edf9;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(38, 94, 155, 0.15);
+            --text-main: #1e3a60;
+            --text-muted: #5b7699;
+            --chip-bg: rgba(38, 94, 155, 0.06);
+            --chip-border: rgba(38, 94, 155, 0.12);
+            --stars-opacity: 0.12;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(38, 94, 155, 0.15), transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(249, 192, 19, 0.12), transparent 30%),
+                radial-gradient(circle at 50% 90%, rgba(51, 157, 157, 0.1), transparent 35%),
+                linear-gradient(135deg, var(--bg) 0%, var(--bg-accent) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .stars-background {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -10;
+            opacity: var(--stars-opacity);
+            background-image:
+                radial-gradient(circle at 12% 18%, #ffffff 0.8px, transparent 1.2px),
+                radial-gradient(circle at 82% 64%, #ffffff 1px, transparent 1.5px),
+                radial-gradient(circle at 50% 32%, #ffffff 0.7px, transparent 1.1px);
+            background-size: 280px 280px, 240px 240px, 320px 320px;
+        }
+
+        /* Glassmorphism elements */
+        aside.sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+        }
+
+        .console-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 
+                0 15px 35px -10px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn {
+            background: var(--chip-bg);
+            border: 1.5px solid var(--chip-border);
+            color: var(--text-muted);
+            transition: all 0.25s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #1e5ea8, #12356a);
+            color: #ffffff;
+            border-color: rgba(138, 180, 248, 0.5);
+            box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.5);
+        }
+        html[data-theme="light"] .tab-btn.active {
+            background: linear-gradient(135deg, #265E9B, #1A4576);
+            color: #ffffff;
+            border-color: #265E9B;
+        }
+
+        .custom-checkbox { 
+            width: 28px; 
+            height: 28px; 
+            border: 2px solid var(--card-border); 
+            border-radius: 8px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: all 0.2s; 
+            flex-shrink: 0; 
+        }
+        .custom-checkbox.checked { 
+            background-color: #339D9D; 
+            border-color: #339D9D; 
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .skeleton { 
+            animation: skelPulse 1.5s ease-in-out infinite; 
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%); 
+            background-size: 200% 100%; 
+            border-radius: 1rem; 
+        }
+        @keyframes skelPulse { 0%, 100% { background-position: 200% 0; } 50% { background-position: 0% 0; } }
+        html[data-theme="light"] .skeleton { 
+            background: linear-gradient(90deg, #e4eeff 25%, #cddaf5 50%, #e4eeff 75%); 
+        }
+
+        /* Kamus Coder */
+        .kc-block {
+            position: relative; margin: 2rem 0; border-radius: 1.5rem; overflow: hidden;
+            border: 1px solid rgba(249,192,19,0.3);
+            background: linear-gradient(135deg, rgba(249,192,19,0.05) 0%, rgba(249,192,19,0.02) 100%);
+            box-shadow: 0 10px 25px rgba(249,192,19,0.02);
+        }
+        html[data-theme="light"] .kc-block {
+            background: linear-gradient(135deg, #fffde7 0%, #fff8e1 100%);
+            border-color: rgba(249,192,19,0.4);
+        }
+        .kc-header {
+            display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+            background: rgba(249,192,19,0.1);
+            border-bottom: 1px solid rgba(249,192,19,0.15);
+        }
+        .kc-icon {
+            width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+            background: linear-gradient(135deg, #F9C013, #e0a800);
+            box-shadow: 0 4px 10px rgba(249,192,19,0.3);
+        }
+        .kc-label-sub { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #8ba2c2; }
+        html[data-theme="light"] .kc-label-sub { color: #d09200; }
+        .kc-label-title { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; color: #ffffff; }
+        html[data-theme="light"] .kc-label-title { color: #7a4a00; }
+        .kc-content { padding: 18px 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-main); }
+        .kc-blob-a { position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(249,192,19,0.1),transparent 70%);pointer-events:none; }
+
+        /* Tahukah Kamu */
+        .fyk-block {
+            position: relative; margin: 2rem 0; border-radius: 1.5rem; overflow: hidden;
+            border: 1px solid rgba(6,182,212,0.25);
+            background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(6,182,212,0.02) 100%);
+        }
+        html[data-theme="light"] .fyk-block {
+            background: linear-gradient(135deg, #ecfeff 0%, #e0f9ff 100%);
+            border-color: rgba(6,182,212,0.35);
+        }
+        .fyk-accent-bar { height: 3px; background: linear-gradient(90deg, #06b6d4, rgba(6,182,212,0)); }
+        .fyk-header {
+            display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+            border-bottom: 1px solid rgba(6,182,212,0.12);
+        }
+        .fyk-icon {
+            width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            box-shadow: 0 4px 10px rgba(6,182,212,0.3);
+        }
+        .fyk-label-sub { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #8ba2c2; }
+        html[data-theme="light"] .fyk-label-sub { color: #0891b2; }
+        .fyk-label-title { font-size: 0.9rem; font-weight: 800; color: #ffffff; }
+        html[data-theme="light"] .fyk-label-title { color: #0e7490; }
+        .fyk-dot { width: 6px; height: 6px; border-radius: 50%; background: #06b6d4; box-shadow: 0 0 6px #06b6d4; }
+        .fyk-live-label { font-size: 0.55rem; font-weight: 800; color: #8ba2c2; }
+        .fyk-content { padding: 18px 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-main); }
+        .fyk-blob-a { position:absolute;top:-20px;left:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.1),transparent 70%);pointer-events:none; }
+
+        /* Modals and Overlays */
+        .modal-overlay { 
+            position: fixed; inset: 0; background: rgba(4, 9, 20, 0.85); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
+            z-index: 1000; display: none; align-items: center; justify-content: center; 
+            padding: 1.5rem; transition: all 0.4s ease; 
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card { 
+            background: linear-gradient(135deg, #0e1b30 0%, #060d1a 100%); 
+            border: 1px solid rgba(138, 180, 248, 0.2); 
+            border-radius: 2.5rem; width: 100%; max-width: 480px; 
+            padding: 3rem 2.5rem; position: relative; 
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6); 
+            text-align: center; overflow: hidden; 
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+        }
+        @keyframes modalIn { from { transform: scale(0.9) translateY(30px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+        /* Submission styles */
+        .btn-console-yellow {
+            background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%);
+            color: #403000;
+            box-shadow: 0 4px 0 #b38400, 0 10px 20px -5px rgba(249, 192, 19, 0.4);
+            font-family: 'Orbitron', sans-serif;
+        }
+        .btn-console-yellow:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 #b38400, 0 4px 10px -5px rgba(249, 192, 19, 0.2);
+        }
+
+        /* 3D secondary button */
+        .btn-3d {
+            box-shadow: 0 4px 0 #1A4576;
+            transition: all 0.1s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* Image modal */
+        #image-modal {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 100000; 
+            display: none; align-items: center; justify-content: center; opacity: 0; 
+            transition: opacity 0.3s ease; backdrop-filter: blur(8px);
+        }
+        #image-modal.active { display: flex; opacity: 1; }
+        #image-modal img {
+            max-width: 90vw; max-height: 90vh; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); object-fit: contain;
+        }
+        #image-modal.active img { transform: scale(1); }
+
+        /* Force text colors in light mode */
+        html[data-theme="light"] .text-white {
+            color: #1e3a60 !important;
+        }
+        html[data-theme="light"] .text-white\/60 {
+            color: rgba(30, 58, 96, 0.7) !important;
+        }
+        html[data-theme="light"] .text-white\/70 {
+            color: rgba(30, 58, 96, 0.8) !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\] {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\]\/50 {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .text-muted-opacity {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10 {
+            background-color: rgba(38, 94, 155, 0.15) !important;
+        }
+        html[data-theme="light"] .border-k-blue\/20 {
+            border-color: rgba(38, 94, 155, 0.25) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10.text-white,
+        html[data-theme="light"] .bg-k-blue\/10 .text-white {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a.bg-k-blue\/10 {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10) {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10):hover {
+            color: #1e3a60 !important;
+        }
+
+        #mission-loader {
+            position: fixed; inset: 0; background: #060e1a; z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+        }
+        #mission-loader.loaded { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        .grad-text {
+            background: linear-gradient(90deg, #F9C013, #FF9D00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* ── Background decorative assets ── */
+        .edge-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+        .edge-planet {
+            position: absolute; margin: 0;
+            pointer-events: none; display: block;
+            opacity: 0.60;
+        }
+        .edge-left  { left: 0; transform-origin: left center; }
+        .edge-right { right: 0; transform-origin: right center; }
+        .char-float {
+            position: absolute; margin: 0;
+            pointer-events: none; opacity: 0.55;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0) rotate(-1deg); }
+            50%      { transform: translateY(-18px) rotate(2deg); }
+        }
+        @keyframes floatY2 {
+            0%,100% { transform: translateY(0) rotate(2deg); }
+            50%      { transform: translateY(-14px) rotate(-2deg); }
+        }
+    </style>
+</head>
+<body class="flex min-h-screen relative">
+
+    <!-- Fixed background assets -->
+    <div class="edge-layer">
+        <!-- Left planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png"
+             class="edge-planet edge-left" style="top:8%; width:min(26vw,190px);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png"
+             class="edge-planet edge-left" style="top:68%; width:min(32vw,250px); transform:translateX(-32%);" alt="">
+        <!-- Right planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png"
+             class="edge-planet edge-right" style="top:26%; width:min(30vw,240px); transform:translateX(32%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png"
+             class="edge-planet edge-right" style="bottom:6%; width:min(34vw,275px);" alt="">
+        <!-- Floating characters -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png"
+             class="char-float" style="left:9%; top:21%; width:105px; animation: floatY 7s ease-in-out infinite;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/904cb9e9-ecd1-4731-a1ef-fa6a0bd50527.png"
+             class="char-float" style="right:13%; top:54%; width:120px; animation: floatY2 8s ease-in-out infinite 1.5s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9b916b05-86ed-4509-aef6-e640606f3542.png"
+             class="char-float" style="left:17%; bottom:10%; width:110px; animation: floatY 6s ease-in-out infinite 0.8s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/555e14a0-4087-4d33-9c20-4d822bef5dac.png"
+             class="char-float" style="left:64%; top:38%; width:88px; opacity:0.38;" alt="">
+    </div>
+
+    <!-- Ambient backdrop stars -->
+    <div class="stars-background"></div>
+
+    <!-- Mission Control Loader -->
+    <div id="mission-loader">
+        <div class="relative animate-bounce">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" class="w-24 h-auto max-h-24 object-contain filter drop-shadow-[0_0_20px_rgba(249,192,19,0.5)]" alt="Rocket">
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-3 bg-[#F9C013]/20 blur-xl rounded-full animate-pulse"></div>
+        </div>
+        <div class="w-64 h-2 bg-white/5 rounded-full mt-10 overflow-hidden border border-white/10 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-k-yellow to-[#FFD700] w-0" style="animation: loaderFill 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;"></div>
+        </div>
+        <div class="mt-6 text-center">
+            <p class="font-display font-black text-xs uppercase tracking-[0.4em] text-k-yellow animate-pulse">MENYIAPKAN MISI...</p>
+            <p class="mt-1.5 text-[9px] text-muted-opacity font-bold uppercase tracking-widest text-[#8ba2c2]/50">Console Initialization...</p>
+        </div>
+    </div>
+    <style>
+        @keyframes loaderFill { 0% { width: 0%; } 100% { width: 100%; } }
+    </style>
+
+    <!-- Project Submission Drawer Modal -->
+    <div id="submit-modal" class="modal-overlay">
+        <div class="modal-card !max-w-xl !p-8 md:!p-10 border-yellow-500/20">
+            <button onclick="closeSubmitModal()" class="absolute top-6 right-6 text-xl opacity-40 hover:opacity-100 transition-opacity">✕</button>
+            <div class="mb-8">
+                <h3 id="modal-phase-title" class="font-display text-2xl font-black text-k-yellow tracking-tight uppercase">MISI SELESAI! 🚀</h3>
+                <p class="text-white/60 text-xs font-bold mt-1">Kumpulkan bukti misimu di bawah ini agar Guru bisa memeriksa.</p>
+            </div>
+            
+            <div class="space-y-5 text-left">
+                <div>
+                    <label class="block text-[9px] font-black mb-2 uppercase tracking-widest text-[#8ba2c2]/60">🔗 Link Project (Roblox / Scratch)</label>
+                    <input type="url" id="submit-url" class="w-full bg-white/5 border border-card-border p-4 rounded-xl outline-none focus:border-k-yellow text-xs transition-all text-white placeholder:text-white/20" placeholder="https://...">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-black mb-2 uppercase tracking-widest text-[#8ba2c2]/60">📸 Upload Screenshot / Video</label>
+                    <div class="p-6 border border-dashed border-card-border rounded-xl text-center hover:bg-white/5 transition-all cursor-pointer bg-white/5" onclick="document.getElementById('submit-files').click()">
+                        <div class="text-3xl mb-1">📥</div>
+                        <p class="text-[10px] font-black uppercase tracking-wider text-white/70">Klik untuk pilih file</p>
+                        <p id="file-count" class="text-[10px] text-k-yellow mt-2 font-bold"></p>
+                        <input type="file" id="submit-files" multiple class="hidden" onchange="updateFileCount()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="submit-status" class="hidden mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-300 font-bold animate-pulse text-center uppercase tracking-widest">
+                Mengirim berkas ke Satelit Markas...
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button onclick="closeSubmitModal()" class="py-4 font-black text-xs uppercase text-white/50 hover:text-white transition-opacity">Nanti Saja</button>
+                <button onclick="submitProjectToServer()" id="submit-btn" class="btn-console-yellow text-xs py-4 rounded-2xl font-black uppercase tracking-widest">KIRIM MISI</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status dialog notification -->
+    <div id="status-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div id="status-icon" class="status-icon w-12 h-12 text-3xl mx-auto mb-4 flex items-center justify-center">🛸</div>
+            <h3 id="status-title" class="font-display font-black text-lg mb-3 tracking-tight uppercase text-k-yellow">SYSTEM MESSAGE</h3>
+            <p id="status-message" class="text-sm leading-relaxed mb-8 font-bold" style="color:#ddeeff">Details</p>
+            <button onclick="document.getElementById('status-modal').classList.remove('active')" class="btn-console-yellow w-full py-4 text-xs font-black uppercase tracking-widest">SIAP, KAPTEN! 🛰️</button>
+        </div>
+    </div>
+
+    <!-- Raw Image Zoom Overlay -->
+    <div id="image-modal" onclick="closeImageModal()">
+        <div class="absolute top-6 right-6 text-white text-xl cursor-pointer opacity-60 hover:opacity-100 bg-white/5 w-10 h-10 rounded-full flex items-center justify-center border border-white/10 z-50">✕</div>
+        <img id="image-modal-img" src="" alt="Popup Image" onclick="event.stopPropagation();">
+    </div>
+
+    <!-- Submissions / Links preview frame modal -->
+    <div id="preview-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 xl:p-8 pointer-events-none opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-black/85 backdrop-blur-md" onclick="closePreviewModal()"></div>
+        <div id="preview-modal-box" class="border border-card-border rounded-[2rem] shadow-2xl scale-95 transition-transform duration-300 relative z-10 w-full max-w-5xl h-[85vh] flex flex-col md:flex-row overflow-hidden pointer-events-auto bg-[#091326]">
+            
+            <!-- Left preview iframe -->
+            <div class="hidden md:flex flex-[1.6] border-r border-card-border relative flex-col bg-black/30">
+                <div class="p-4 border-b border-card-border flex justify-between items-center bg-white/5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                        <span class="text-[9px] font-black uppercase tracking-widest ml-2 font-display text-[#8ba2c2]/50">PREVIEWER PANEL</span>
+                    </div>
+                    <div id="preview-url-display" class="text-[9px] font-mono truncate max-w-xs px-3 py-1.5 rounded-lg border border-card-border bg-[#091326] text-[#8ba2c2]">about:blank</div>
+                </div>
+                <div class="flex-1 relative overflow-hidden">
+                    <iframe id="modal-project-iframe" title="Project Preview" class="w-full h-full border-0 bg-white" src="about:blank"></iframe>
+                    <div id="iframe-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center pointer-events-none">
+                        <div class="w-16 h-16 mb-4 opacity-20 text-[#8ba2c2]">
+                            🎥
+                        </div>
+                        <h4 class="font-black text-sm text-[#8ba2c2] mb-1">Belum ada preview</h4>
+                        <p class="text-xs text-[#8ba2c2]/50">Link project eksternal akan dibuka lewat link di samping kanan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right list controller -->
+            <div class="flex-[1] flex flex-col min-w-[320px] overflow-y-auto bg-slate-900/60 relative p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="font-display font-black text-xl text-white leading-none mb-1">Hasil Misi</h3>
+                        <p class="text-[9px] font-black uppercase tracking-widest text-[#F9C013]" id="preview-phase-label">MUST DO</p>
+                    </div>
+                    <button onclick="closePreviewModal()" class="w-8 h-8 rounded-full flex items-center justify-center border border-card-border text-white hover:bg-white/5">✕</button>
+                </div>
+
+                <div class="flex-1 space-y-4">
+                    <div class="p-6 rounded-2xl border border-card-border bg-white/5 text-center">
+                        <div class="w-12 h-12 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center text-2xl mx-auto mb-3 border border-teal-500/20">✓</div>
+                        <h4 class="font-black text-sm text-white mb-1">Misi Selesai Kapten!</h4>
+                        <div id="preview-links-container" class="space-y-2 mt-4 mb-4">
+                            <!-- Buttons injected dynamically -->
+                        </div>
+                        <p id="preview-msg-desktop" class="text-[10px] text-[#8ba2c2]/60 hidden md:block">Pilih berkas di atas untuk memuat visualnya di sebelah kiri.</p>
+                        <p id="preview-msg-mobile" class="text-[10px] text-[#8ba2c2]/60 md:hidden">Pilih berkas di atas untuk membuka link external.</p>
+                        
+                        <div class="mt-6 pt-5 border-t border-white/10">
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-[#8ba2c2]/40 mb-3">Revisi atau perbaiki tugas?</p>
+                            <button id="preview-update-btn" class="w-full py-2.5 rounded-xl border border-dashed border-white/20 text-[#8ba2c2] hover:text-white hover:border-white/40 text-[9px] font-black uppercase tracking-widest transition-all">Perbaiki Tugas 🛸</button>
+                        </div>
+                    </div>
+                    
+                    <div id="preview-quiz-box" class="hidden">
+                        <div class="p-5 rounded-2xl border border-k-yellow/30 bg-k-yellow/5 text-center">
+                            <h4 class="font-black text-xs text-white mb-1">Akses Quiz Terbuka!</h4>
+                            <p class="text-[10px] text-[#8ba2c2]/60 leading-relaxed mb-4">Misi Must Do sudah tuntas, silakan mulai kuis kelulusan sesi.</p>
+                            <button onclick="attemptGoToQuiz()" class="btn-console-yellow w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest">Mulai Quiz Sesi ✉️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SIDEBAR LEFT NAVIGATION -->
+    <aside class="sidebar fixed inset-y-0 left-0 w-64 z-40 hidden xl:flex flex-col p-6 justify-between">
+        <div class="flex flex-col gap-10">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" 
+                     alt="Kalananti Logo" class="h-8 w-auto object-contain">
+                <div class="h-6 w-px bg-white/10"></div>
+                <div class="flex flex-col">
+                    <span class="font-display font-black text-xs tracking-widest uppercase text-k-yellow">MISSION</span>
+                    <span class="text-[8px] font-bold text-opacity-50 text-[#8ba2c2] uppercase tracking-[0.2em]">CONTROL</span>
+                </div>
+            </div>
+
+            <!-- Navigation links -->
+            <nav class="flex flex-col gap-2">
+                <a href="dashboard.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏡</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="sessions.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🗓️</span>
+                    <span>Peta Sesi</span>
+                </a>
+                <a href="#" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-k-blue/10 border border-k-blue/20 text-white font-bold text-sm transition-all">
+                    <span class="text-lg">📖</span>
+                    <span>Materi Belajar</span>
+                </a>
+                <a href="quiz.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏆</span>
+                    <span>Quiz Arena</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <div class="h-px w-full bg-white/10"></div>
+            <!-- Theme changer -->
+            <button onclick="toggleTheme()" class="flex items-center justify-between w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-colors">
+                <span class="flex items-center gap-2">
+                    <span id="theme-icon">🌙</span>
+                    <span>Mode Tampilan</span>
+                </span>
+                <span class="text-[9px] uppercase tracking-wider text-k-yellow">Ubah</span>
+            </button>
+            <div class="flex items-center justify-between p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full overflow-hidden bg-k-yellow flex items-center justify-center text-xs font-bold text-white">
+                        <span>👦</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="sidebar-user-name" class="font-bold text-xs truncate max-w-[110px] text-white">Kapten</span>
+                        <span class="text-[8px] text-[#8ba2c2]/40 font-black uppercase">Active pilot</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-red-500/10 rounded-lg text-red-400 text-sm transition-colors">🚪</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONSOLE GRID FRAME -->
+    <div class="flex-1 xl:ml-64 flex flex-col min-h-screen">
+        
+        <!-- Header Nav bar top -->
+        <nav class="w-full px-6 py-4 flex justify-between items-center bg-white/5 border-b border-card-b/10 sticky top-0 backdrop-blur-md z-30">
+            <div class="flex items-center gap-4">
+                <div class="flex xl:hidden items-center gap-2">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" class="h-6 w-auto">
+                </div>
+                <div class="hidden md:flex flex-col">
+                    <p class="text-[9px] font-black text-[#8ba2c2]/60 uppercase tracking-widest mb-0.5">Petualangan Misi Aktif</p>
+                    <h2 id="nav-title" class="font-black text-xs text-white">Memuat Sesi...</h2>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div id="header-quiz-status" class="chip hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white/5 border border-white/10">
+                    <span class="w-2 h-2 rounded-full bg-slate-500"></span> <span>Status Quiz</span>
+                </div>
+                <a href="dashboard.html" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <span>← Dashboard</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- MAIN LAYOUT FRAME: CONTENT DISPLAY + MISSION CHECKLIST SIDEBAR -->
+        <div class="flex-1 flex flex-col lg:flex-row p-6 md:p-8 gap-6 min-h-0">
+            
+            <!-- Left Slides Viewer panel -->
+            <main class="flex-[2.2] flex flex-col gap-6 relative min-w-0">
+                <div id="content-card" class="console-card flex-1 rounded-[2.5rem] flex flex-col relative overflow-hidden min-h-[500px]">
+                    <div class="absolute inset-0 opacity-[0.02] pointer-events-none">
+                        <svg width="100%" height="100%"><pattern id="materials-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="1"/></pattern><rect width="100%" height="100%" fill="url(#materials-grid)"/></svg>
+                    </div>
+                    
+                    <!-- Content loaders skeleton -->
+                    <div id="content-loading" class="flex-1 p-10 md:p-14 flex flex-col gap-4">
+                        <div class="skeleton h-10 w-1/3 mb-4"></div>
+                        <div class="skeleton h-6 w-full"></div>
+                        <div class="skeleton h-6 w-4/5"></div>
+                        <div class="skeleton h-64 w-full mt-6"></div>
+                    </div>
+
+                    <!-- Slide Manual renderer main -->
+                    <div id="main-display" class="flex-1 p-8 md:p-12 lg:p-14 flex flex-col items-start z-10 overflow-y-auto hidden"></div>
+
+                    <!-- Slide footer controls navigator -->
+                    <div id="slide-nav" class="px-8 py-6 border-t border-card-border bg-[#091326]/60 flex justify-between items-center z-10 backdrop-blur-md hidden">
+                        <button id="prev-btn" onclick="changeSlide(-1)" class="w-12 h-12 rounded-xl border border-card-border text-white flex items-center justify-center hover:bg-white/5 disabled:opacity-20 transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <div class="flex flex-col items-center gap-1.5 min-w-0">
+                            <p id="slide-counter" class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]">Slide 1 dari 1</p>
+                            <div id="slide-dots" class="flex items-center gap-2 max-w-[42vw] overflow-x-auto px-1 py-0.5 scrollbar-none"></div>
+                        </div>
+                        <button id="next-btn" onclick="changeSlide(1)" class="w-12 h-12 rounded-xl bg-k-blue text-white flex items-center justify-center hover:bg-k-blue-d transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Misi Panel Checklist -->
+            <aside class="flex-1 hidden lg:flex flex-col gap-6 max-w-[360px] min-w-[300px]">
+                <div class="console-card rounded-[2.2rem] p-6 flex flex-col h-full overflow-hidden">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div id="phase-icon" class="w-11 h-11 bg-white/5 rounded-xl flex items-center justify-center text-xl border border-card-border">🚀</div>
+                        <div>
+                            <p class="text-[9px] font-black text-[#8ba2c2]/50 uppercase tracking-[0.2em] mb-0.5">SEKARANG LAGI:</p>
+                            <h3 id="sidebar-title" class="font-black text-xl text-white tracking-tight uppercase">Misi Sesi</h3>
+                        </div>
+                    </div>
+
+                    <!-- Phase controllers navigation buttons -->
+                    <div class="flex items-center gap-1 mb-5 p-1 rounded-xl bg-white/5 border border-white/5">
+                        <button onclick="setPhase('learning')" id="tab-learning" class="flex-1 py-2 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all text-[#8ba2c2]">Materi</button>
+                        <button onclick="setPhase('must-do')" id="tab-must" class="flex-1 py-2 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all text-[#8ba2c2]">Must Do</button>
+                        <button onclick="setPhase('should-do')" id="tab-should" class="flex-1 py-2 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all text-[#8ba2c2]">Should</button>
+                        <button onclick="setPhase('aspire-do')" id="tab-aspire" class="flex-1 py-2 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all text-[#8ba2c2]">Aspire</button>
+                    </div>
+                    <!-- Checklist items scroll frame -->
+                    <div id="task-list" class="space-y-3 overflow-y-auto pr-2 flex-1">
+                        <!-- Checklist options loaded from JS -->
+                    </div>
+
+                    <div id="sidebar-footer" class="mt-6 flex flex-col gap-2 shrink-0">
+                        <!-- Submit buttons injected here -->
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- Sync and API logic script -->
+    <script>
+        const _COURSE_SHEETS = {
+            roblox: 'B2C_RobloxStudio_INS',
+            scratch: 'B2C_Scratch_INS'
+        };
+        const _selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+        const _studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
+        const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
+        let activeLesson = parseInt(localStorage.getItem('activeLesson') || '1');
+        let currentSyncVersion = 0;
+        let isPolling = false;
+        const classCode = localStorage.getItem('classCode') || ''; 
+        const THEME_KEY = 'kalanantiTheme';
+
+        let currentPhase = 'learning';
+        let currentSlideIndex = 0;
+        let kcBlocks = {};
+        let fykBlocks = {};
+        let sScriptBlocks = {};
+        let sInteractiveBlocks = {};
+        let checkedTasks = { 'must-do': [], 'should-do': [], 'aspire-do': [] };
+        let lessonSlides = [];
+        let taskContent = {};
+        let lessonData = null;
+        let learningObjectives = '';
+        let activePhaseForSubmit = '';
+
+        const TASK_PROGRESS_KEY = `kalanantiTaskProgress_${_selectedCourse}_${activeLesson}`;
+        const SUBMISSION_KEY = `kalanantiSubmitted_${_selectedCourse}_${activeLesson}`;
+
+        async function init() {
+            try {
+                const sName = localStorage.getItem('studentName') || 'Siswa Kalananti';
+                document.getElementById('sidebar-user-name').textContent = sName;
+                const navUser = document.getElementById('nav-user-name');
+                if (navUser) navUser.textContent = sName;
+
+                const sheet = _COURSE_SHEETS[_selectedCourse] || 'B2C_RobloxStudio_INS';
+                const res = await fetch(`${STUDENT_API_URL}?sheet=${sheet}`);
+                const rawData = await res.json();
+                
+                const levelMatches = value => {
+                    const levels = String(value || '').match(/\d+/g) || [];
+                    return levels.length === 0 || levels.map(Number).includes(_studentLevel);
+                };
+                const levelData = rawData.filter(r => levelMatches(r['Level'] || r['level'] || r.col_1));
+                lessonData = levelData.find(r => {
+                    const s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                    return s === activeLesson;
+                });
+                
+                if (!lessonData) {
+                    lessonData = levelData[activeLesson - 1];
+                }
+                
+                if (!lessonData) {
+                    throw new Error('Lesson material not found for session ' + activeLesson);
+                }
+
+                document.getElementById('nav-title').innerHTML = `${_selectedCourse.toUpperCase()} LEVEL ${_studentLevel} <span class="text-gray-400 mx-1.5">/</span> Sesi ${activeLesson}`;
+                
+                processLessonData(lessonData);
+                loadSavedState();
+                
+                document.getElementById('content-loading').classList.add('hidden');
+                document.getElementById('main-display').classList.remove('hidden');
+                
+                render();
+                setPhase('learning');
+                updateTabChecks();
+                syncStudentProgress();
+                
+                fetchSyncVersion();
+                startSyncPolling();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content-loading').innerHTML = `<p class="text-center py-20 font-black opacity-40 text-xs">Gagal memuat materi. Cek koneksi ya Captain.</p>`;
+            } finally {
+                setTimeout(() => {
+                    const loader = document.getElementById('mission-loader');
+                    if (loader) loader.classList.add('loaded');
+                }, 600);
+            }
+        }
+
+        function parseBlocks(text, prefix, suffix = '') {
+            if (!text) return {};
+            const regex = new RegExp(`${prefix}(\\d+)${suffix}\\s*([\\s\\S]*?)(?=${prefix}\\d+${suffix}|$)`, 'g');
+            const blocks = {};
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                blocks[match[1]] = match[2].trim();
+            }
+            return blocks;
+        }
+
+        function processLessonData(lesson) {
+            const getCol = (keyNames, fallbackCol) => {
+                for (let k of keyNames) {
+                    if (lesson[k]) return lesson[k];
+                    const foundKey = Object.keys(lesson).find(x => x.toLowerCase().replace(/_/g, ' ') === k.toLowerCase().replace(/_/g, ' '));
+                    if (foundKey && lesson[foundKey]) return lesson[foundKey];
+                }
+                return lesson[fallbackCol] || '';
+            };
+
+            const kcData = getCol(['kamus coder'], 'col_9');
+            const interactiveData = getCol(['Interactive slide'], 'col_14') || '';
+            const scriptData = getCol(['Script HTML'], 'col_15') || '';
+
+            kcBlocks = parseBlocks(kcData, 'kc');
+            sInteractiveBlocks = parseBlocks(interactiveData, 's', ':');
+            sScriptBlocks = parseBlocks(scriptData, 's', '\\*');
+
+            let fykData = getCol(['tahukah kamu'], 'col_10');
+            fykBlocks = parseBlocks(fykData, 'fyk');
+
+            let materialsContent = getCol(['Manual', 'materials'], 'col_4');
+            
+            if (!materialsContent || materialsContent.trim() === '') {
+                materialsContent = 'H# Materi Belum Tersedia\n\nMaaf Captain, instruksi misi untuk sesi ini sedang dipersiapkan di Markas. Harap tunggu aba-aba selanjutnya dari komandan!';
+            }
+            
+            if (Object.keys(sInteractiveBlocks).length === 0 && interactiveData.trim() && !interactiveData.match(/s\d+:/)) {
+                sInteractiveBlocks['raw_int'] = interactiveData;
+                materialsContent += '\n\n[s_raw_int:]';
+            }
+            
+            if (Object.keys(sScriptBlocks).length === 0 && scriptData.trim() && scriptData !== interactiveData && !scriptData.match(/s\d+\*/)) {
+                sScriptBlocks['raw_scr'] = scriptData;
+                materialsContent += '\n\n[s_raw_scr*]';
+            }
+
+            let customIdCounter = 1;
+            materialsContent = materialsContent.replace(/\^([\s\S]+?)\^/g, (match, code) => {
+                const id = 'custom_' + customIdCounter++;
+                sInteractiveBlocks[id] = code.trim();
+                return `\n\n[s${id}:]\n\n`;
+            });
+
+            materialsContent = materialsContent.replace(/\n?\s*\[?s(\d+)([\*:])\]?\s*\n?/g, '\n---\n[s$1$2]\n---\n');
+            lessonSlides = materialsContent.split(/(?:\s*---\s*|\s*divide#\s*)/i);
+            
+            lessonSlides = lessonSlides
+                .map(s => s.trim())
+                .filter(s => s.length > 0)
+                .map(s => ({ content: injectPlaceholders(formatMaterialContent(s)) }));
+            
+            learningObjectives = getCol(['Objectives', 'Objective', 'Tujuan'], 'col_3');
+
+            const parseTasks = (raw, phase = '') => {
+                if (!raw) return [];
+                const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const tasks = [];
+                
+                let startIdx = 0;
+                if (lines.length > 1 && !/^([•\-]|(\d+[\.\)])|Opsi|Option)\s*/i.test(lines[0])) {
+                    startIdx = 1;
+                }
+
+                let inOpsiBlock = false;
+                for (let i = startIdx; i < lines.length; i++) {
+                    const line = lines[i];
+                    const isBullet = /^([•\-]|(\d+[\.\)]))\s*/.test(line);
+                    const isOpsi = /^(Opsi|Option)\s*([A-Z0-9]+)[:\s]/i.test(line);
+
+                    if (isOpsi) {
+                        tasks.push({ title: line });
+                        inOpsiBlock = true;
+                    } else if (isBullet) {
+                        if (phase === 'aspire-do' && inOpsiBlock && /^\d+[\.\)]/.test(line)) {
+                            tasks[tasks.length - 1].title += '\n' + line;
+                        } else {
+                            tasks.push({ title: line.replace(/^([•\-]|(\d+[\.\)]))\s*/, '').trim() });
+                            if (phase === 'aspire-do') inOpsiBlock = false;
+                        }
+                    } else if (tasks.length > 0) {
+                        tasks[tasks.length - 1].title += '\n' + line;
+                    } else {
+                        tasks.push({ title: line });
+                    }
+                }
+                return tasks;
+            };
+
+            taskContent = {
+                'learning': { title: 'Misi Hari Ini', icon: '🚀' },
+                'must-do': { title: 'Must Do', icon: '🚀', tasks: parseTasks(getCol(['Must Do', 'must_do', 'Tugas Must Do'], 'col_5'), 'must-do') },
+                'should-do': { title: 'Should Do', icon: '⭐', tasks: parseTasks(getCol(['Should Do', 'should_do', 'Tugas Should Do'], 'col_6'), 'should-do') },
+                'aspire-do': { title: 'Aspire Do', icon: '👑', tasks: parseTasks(getCol(['Aspire To Do', 'Aspire Do', 'aspire_to_do', 'Aspire'], 'col_7'), 'aspire-do') }
+            };
+        }
+
+        function loadSavedState() {
+            const saved = localStorage.getItem(TASK_PROGRESS_KEY);
+            if (saved) checkedTasks = JSON.parse(saved);
+        }
+
+        function saveTaskState() {
+            localStorage.setItem(TASK_PROGRESS_KEY, JSON.stringify(checkedTasks));
+            updateTabChecks();
+        }
+
+        function formatMaterialContent(raw) {
+            if (!raw) return '';
+            let content = raw;
+            
+            let codeBlocks = {};
+            let codeIdCounter = 0;
+            content = content.replace(/```([\s\S]*?)```/g, (match, code) => {
+                const id = `__CODE_BLOCK_${codeIdCounter}__`;
+                codeBlocks[id] = code.replace(/^[a-z]+\n/i, '').trim();
+                codeIdCounter++;
+                return `\n${id}\n`;
+            });
+            
+            content = content.replace(/^H###\s*(.*)$/gm, '<h3 class="text-lg font-black text-k-blue dark:text-blue-200 mt-5 mb-2.5 flex items-center gap-2"><span class="w-1.5 h-5 bg-k-yellow rounded-full"></span>$1</h3>');
+            content = content.replace(/^H##\s*(.*)$/gm, '<h2 class="text-xl font-black text-k-blue dark:text-white mt-7 mb-3 border-l-4 border-k-yellow pl-3 py-0.5 bg-k-yellow/5 rounded-r-lg shadow-sm">$1</h2>');
+            content = content.replace(/^H#\s*(.*)$/gm, '<h1 class="text-2xl font-black text-k-blue dark:text-white mt-8 mb-5 border-b-2 border-k-yellow pb-2 flex items-center justify-between"><span class="grad-text">$1</span><span class="text-[9px] font-black uppercase tracking-wider opacity-35">Mission Intel</span></h1>');
+
+            let lines = content.split('\n');
+            let formattedLines = lines.map(line => {
+                let trimmed = line.trim();
+                if (!trimmed) return '<br>';
+                if (trimmed.match(/^__CODE_BLOCK_\d+__$/)) return trimmed;
+                
+                if (trimmed.startsWith('![')) {
+                    const match = trimmed.match(/!\[(.*?)\]\((.*?)\)/);
+                    if (match) return `<div class="my-6 flex justify-center"><img src="${match[2]}" alt="${match[1]}" class="max-w-[85%] max-h-[380px] object-contain rounded-2xl border border-card-border shadow-lg cursor-pointer hover:scale-[1.02] transition-transform" onclick="openImageModal(this.src)"></div>`;
+                } else if (trimmed.match(/^https?:\/\/[^\s<"]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^"\s]+)?$/i)) {
+                    return `<div class="my-6 flex justify-center"><img src="${trimmed}" alt="Material image" class="max-w-[85%] max-h-[380px] object-contain rounded-2xl border border-card-border shadow-lg cursor-pointer hover:scale-[1.02] transition-transform" onclick="openImageModal(this.src)"></div>`;
+                }
+
+                if (trimmed.match(/^(kc\d+|fyk\d+|\[s[a-zA-Z0-9_]+[\*:]\])$/)) return trimmed;
+                if (trimmed.startsWith('<h1') || trimmed.startsWith('<h2') || trimmed.startsWith('<h3')) return line;
+
+                return `<p class="text-sm md:text-base leading-relaxed text-[var(--text-main)] mb-3">${line}</p>`;
+            });
+            
+            let finalHtml = formattedLines.join('');
+            for (const [id, code] of Object.entries(codeBlocks)) {
+                finalHtml = finalHtml.replace(id, `<div class="my-5 relative"><div class="absolute top-0 left-0 px-3 py-1 bg-k-blue text-white text-[9px] font-black uppercase tracking-widest rounded-tl-xl rounded-br-xl z-10 shadow-sm border border-k-blue">CODE</div><pre class="bg-[#0c1424] text-[#e2e8f0] p-5 pt-8 rounded-2xl overflow-x-auto border border-card-border shadow-md relative"><code style="font-family: 'Courier New', Courier, monospace; font-size: 0.9em; line-height: 1.5;" class="block whitespace-pre">${escapeHtml(code)}</code></pre></div>`);
+            }
+            return finalHtml;
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function injectPlaceholders(text) {
+            let result = text;
+
+            function cleanBlockContent(raw) {
+                let cleaned = raw.trim().replace(/^[\s:]+/, '').trim();
+                const lines = cleaned.split('\n');
+                const bulletLines = lines.filter(l => l.trim().startsWith('•'));
+                const hasMultipleBullets = bulletLines.length > 1;
+                const processed = [];
+                let prevWasBullet = false;
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('•')) {
+                        const bulletText = trimmed.slice(1).trim();
+                        if (hasMultipleBullets) {
+                            if (prevWasBullet) processed.push('');
+                            processed.push('• ' + bulletText);
+                        } else {
+                            processed.push(bulletText);
+                        }
+                        prevWasBullet = true;
+                    } else {
+                        if (trimmed !== '') processed.push(line);
+                        prevWasBullet = false;
+                    }
+                }
+                return processed.join('\n');
+            }
+
+            result = result.replace(/kc(\d+)/g, (match, id) => {
+                const raw = kcBlocks[id];
+                if (!raw) return '';
+                const content = cleanBlockContent(raw);
+                return `
+                <div class="kc-block">
+                    <div class="kc-blob-a"></div>
+                    <div class="kc-header">
+                        <div class="kc-icon">📚</div>
+                        <div>
+                            <p class="kc-label-sub">GLOSARIUM</p>
+                            <p class="kc-label-title">Kamus Coder 📖</p>
+                        </div>
+                    </div>
+                    <div class="kc-content">${formatMaterialContent(content)}</div>
+                </div>`;
+            });
+
+            result = result.replace(/fyk(\d+)/g, (match, id) => {
+                const raw = fykBlocks[id];
+                if (!raw) return '';
+                const content = cleanBlockContent(raw);
+                return `
+                <div class="fyk-block">
+                    <div class="fyk-blob-a"></div>
+                    <div class="fyk-accent-bar"></div>
+                    <div class="fyk-header">
+                        <div class="fyk-icon">💡</div>
+                        <div>
+                            <p class="fyk-label-sub">FUN FACT</p>
+                            <p class="fyk-label-title">Tahukah Kamu? 🤔</p>
+                        </div>
+                    </div>
+                    <div class="fyk-content">${formatMaterialContent(content)}</div>
+                </div>`;
+            });
+
+            const renderContent = (content) => {
+                let trimmed = content.trim();
+                let lower = trimmed.toLowerCase();
+                
+                if (lower.startsWith('<iframe') && lower.endsWith('>')) {
+                    let iframeHtml = trimmed;
+                    if (!iframeHtml.includes('class=')) {
+                         iframeHtml = iframeHtml.replace('<iframe', '<iframe class="w-full min-h-[500px] border-0 rounded-2xl shadow-xl"');
+                    }
+                    return `<div class="s-interactive-wrapper my-8 w-full mx-auto flex justify-center">${iframeHtml}</div>`;
+                }
+
+                const sandboxAttrs = 'allow-scripts allow-forms allow-same-origin allow-modals allow-popups allow-downloads';
+                return `<div class="s-script-container my-6 w-full relative group mx-auto">
+                    <iframe srcdoc="${escapeHtml(trimmed)}" 
+                            sandbox="${sandboxAttrs}"
+                            onload="this.style.height = Math.max(500, this.contentWindow.document.documentElement.scrollHeight + 40) + 'px';"
+                            class="relative w-full border-0 bg-transparent transition-all duration-300"></iframe>
+                    <div class="mt-2 flex justify-end px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="let f = this.closest('.s-script-container').querySelector('iframe'); let d = f.getAttribute('srcdoc'); f.removeAttribute('srcdoc'); setTimeout(() => { f.setAttribute('srcdoc', d); f.style.height = '500px'; }, 50);" 
+                                class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2] hover:text-k-yellow transition-colors flex items-center gap-1">
+                            Reload Activity
+                        </button>
+                    </div>
+                </div>`;
+            };
+
+            result = result.replace(/\[s([a-zA-Z0-9_]+)\*\]/g, (match, id) => {
+                let content = sScriptBlocks[id] || sInteractiveBlocks[id];
+                return content ? renderContent(content) : match;
+            });
+
+            result = result.replace(/\[s([a-zA-Z0-9_]+):\]/g, (match, id) => {
+                let content = sInteractiveBlocks[id] || sScriptBlocks[id];
+                return content ? renderContent(content) : match;
+            });
+
+            return result;
+        }
+
+        function setPhaseVisual(phase) {
+            const tabs = ['learning', 'must', 'should', 'aspire'];
+            tabs.forEach(t => {
+                const el = document.getElementById('tab-' + t);
+                if (!el) return;
+                if (t === 'learning' && phase === 'learning') el.className = "flex-1 py-2 text-[9px] font-black uppercase tracking-wider rounded-lg bg-k-blue text-white shadow";
+                else if (t === 'must' && phase === 'must-do') el.className = "flex-1 py-2 text-[9px] font-black uppercase tracking-wider rounded-lg bg-k-blue text-white shadow";
+                else if (t === 'should' && phase === 'should-do') el.className = "flex-1 py-2 text-[9px] font-black uppercase tracking-wider rounded-lg bg-k-blue text-white shadow";
+                else if (t === 'aspire' && phase === 'aspire-do') el.className = "flex-1 py-2 text-[9px] font-black uppercase tracking-wider rounded-lg bg-k-blue text-white shadow";
+                else el.className = "flex-1 py-2 text-[9px] font-bold uppercase tracking-wider rounded-lg hover:text-white text-[#8ba2c2]";
+            });
+        }
+
+        function setPhase(phase) {
+            currentPhase = phase;
+            currentSlideIndex = 0;
+            if (phase === 'must-do') syncProgress();
+            render();
+            setPhaseVisual(phase);
+        }
+
+        function changeSlide(dir) {
+            if (dir > 0 && currentSlideIndex >= lessonSlides.length - 1) {
+                setPhase('must-do');
+                return;
+            }
+            currentSlideIndex = Math.max(0, Math.min(lessonSlides.length - 1, currentSlideIndex + dir));
+            render();
+        }
+
+        function render() {
+            const display = document.getElementById('main-display');
+            const nav = document.getElementById('slide-nav');
+            const taskList = document.getElementById('task-list');
+            const footer = document.getElementById('sidebar-footer');
+            const sidebarTitle = document.getElementById('sidebar-title');
+            const pathIcon = document.getElementById('phase-icon');
+
+            display.classList.remove('slide-content-enter');
+            void display.offsetWidth;
+            display.classList.add('slide-content-enter');
+
+            const content = taskContent[currentPhase];
+            sidebarTitle.innerText = content.title;
+            pathIcon.innerText = content.icon;
+
+            if (currentPhase === 'learning') {
+                nav.classList.remove('hidden');
+                display.innerHTML = `<div class="w-full max-w-3xl text-left">${lessonSlides[currentSlideIndex].content}</div>`;
+                document.getElementById('slide-counter').textContent = `Slide ${currentSlideIndex + 1} dari ${lessonSlides.length}`;
+                document.getElementById('slide-dots').innerHTML = lessonSlides.map((_, i) => `<button type="button" onclick="goToSlide(${i})" class="h-2 rounded-full shrink-0 transition-all ${i === currentSlideIndex ? 'bg-k-yellow w-6 shadow' : 'bg-slate-700 w-2 hover:bg-k-blue/50'}"></button>`).join('');
+                document.getElementById('prev-btn').disabled = currentSlideIndex === 0;
+                
+                const nextBtn = document.getElementById('next-btn');
+                const isLastSlide = currentSlideIndex >= lessonSlides.length - 1;
+                nextBtn.disabled = false;
+                nextBtn.title = isLastSlide ? 'Lanjut ke Must Do' : 'Slide berikutnya';
+                nextBtn.classList.toggle('bg-k-yellow', isLastSlide);
+                nextBtn.classList.toggle('bg-k-blue', !isLastSlide);
+
+                const objectives = learningObjectives.split('\n').filter(l => l.trim());
+                taskList.innerHTML = objectives.map(obj => `
+                    <div class="flex items-start gap-3 bg-white/5 border border-card-border p-4 rounded-2xl">
+                        <span class="text-k-yellow font-black mt-0.5 shrink-0">✦</span>
+                        <p class="text-[#8ba2c2] text-[11px] font-medium leading-relaxed">${obj.replace(/^[•\-]\s*/, '')}</p>
+                    </div>`).join('');
+                
+                footer.innerHTML = `<button onclick="setPhase('must-do')" class="btn-console-yellow w-full py-4.5 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest flex justify-between items-center group">
+                    <span>Lanjutkan Ke Misi</span> 🚀
+                </button>`;
+            } else {
+                nav.classList.add('hidden');
+                const phaseTasks = content.tasks;
+
+                const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+                const currentSessionProgress = savedProgress.find(s => parseInt(s.session) === activeLesson);
+                const phaseLabel = currentPhase === 'must-do' ? 'MUST DO' : (currentPhase === 'should-do' ? 'SHOULD DO' : 'ASPIRE');
+                
+                const progressNum = currentSessionProgress ? parseInt((currentSessionProgress.progress || '0').replace('%','')) : 0;
+                const hasServerLink = currentSessionProgress && currentSessionProgress.link && currentSessionProgress.link.trim().length > 0;
+                const hasSpecificPhaseSubmission = currentSessionProgress && currentSessionProgress.link && currentSessionProgress.link.toUpperCase().includes(phaseLabel);
+                const isSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_${currentPhase}`) === 'true' || hasSpecificPhaseSubmission;
+
+                display.innerHTML = `
+                    <div class="w-full max-w-3xl flex flex-col gap-6 text-left pb-10">
+                        <div class="bg-white/5 border-l-4 border-k-yellow p-6 rounded-r-2xl border border-card-border border-l-0">
+                            <h3 class="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Tantangan ${content.title}</h3>
+                            <p class="text-[#8ba2c2] text-xs font-semibold mt-1">Selesaikan misi di bawah ini dan kumpulkan buktinya!</p>
+                        </div>
+                        <div class="flex flex-col gap-5">
+                            ${phaseTasks.map((t, i) => renderTaskCard(t, i)).join('')}
+                        </div>
+                    </div>`;
+
+                taskList.innerHTML = phaseTasks.map((t, i) => {
+                    const checked = (checkedTasks[currentPhase] || []).includes(i) || isSubmitted;
+                    return `<div onclick="${isSubmitted ? "showStatusPopup('success', 'Misi Terkirim', 'Kamu sudah mengumpulkan misi ini!')" : `toggleTask(${i})`}" class="p-3.5 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all ${checked ? 'bg-k-green/10 border-k-green text-k-green' : 'bg-white/5 border-card-border'}">
+                        <div class="custom-checkbox h-5 w-5 ${checked ? 'checked' : ''}">${checked ? '✓' : ''}</div>
+                        <p class="text-[10px] font-black truncate uppercase tracking-wider">${t.title.split('http')[0].trim() || 'Misi ' + (i+1)}</p>
+                    </div>`;
+                }).join('');
+
+                const totalTasks = phaseTasks.length;
+                const checkedCount = (checkedTasks[currentPhase] || []).length;
+                const isReadyToSubmit = currentPhase === 'aspire-do' ? (checkedCount > 0) : (checkedCount === totalTasks && totalTasks > 0);
+
+                let nextBtnHTML = '';
+                if (isSubmitted) {
+                    const viewBtn = `<button onclick="openPreviewModal('${currentPhase}')" class="w-full bg-white/5 border border-white/10 text-white font-black py-4 rounded-2xl text-[10px] hover:bg-white/10 uppercase tracking-widest transition-all">Lihat Tugas 👀</button>`;
+                    const quizBtn = `<button onclick="attemptGoToQuiz()" class="w-full bg-k-green/10 border border-k-green/30 text-k-green font-black py-4 rounded-2xl text-[10px] hover:bg-k-green/20 uppercase tracking-widest transition-all">Mulai Quiz ✉️</button>`;
+                    
+                    const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
+                    const showQuizAccess = !quizDone;
+                    
+                    const actionGrid = showQuizAccess ? `<div class="grid grid-cols-2 gap-3">${viewBtn}${quizBtn}</div>` : viewBtn;
+
+                    if (currentPhase === 'must-do') {
+                        nextBtnHTML = `
+                            <button onclick="setPhase('should-do')" class="btn-console-yellow w-full py-4.5 rounded-2xl text-[10px] font-black uppercase tracking-widest mb-3">Lanjut ke Should Do ⭐</button>
+                            ${actionGrid}`;
+                    } else if (currentPhase === 'should-do') {
+                        nextBtnHTML = `
+                            <button onclick="setPhase('aspire-do')" class="btn-console-yellow w-full py-4.5 rounded-2xl text-[10px] font-black uppercase tracking-widest mb-3">Lanjut ke Aspire Do 👑</button>
+                            ${actionGrid}`;
+                    } else {
+                        nextBtnHTML = actionGrid;
+                    }
+                } else {
+                    const warningMsg = currentPhase === 'aspire-do' 
+                        ? 'Pilih setidaknya satu misi tantangan di atas dulu sebelum mengumpulkan ya Captain! 🛸'
+                        : 'Selesaikan dan centang semua misi di atas dulu sebelum mengumpulkan ya Captain! 🛸';
+
+                    nextBtnHTML = `<button onclick="${isReadyToSubmit ? `openSubmitModal('${currentPhase}')` : `showStatusPopup('warning', 'Mission Locked', '${warningMsg}')`}" 
+                        class="btn-3d w-full py-4.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${isReadyToSubmit ? 'bg-gradient-to-b from-k-blue to-k-blue-d text-white border-0 shadow-lg active:translate-y-1' : 'bg-white/5 border border-white/10 text-[#8ba2c2]/40 opacity-50 cursor-not-allowed'}">
+                        KUMPUL MISI 🚀
+                    </button>`;
+                }
+
+                footer.innerHTML = `<div class="w-full">${nextBtnHTML}</div>`;
+            }
+            if (typeof setPhaseVisual === 'function') setPhaseVisual(currentPhase);
+        }
+
+        function goToSlide(index) {
+            currentSlideIndex = Math.max(0, Math.min(lessonSlides.length - 1, index));
+            render();
+        }
+
+        function renderTaskCard(t, i) {
+            const phaseLabel = currentPhase === 'must-do' ? 'MUST DO' : (currentPhase === 'should-do' ? 'SHOULD DO' : 'ASPIRE');
+            const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+            const currentSessionProgress = savedProgress.find(s => parseInt(s.session) === activeLesson);
+            
+            const hasSpecificPhaseSubmission = currentSessionProgress && currentSessionProgress.link && currentSessionProgress.link.toUpperCase().includes(phaseLabel);
+            const isSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_${currentPhase}`) === 'true' || hasSpecificPhaseSubmission;
+
+            const checked = (checkedTasks[currentPhase] || []).includes(i);
+            const urlRegex = /(https?:\/\/[^\s<"]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^"\s]+)?)/gi;
+            const images = t.title.match(urlRegex) || [];
+            const textOnly = t.title.replace(urlRegex, '').trim();
+
+            let imageHTML = '';
+            if (images.length > 0) {
+                imageHTML = `<div class="flex flex-row flex-wrap gap-4 mt-4">
+                    ${images.map(img => `<img src="${img}" onclick="openImageModal(this.src)" class="rounded-2xl border border-card-border bg-white/5 object-contain shadow-lg cursor-pointer hover:scale-[1.02] transition-transform" style="max-height: 200px; max-width: 100%;">`).join('')}
+                </div>`;
+            }
+
+            let headerText = '';
+            let bodyText = '';
+            const colonIndex = textOnly.indexOf(':');
+            const newlineIndex = textOnly.indexOf('\n');
+            const splitIdx = (colonIndex > -1 && colonIndex < (newlineIndex > -1 ? newlineIndex : 999)) ? colonIndex : newlineIndex;
+
+            if (splitIdx > -1) {
+                headerText = textOnly.substring(0, splitIdx + 1).trim();
+                let rawBody = textOnly.substring(splitIdx + 1).trim();
+                
+                let tCodeBlocks = {};
+                let tCodeIdCounter = 0;
+                rawBody = rawBody.replace(/```([\s\S]*?)```/g, (match, code) => {
+                    const id = `__TCODE_BLOCK_${tCodeIdCounter}__`;
+                    tCodeBlocks[id] = code.replace(/^[a-z]+\n/i, '').trim();
+                    tCodeIdCounter++;
+                    return id;
+                });
+                
+                bodyText = rawBody.replace(/\n/g, '<br/>');
+                for (const [id, code] of Object.entries(tCodeBlocks)) {
+                    bodyText = bodyText.replace(id, `<div class="my-4 relative"><div class="absolute top-0 left-0 px-3 py-1 bg-k-blue text-white text-[9px] font-black uppercase tracking-widest rounded-tl-xl rounded-br-xl z-10 shadow-sm">CODE</div><pre class="bg-[#0f172a] text-[#e2e8f0] p-4 pt-8 rounded-xl overflow-x-auto border-2 border-[#1e293b] shadow-lg relative text-left"><code style="font-family: 'Courier New', Courier, monospace; font-size: 0.9em; line-height: 1.5;" class="block whitespace-pre">${escapeHtml(code)}</code></pre></div>`);
+                }
+            } else {
+                headerText = textOnly;
+            }
+
+            const isDone = checked || isSubmitted;
+
+            return `
+                <div class="console-card !p-6 md:!p-8 rounded-3xl flex flex-col md:flex-row gap-5 md:gap-6 items-start transition-all ${isDone ? 'opacity-50' : ''}">
+                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl ${isDone ? 'bg-k-green shadow' : 'bg-k-blue'} flex items-center justify-center text-white font-black text-base shrink-0 shadow-md">${i+1}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-black text-lg md:text-xl text-white tracking-tight leading-snug mb-1 uppercase">${headerText || 'MISI ' + (i+1)}</p>
+                        ${bodyText ? `<p class="text-xs md:text-sm text-[#8ba2c2]/80 leading-relaxed font-semibold mb-4">${bodyText}</p>` : ''}
+                        ${imageHTML}
+                        <div class="mt-6">
+                            <button onclick="${isSubmitted ? "showStatusPopup('success', 'Misi Terkirim', 'Kamu sudah mengumpulkan misi ini!')" : `toggleTask(${i})`}" 
+                                    class="btn-3d py-3.5 px-8 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all !shadow-none active:translate-y-1 ${isDone ? 'bg-k-green text-white border-0' : 'bg-transparent border border-k-blue text-k-blue hover:bg-white/5' }">
+                                ${isSubmitted ? 'SUBMITTED 🛰️' : (checked ? '✓ SELESAI' : 'TANDAI SELESAI')}
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        async function toggleTask(i) {
+            if (!checkedTasks[currentPhase]) checkedTasks[currentPhase] = [];
+            const idx = checkedTasks[currentPhase].indexOf(i);
+            if (idx > -1) checkedTasks[currentPhase].splice(idx, 1);
+            else checkedTasks[currentPhase].push(i);
+            saveTaskState();
+            await syncProgress();
+            render();
+            updateTabChecks();
+        }
+
+        function updateTabChecks() {
+            const pill = document.getElementById('header-quiz-status');
+            const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
+            
+            const mustTotal = taskContent['must-do']?.tasks?.length || 0;
+            const checkedCount = (checkedTasks['must-do'] || []).length;
+            const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+            const currentSessionProgress = savedProgress.find(s => parseInt(s.session) === activeLesson);
+            const isSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_must-do`) === 'true' || 
+                               (currentSessionProgress?.link && currentSessionProgress.link.toUpperCase().includes('MUST DO'));
+            
+            const mustDone = (isSubmitted || checkedCount === mustTotal) && mustTotal > 0;
+            
+            if (quizDone) {
+                pill.className = "chip hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border border-k-green/30 bg-k-green/10 text-k-green text-[10px] font-black uppercase tracking-wider";
+                pill.innerHTML = `<span class="w-1.5 h-1.5 bg-k-green rounded-full"></span> Selesai`;
+            } else if (mustDone) {
+                pill.className = "chip hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border border-k-yellow/30 bg-k-yellow/10 text-k-yellow text-[10px] font-black uppercase tracking-wider";
+                pill.innerHTML = `<span class="w-1.5 h-1.5 bg-k-yellow rounded-full animate-pulse"></span> Siap Quiz`;
+            } else {
+                pill.className = "chip hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[#8ba2c2]/50 text-[10px] font-black uppercase tracking-wider";
+                pill.innerHTML = `<span class="w-1.5 h-1.5 bg-[#8ba2c2]/20 rounded-full"></span> Belum Siap`;
+            }
+        }
+
+        async function syncProgress() {
+            if (!activeLesson) return;
+            let progress = 50;
+            
+            const mustDoTotal = taskContent['must-do']?.tasks?.length || 0;
+            const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+            const currentSessionProgress = savedProgress.find(s => parseInt(s.session) === activeLesson);
+            const isMustSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_must-do`) === 'true' || 
+                                   (currentSessionProgress?.link && currentSessionProgress.link.toUpperCase().includes('MUST DO'));
+            
+            const mustDoDone = isMustSubmitted ? mustDoTotal : (checkedTasks['must-do'] || []).length;
+            
+            if (mustDoTotal > 0) {
+                const percentPerTask = 45 / mustDoTotal;
+                progress += (mustDoDone * percentPerTask);
+            } else {
+                progress += 45;
+            }
+            
+            const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
+            if (quizDone) progress = 100;
+            
+            progress = Math.min(100, Math.round(progress));
+            const progressStr = progress + "%";
+
+            const sIdx = savedProgress.findIndex(s => {
+                const sNum = parseInt(String(s.session).replace(/[^0-9]/g, ''));
+                return sNum === activeLesson;
+            });
+
+            if (sIdx > -1) {
+                savedProgress[sIdx].progress = progressStr;
+            } else {
+                savedProgress.push({ session: activeLesson, progress: progressStr });
+            }
+            localStorage.setItem('sessionProgress', JSON.stringify(savedProgress));
+            
+            const payload = {
+                action: 'updateProgress',
+                classCode: localStorage.getItem('classCode'),
+                studentName: localStorage.getItem('studentName'),
+                session: activeLesson,
+                progress: progressStr
+            };
+            
+            try {
+                fetch(STUDENT_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) {
+                console.error("Gagal sync progress", e);
+            }
+        }
+
+        async function syncStudentProgress(isSilent = false) {
+            try {
+                const payload = {
+                    action: 'getStudentProgress',
+                    classCode: localStorage.getItem('classCode'),
+                    studentName: localStorage.getItem('studentName')
+                };
+                const res = await fetch(STUDENT_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'success' || data.success) {
+                    if (data.sessionProgress) {
+                        localStorage.setItem('sessionProgress', JSON.stringify(data.sessionProgress));
+                        if (currentPhase !== 'learning') render();
+                    }
+                    if (isSilent) showSyncToast();
+                }
+            } catch(e) {
+                console.warn('Failed to sync student progress from server', e);
+            }
+        }
+
+        async function fetchSyncVersion() {
+            try {
+                const classCode = localStorage.getItem('classCode');
+                const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(classCode)}`);
+                const json = await res.json();
+                if (json.success) currentSyncVersion = json.syncVersion;
+            } catch (e) {}
+        }
+
+        function startSyncPolling() {
+            if (isPolling) return;
+            isPolling = true;
+            setInterval(async () => {
+                try {
+                    const classCode = localStorage.getItem('classCode');
+                    const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(classCode)}`);
+                    const json = await res.json();
+                    if (json.success && json.syncVersion > currentSyncVersion) {
+                        currentSyncVersion = json.syncVersion;
+                        syncStudentProgress(true);
+                    }
+                } catch (e) {}
+            }, 60000);
+        }
+
+        function showSyncToast() {
+            let toast = document.getElementById('sync-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'sync-toast';
+                toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-5 py-2.5 rounded-xl bg-k-blue text-white font-black text-[10px] uppercase tracking-widest shadow-2xl flex items-center gap-2 border border-k-blue/20';
+                toast.innerHTML = `<span>🔄</span><span>Data Misi Terupdate</span>`;
+                document.body.appendChild(toast);
+            }
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
+            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 4000);
+        }
+
+        function openSubmitModal(phase) {
+            activePhaseForSubmit = phase;
+            document.getElementById('modal-phase-title').innerText = `KUMPUL MISI ${phase.replace('-do','').toUpperCase()} 🚀`;
+            document.getElementById('submit-url').value = '';
+            document.getElementById('submit-files').value = '';
+            updateFileCount();
+            document.getElementById('submit-modal').classList.add('active');
+        }
+
+        function closeSubmitModal() {
+            document.getElementById('submit-modal').classList.remove('active');
+        }
+
+        function updateFileCount() {
+            const count = document.getElementById('submit-files').files.length;
+            document.getElementById('file-count').textContent = count > 0 ? `${count} file terpilih` : '';
+        }
+
+        async function submitProjectToServer() {
+            const url = document.getElementById('submit-url').value;
+            const fileInput = document.getElementById('submit-files');
+            const status = document.getElementById('submit-status');
+            const btn = document.getElementById('submit-btn');
+
+            if (!url && fileInput.files.length === 0) return showStatusPopup('warning', 'Waduh!', 'Masukkan link atau upload file dulu ya kapten!');
+
+            btn.disabled = true;
+            status.classList.remove('hidden');
+
+            const payload = {
+                action: 'submitProject',
+                classCode: localStorage.getItem('classCode'),
+                studentName: localStorage.getItem('studentName'),
+                className: localStorage.getItem('className'),
+                session: activeLesson,
+                phase: activePhaseForSubmit,
+                url: url,
+                files: []
+            };
+
+            for (let f of fileInput.files) {
+                const b64 = await toBase64(f);
+                payload.files.push({ name: f.name, mime: f.type, data: b64.split(',')[1] });
+            }
+
+            try {
+                const res = await fetch(STUDENT_API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const r = await res.json();
+                if (r.status === 'success' || r.success) {
+                    localStorage.setItem(`${SUBMISSION_KEY}_${activePhaseForSubmit}`, 'true');
+                    localStorage.setItem(`${SUBMISSION_KEY}_link_${activePhaseForSubmit}`, r.url || url);
+                    closeSubmitModal();
+                    showStatusPopup('success', 'MANTAP! TERKIRIM! 🌟', 'Wih! Misimu sudah terkirim ke markas! Sekarang tunggu Kakak Pengajar periksa ya! Kamu luar biasa! 🛰️');
+                    render();
+                } else throw new Error(r.message);
+            } catch (e) {
+                showStatusPopup('error', 'TRANSMISI GAGAL', `Ada gangguan sinyal: ${e.message}`);
+            } finally {
+                btn.disabled = false;
+                status.classList.add('hidden');
+            }
+        }
+
+        const toBase64 = f => new Promise((res, rej) => {
+            const r = new FileReader();
+            r.readAsDataURL(f);
+            r.onload = () => res(r.result);
+            r.onerror = e => rej(e);
+        });
+
+        function showStatusPopup(type, title, message) {
+            const modal = document.getElementById('status-modal');
+            const icon = document.getElementById('status-icon');
+            const titleEl = document.getElementById('status-title');
+            const msgEl = document.getElementById('status-message');
+            
+            icon.innerText = type === 'success' ? '✅' : (type === 'error' ? '❌' : '🛸');
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            modal.classList.add('active');
+        }
+
+        function openPreviewModal(phase) {
+            const modal = document.getElementById('preview-modal');
+            const box = document.getElementById('preview-modal-box');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                box.style.transform = 'scale(1)';
+            }, 10);
+
+            const labels = { 'must-do': '🚀 MUST DO', 'should-do': '⭐ SHOULD DO', 'aspire-do': '👑 ASPIRE TO' };
+            document.getElementById('preview-phase-label').innerText = labels[phase] || phase;
+            
+            const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+            const savedSession = savedProgress.find(s => {
+                const sNum = parseInt(String(s.session).replace(/[^0-9]/g, ''));
+                return sNum === activeLesson;
+            });
+            
+            const linksContainer = document.getElementById('preview-links-container');
+            linksContainer.innerHTML = ''; 
+
+            if (savedSession && savedSession.link) {
+                const rawLink = String(savedSession.link);
+                const phaseKey = phase.replace('-do', '').toUpperCase(); 
+                
+                const entryRegex = /\[([^\]]+)\]\[([^\]]+)\]\s*([^\s\[\]]+)/gi;
+                let match;
+                const phaseLinks = [];
+
+                while ((match = entryRegex.exec(rawLink)) !== null) {
+                    const foundPhase = match[1].trim().toUpperCase();
+                    const type = match[2].trim().toUpperCase();
+                    const url = match[3].trim();
+
+                    const matchesPhase = foundPhase.includes(phaseKey) || 
+                                       phaseKey.includes(foundPhase) ||
+                                       (phaseKey === 'MUST' && foundPhase.includes('MUST')) ||
+                                       (phaseKey === 'SHOULD' && foundPhase.includes('SHOULD'));
+
+                    if (matchesPhase && url.startsWith('http')) {
+                        phaseLinks.push({
+                            label: type.includes('LINK') ? 'Link Project 🔗' : 'Screenshot/Folder 📸',
+                            url: url
+                        });
+                    }
+                }
+                
+                if (phaseLinks.length === 0) {
+                    showPreviewError("Belum ada link/file untuk fase " + (labels[phase] || phase) + ".");
+                    return;
+                }
+
+                phaseLinks.forEach((item, idx) => {
+                    addPreviewButton(item.label, item.url, idx === 0);
+                });
+
+                const quizBox = document.getElementById('preview-quiz-box');
+                const mustTaskCount = taskContent['must-do']?.tasks?.length || 0;
+                const mustCheckedDone = (checkedTasks['must-do'] || []).length === mustTaskCount && mustTaskCount > 0;
+                const mustSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_must-do`) === 'true' ||
+                    String(savedSession.link || '').toUpperCase().includes('MUST DO');
+                const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
+                if ((mustCheckedDone || mustSubmitted) && !quizDone) {
+                    quizBox.classList.remove('hidden');
+                } else {
+                    quizBox.classList.add('hidden');
+                }
+
+                const updateBtn = document.getElementById('preview-update-btn');
+                updateBtn.onclick = () => {
+                    closePreviewModal();
+                    openSubmitModal(phase);
+                };
+            } else {
+                showPreviewError("Data tidak ditemukan untuk Sesi " + activeLesson);
+            }
+        }
+
+        function addPreviewButton(label, url, autoLoad) {
+            const container = document.getElementById('preview-links-container');
+            const btn = document.createElement('button');
+            btn.className = "w-full py-3.5 px-5 rounded-xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all flex justify-between items-center group mb-2 text-xs";
+            btn.innerHTML = `
+                <span class="text-[10px] font-black uppercase tracking-widest text-[#8ba2c2] group-hover:text-white">${label}</span>
+                <span class="text-k-yellow text-[9px] opacity-40 group-hover:opacity-100 italic font-black uppercase tracking-widest">View →</span>
+            `;
+            btn.onclick = () => loadIframe(url, btn);
+            container.appendChild(btn);
+
+            if (autoLoad) loadIframe(url, btn);
+        }
+
+        function loadIframe(url, btn) {
+            const btns = document.querySelectorAll('#preview-links-container button');
+            btns.forEach(b => {
+                b.classList.remove('border-k-yellow/50', 'bg-k-yellow/5');
+                b.querySelector('span:last-child').innerText = 'VIEW →';
+            });
+            
+            btn.classList.add('border-k-yellow/50', 'bg-k-yellow/5');
+            btn.querySelector('span:last-child').innerText = 'OPENING';
+
+            const iframe = document.getElementById('modal-project-iframe');
+            const placeholder = document.getElementById('iframe-placeholder');
+            const urlDisplay = document.getElementById('preview-url-display');
+            
+            urlDisplay.innerText = url;
+            iframe.src = 'about:blank';
+
+            let finalUrl = url;
+            const isScratch = url.includes('scratch.mit.edu/projects/') && !url.includes('/embed');
+            const isDrive = url.includes('drive.google.com');
+
+            if (isScratch) {
+                finalUrl = url.replace(/\/$/, '') + '/embed';
+            } else if (isDrive) {
+                if (url.includes('/drive/folders/')) {
+                    const folderMatch = url.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+                    if (folderMatch) finalUrl = `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#list`;
+                } else if (url.includes('/file/d/')) {
+                    const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+                    if (fileMatch) finalUrl = `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+                }
+            }
+
+            const isEmbeddable = isScratch || isDrive || url.includes('youtube.com') || url.includes('vimeo.com');
+
+            if (isEmbeddable) {
+                placeholder.classList.add('hidden');
+                iframe.classList.remove('hidden');
+                iframe.src = finalUrl;
+            } else {
+                iframe.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                placeholder.innerHTML = `
+                    <div class="text-3xl mb-3">🚀</div>
+                    <h4 class="font-black text-sm mb-1 text-white">Project External</h4>
+                    <p class="text-xs max-w-xs leading-relaxed text-[#8ba2c2] opacity-60 mb-6">Link ini tidak bisa di-preview langsung. Silakan buka tab baru ya Captain.</p>
+                    <a href="${url}" target="_blank" class="px-6 py-3 bg-k-yellow text-k-blue rounded-lg font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-transform inline-block">BUKA PROJECT 🔗</a>
+                `;
+            }
+        }
+
+        function showPreviewError(msg) {
+            const placeholder = document.getElementById('iframe-placeholder');
+            const iframe = document.getElementById('modal-project-iframe');
+            placeholder.classList.remove('hidden');
+            iframe.classList.add('hidden');
+            placeholder.querySelector('h4').innerText = 'Belum ada Link/File';
+            placeholder.querySelector('p').innerText = msg || 'Silahkan kumpulkan misi terlebih dahulu.';
+            document.getElementById('preview-url-display').innerText = 'Data tidak ditemukan';
+        }
+
+        function closePreviewModal() {
+            const modal = document.getElementById('preview-modal');
+            const box = document.getElementById('preview-modal-box');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            box.classList.add('scale-95');
+            
+            setTimeout(() => {
+                document.getElementById('modal-project-iframe').src = 'about:blank';
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('image-modal-img');
+            img.src = src;
+            modal.style.display = 'flex';
+            void modal.offsetWidth;
+            modal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function attemptGoToQuiz() {
+            const mustTotal = taskContent['must-do']?.tasks?.length || 0;
+            const checkedCount = (checkedTasks['must-do'] || []).length;
+            const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+            const currentSessionProgress = savedProgress.find(s => parseInt(s.session) === activeLesson);
+            const isSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_must-do`) === 'true' || 
+                               (currentSessionProgress?.link && currentSessionProgress.link.toUpperCase().includes('MUST DO'));
+
+            if (!isSubmitted && checkedCount < mustTotal) {
+                return showStatusPopup('warning', 'Belum Siap!', 'Selesaikan Must Do dulu baru bisa Quiz ya!');
+            }
+            window.location.href = 'quiz.html';
+        }
+
+        function toggleProfileMenu() {
+            const d = document.getElementById('profile-dropdown');
+            if (d.classList.contains('opacity-0')) {
+                d.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                d.classList.add('opacity-100', 'scale-100');
+            } else {
+                d.classList.remove('opacity-100', 'scale-100');
+                d.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            }
+        }
+
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem(THEME_KEY, next);
+            
+            const sidebarText = document.getElementById('theme-icon');
+            if (sidebarText) sidebarText.innerText = next === 'dark' ? '🌙' : '☀️';
+            
+            const dropIcon = document.getElementById('theme-toggle-icon-dropdown');
+            if (dropIcon) dropIcon.innerText = next === 'dark' ? '🌙' : '☀️';
+            
+            const dropText = document.getElementById('theme-toggle-text-dropdown');
+            if (dropText) dropText.innerText = next === 'dark' ? 'Mode Gelap' : 'Mode Terang';
+        }
+
+        function logout() {
+            localStorage.removeItem('studentName');
+            localStorage.removeItem('className');
+            localStorage.removeItem('isAdmin');
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('click', (e) => {
+            const c = document.getElementById('profile-menu-container');
+            const d = document.getElementById('profile-dropdown');
+            if (c && d && !c.contains(e.target)) {
+                d.classList.remove('opacity-100', 'scale-100');
+                d.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

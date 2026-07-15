@@ -1,5 +1,6 @@
 const fs = require('fs');
-const file = '/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/dashboard.html';
+const path = require('path');
+const file = path.resolve(__dirname, '..', 'dashboard.html');
 let content = fs.readFileSync(file, 'utf8');
 
 const target1 = `        const currentSession = parseInt(localStorage.getItem('currentSession')||'1', 10);`;

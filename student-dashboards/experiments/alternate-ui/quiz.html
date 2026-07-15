@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="../../assets/css/device-guard.css">
+    <script src="../../assets/js/device-guard.js" defer></script>
+    <title>Quiz Kalananti - Challenge Arena</title>
+    <script>
+        if (!localStorage.getItem('studentName')) {
+            window.location.href = 'index.html';
+        } else if (!localStorage.getItem('classCode') && localStorage.getItem('className')) {
+            localStorage.setItem('classCode', localStorage.getItem('className'));
+        } else if (!localStorage.getItem('classCode')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config={darkMode:['class', '[data-theme="dark"]'], theme:{extend:{fontFamily:{sans:['Outfit','sans-serif'],display:['Orbitron','sans-serif']},colors:{'k-blue':'#265E9B','k-blue-d':'#1A4576','k-yellow':'#F9C013','k-green':'#339D9D'}}}}
+    </script>
+    <script>
+        (()=>{ const s=localStorage.getItem('kalanantiTheme'); document.documentElement.setAttribute('data-theme',(s==='light'||s==='dark')?s:'dark'); })();
+    </script>
+    <style>
+        :root {
+            --bg: #091326;
+            --bg-accent: #0f1d38;
+            --sidebar-bg: rgba(10, 20, 42, 0.85);
+            --card-bg: rgba(14, 28, 56, 0.7);
+            --card-border: rgba(138, 180, 248, 0.15);
+            --text-main: #f0f6ff;
+            --text-muted: #8ba2c2;
+            --chip-bg: rgba(255, 255, 255, 0.05);
+            --chip-border: rgba(255, 255, 255, 0.1);
+            --stars-opacity: 0.4;
+            --opt-bg: rgba(6, 14, 30, 0.4);
+            --opt-border: rgba(138, 180, 248, 0.15);
+            --opt-hover-border: rgba(138, 180, 248, 0.35);
+            --opt-hover-bg: rgba(38, 94, 155, 0.1);
+            --opt-selected-border: #F9C013;
+        }
+
+        html[data-theme="light"] {
+            --bg: #f3f8fe;
+            --bg-accent: #e1edf9;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(38, 94, 155, 0.15);
+            --text-main: #1e3a60;
+            --text-muted: #5b7699;
+            --chip-bg: rgba(38, 94, 155, 0.06);
+            --chip-border: rgba(38, 94, 155, 0.12);
+            --stars-opacity: 0.12;
+            --opt-bg: rgba(255, 255, 255, 0.9);
+            --opt-border: rgba(38, 94, 155, 0.15);
+            --opt-hover-border: rgba(38, 94, 155, 0.35);
+            --opt-hover-bg: rgba(38, 94, 155, 0.05);
+            --opt-selected-border: #265E9B;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(38, 94, 155, 0.15), transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(249, 192, 19, 0.12), transparent 30%),
+                radial-gradient(circle at 50% 90%, rgba(51, 157, 157, 0.1), transparent 35%),
+                linear-gradient(135deg, var(--bg) 0%, var(--bg-accent) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            position: relative;
+        }
+
+        .stars-background {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -10;
+            opacity: var(--stars-opacity);
+            background-image:
+                radial-gradient(circle at 12% 18%, #ffffff 0.8px, transparent 1.2px),
+                radial-gradient(circle at 82% 64%, #ffffff 1px, transparent 1.5px),
+                radial-gradient(circle at 50% 32%, #ffffff 0.7px, transparent 1.1px);
+            background-size: 280px 280px, 240px 240px, 320px 320px;
+        }
+
+        /* Glassmorphism sidebar left */
+        aside.sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+        }
+
+        .console-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 
+                0 15px 35px -10px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn {
+            background: var(--chip-bg);
+            border: 1.5px solid var(--chip-border);
+            color: var(--text-muted);
+            transition: all 0.25s ease;
+        }
+
+        /* Immersive option cards */
+        .opt-card {
+            background: var(--opt-bg);
+            border: 1.5px solid var(--opt-border);
+            border-radius: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 1.25rem 1.5rem;
+        }
+        .opt-card:hover:not(.disabled) {
+            border-color: var(--opt-hover-border);
+            background: var(--opt-hover-bg);
+            transform: translateY(-2px);
+        }
+        .opt-card.selected {
+            border-color: var(--opt-selected-border);
+            background: rgba(249, 192, 19, 0.08);
+            box-shadow: 0 0 15px rgba(249, 192, 19, 0.15);
+        }
+        .opt-card.correct {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+            animation: correctBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .opt-card.wrong {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            animation: wrongShake 0.35s ease;
+        }
+        .opt-card.reveal-correct {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.08);
+        }
+        .opt-card.disabled { cursor: not-allowed; opacity: 0.7; }
+
+        @keyframes correctBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .opt-badge {
+            width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+            border: 2px solid var(--card-border); background: rgba(255,255,255,0.03);
+        }
+        .opt-card.selected .opt-badge { border-color: var(--opt-selected-border); background: rgba(249, 192, 19, 0.15); }
+        .opt-card.correct .opt-badge { border-color: #22c55e; background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .opt-card.wrong .opt-badge { border-color: #ef4444; background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        /* Tactile 3D Action buttons */
+        .btn-console-blue {
+            background: linear-gradient(180deg, #265E9B 0%, #1A4576 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 0 #0f2a4e, 0 10px 20px -5px rgba(38, 94, 155, 0.4);
+        }
+        .btn-console-blue:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
+        
+        .btn-console-green {
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 0 #047857, 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+            font-family: 'Orbitron', sans-serif;
+        }
+        .btn-console-green:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
+
+        /* Question map Navigator dots */
+        .q-dot {
+            width: 40px; height: 40px; border-radius: 12px; font-weight: 900; font-size: 0.8rem;
+            display: grid; place-items: center; cursor: pointer; transition: all 0.15s ease;
+            border: 1.5px solid var(--opt-border); background: var(--opt-bg); color: var(--text-main);
+        }
+        .q-dot:hover { transform: translateY(-2px); border-color: var(--opt-hover-border); }
+        .q-dot.answered { border-color: #339D9D; background: rgba(51, 157, 157, 0.08); color: #339D9D; }
+        .q-dot.current { background: rgba(38, 94, 155, 0.4); border-color: #265E9B; color: #ffffff; box-shadow: 0 0 12px rgba(38, 94, 155, 0.3); }
+        .q-dot.correct-rev { border-color: #22c55e; background: rgba(34, 197, 94, 0.08); color: #22c55e; }
+        .q-dot.wrong-rev { border-color: #ef4444; background: rgba(239, 68, 68, 0.08); color: #ef4444; }
+
+        .skeleton { 
+            animation: skelPulse 1.5s ease-in-out infinite; 
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%); 
+            background-size: 200% 100%; border-radius: 12px; 
+        }
+        @keyframes skelPulse { 0%, 100% { background-position: 200% 0; } 50% { background-position: 0% 0; } }
+
+        /* Fullscreen results dashboard panel overlay */
+        #result-view {
+            display: none; position: fixed; inset: 0; z-index: 90;
+            background: rgba(4, 9, 20, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            align-items: center; justify-content: center; padding: 2rem 1.5rem; overflow-y: auto;
+        }
+
+        .result-circle {
+            background: linear-gradient(135deg, #0d2b5a, #1a4070);
+            border: 4px solid rgba(138, 180, 248, 0.2);
+            box-shadow: 0 0 50px rgba(38, 94, 155, 0.2);
+        }
+        html[data-theme="light"] .result-circle {
+            background: linear-gradient(135deg, #c5dffb, #a5caf8);
+            border-color: rgba(38, 94, 155, 0.2);
+            box-shadow: 0 0 50px rgba(38, 94, 155, 0.1);
+        }
+
+        /* Animated Trophy pop */
+        @keyframes trophyPop {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); }
+        }
+        .trophy-pop { animation: trophyPop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+        .confetti-piece {
+            position: fixed; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; z-index: 200;
+            animation: confettiFall 2.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Review answers cards */
+        .review-opt {
+            padding: 1rem 1.25rem; border-radius: 1.25rem; font-weight: 700; font-size: 0.85rem; border: 1.5px solid transparent;
+            margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;
+        }
+        .review-opt.correct-a { border-color: #22c55e; background: rgba(34, 197, 94, 0.08); color: #22c55e; }
+        .review-opt.wrong-a { border-color: #ef4444; background: rgba(239, 68, 68, 0.08); color: #ef4444; }
+        .review-opt.neutral { border-color: var(--opt-border); background: var(--opt-bg); color: var(--text-muted); }
+
+        #mission-loader {
+            position: fixed; inset: 0; background: #060e1a; z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+        }
+        #mission-loader.loaded { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        /* Retro Modal standard */
+        .retro-modal {
+            position: fixed; inset: 0; background: rgba(4, 9, 20, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .retro-modal.active { opacity: 1; pointer-events: auto; }
+        .retro-box {
+            background: linear-gradient(135deg, #0e1b30 0%, #060d1a 100%); border: 1px solid rgba(138, 180, 248, 0.2);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7); transform: translateY(30px) scale(0.95); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .retro-modal.active .retro-box { transform: translateY(0) scale(1); }
+
+        .btn-console-yellow {
+            background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%);
+            color: #403000;
+            box-shadow: 0 4px 0 #b38400, 0 10px 20px -5px rgba(249, 192, 19, 0.4);
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* ── Background decorative assets ── */
+        .edge-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+        .edge-planet {
+            position: absolute; margin: 0;
+            pointer-events: none; display: block;
+            opacity: 0.60;
+        }
+        .edge-left  { left: 0; transform-origin: left center; }
+        .edge-right { right: 0; transform-origin: right center; }
+        .char-float {
+            position: absolute; margin: 0;
+            pointer-events: none; opacity: 0.55;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0) rotate(-1deg); }
+            50%      { transform: translateY(-18px) rotate(2deg); }
+        }
+        @keyframes floatY2 {
+            0%,100% { transform: translateY(0) rotate(2deg); }
+            50%      { transform: translateY(-14px) rotate(-2deg); }
+        }
+
+        /* Force text colors in light mode */
+        html[data-theme="light"] .text-white {
+            color: #1e3a60 !important;
+        }
+        html[data-theme="light"] .text-white\/60 {
+            color: rgba(30, 58, 96, 0.7) !important;
+        }
+        html[data-theme="light"] .text-white\/70 {
+            color: rgba(30, 58, 96, 0.8) !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\] {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\]\/50 {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .text-muted-opacity {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10 {
+            background-color: rgba(38, 94, 155, 0.15) !important;
+        }
+        html[data-theme="light"] .border-k-blue\/20 {
+            border-color: rgba(38, 94, 155, 0.25) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10.text-white,
+        html[data-theme="light"] .bg-k-blue\/10 .text-white {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a.bg-k-blue\/10 {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10) {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10):hover {
+            color: #1e3a60 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex relative">
+
+    <!-- Fixed background assets -->
+    <div class="edge-layer">
+        <!-- Left planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png"
+             class="edge-planet edge-left" style="top:8%; width:min(26vw,190px);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png"
+             class="edge-planet edge-left" style="top:68%; width:min(32vw,250px); transform:translateX(-32%);" alt="">
+        <!-- Right planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png"
+             class="edge-planet edge-right" style="top:26%; width:min(30vw,240px); transform:translateX(32%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png"
+             class="edge-planet edge-right" style="bottom:6%; width:min(34vw,275px);" alt="">
+        <!-- Floating characters -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png"
+             class="char-float" style="left:9%; top:21%; width:105px; animation: floatY 7s ease-in-out infinite;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/904cb9e9-ecd1-4731-a1ef-fa6a0bd50527.png"
+             class="char-float" style="right:13%; top:54%; width:120px; animation: floatY2 8s ease-in-out infinite 1.5s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9b916b05-86ed-4509-aef6-e640606f3542.png"
+             class="char-float" style="left:17%; bottom:10%; width:110px; animation: floatY 6s ease-in-out infinite 0.8s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/555e14a0-4087-4d33-9c20-4d822bef5dac.png"
+             class="char-float" style="left:64%; top:38%; width:88px; opacity:0.38;" alt="">
+    </div>
+
+    <!-- Ambient backdrop stars -->
+    <div class="stars-background"></div>
+
+    <!-- Mission Control Loader -->
+    <div id="mission-loader">
+        <div class="relative animate-bounce">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" class="w-24 h-auto max-h-24 object-contain filter drop-shadow-[0_0_20px_rgba(249,192,19,0.5)]" alt="Rocket">
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-3 bg-[#F9C013]/20 blur-xl rounded-full animate-pulse"></div>
+        </div>
+        <div class="w-64 h-2 bg-white/5 rounded-full mt-10 overflow-hidden border border-white/10 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-k-yellow to-[#FFD700] w-0" style="animation: loaderFill 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;"></div>
+        </div>
+        <div class="mt-6 text-center">
+            <p class="font-display font-black text-xs uppercase tracking-[0.4em] text-k-yellow animate-pulse">MENYIAPKAN ARENA...</p>
+            <p class="mt-1.5 text-[9px] text-muted-opacity font-bold uppercase tracking-widest text-[#8ba2c2]/50">Challenge Arena Console...</p>
+        </div>
+    </div>
+    <script>
+        @keyframes loaderFill { 0% { width: 0%; } 100% { width: 100%; } }
+    </script>
+
+    <!-- SIDEBAR LEFT NAVIGATION -->
+    <aside class="sidebar fixed inset-y-0 left-0 w-64 z-40 hidden xl:flex flex-col p-6 justify-between">
+        <div class="flex flex-col gap-10">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" 
+                     alt="Kalananti Logo" class="h-8 w-auto object-contain">
+                <div class="h-6 w-px bg-white/10"></div>
+                <div class="flex flex-col">
+                    <span class="font-display font-black text-xs tracking-widest uppercase text-k-yellow">MISSION</span>
+                    <span class="text-[8px] font-bold text-opacity-50 text-[#8ba2c2] uppercase tracking-[0.2em]">CONTROL</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex flex-col gap-2">
+                <a href="dashboard.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏡</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="sessions.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🗓️</span>
+                    <span>Peta Sesi</span>
+                </a>
+                <a href="materials.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">📖</span>
+                    <span>Materi Belajar</span>
+                </a>
+                <a href="#" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-k-blue/10 border border-k-blue/20 text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏆</span>
+                    <span>Quiz Arena</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <div class="h-px w-full bg-white/10"></div>
+            <!-- Theme Changer -->
+            <button onclick="toggleTheme()" class="flex items-center justify-between w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-colors">
+                <span class="flex items-center gap-2">
+                    <span id="theme-icon">🌙</span>
+                    <span>Mode Tampilan</span>
+                </span>
+                <span class="text-[9px] uppercase tracking-wider text-k-yellow">Ubah</span>
+            </button>
+            <div class="flex items-center justify-between p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full overflow-hidden bg-k-yellow flex items-center justify-center text-xs font-bold text-white">
+                        <span>👦</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="sidebar-user-name" class="font-bold text-xs truncate max-w-[110px] text-white">Kapten</span>
+                        <span class="text-[8px] text-[#8ba2c2]/40 font-black uppercase">Active pilot</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-red-500/10 rounded-lg text-red-400 text-sm transition-colors">🚪</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONSOLE GRID PANEL FRAME -->
+    <div class="flex-1 xl:ml-64 flex flex-col min-h-screen">
+        
+        <!-- Header Top bar Navigation -->
+        <nav class="w-full px-6 py-4 flex justify-between items-center bg-white/5 border-b border-card-b/10 sticky top-0 backdrop-blur-md z-30 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='materials.html'" class="tab-btn w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10">
+                    <span class="text-sm">←</span>
+                </button>
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/60">CHALLENGE ARENA</p>
+                    <h2 id="nav-quiz-title" class="font-black text-xs text-white">Quiz Sesi <span id="nav-session-num">1</span></h2>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="theme-toggle" onclick="toggleTheme()" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                    <span id="theme-toggle-icon">🌙</span>
+                    <span id="theme-toggle-text" class="hidden sm:inline">Dark</span>
+                </button>
+                <div class="hidden sm:flex items-center gap-3 bg-white/5 border border-white/10 p-1.5 pr-4 rounded-full text-xs">
+                    <div class="w-7 h-7 rounded-full overflow-hidden bg-blue-50 flex items-center justify-center font-bold">👦</div>
+                    <span id="user-name-display" class="font-black text-[10px] uppercase tracking-wider text-k-yellow">Memuat...</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN LAYOUT DISPLAY WORKSPACE -->
+        <div class="flex-1 flex flex-col lg:flex-row p-6 md:p-8 gap-6 min-h-0 relative z-10">
+            
+            <!-- Left Question Workspace area -->
+            <div id="quiz-content" class="flex-[2.4] flex flex-col gap-6 min-w-0">
+                
+                <!-- Skeleton loader content -->
+                <div id="quiz-loading" class="console-card rounded-[2.5rem] p-8 md:p-10 flex flex-col gap-4">
+                    <div class="skeleton h-6 w-1/3 mb-4"></div>
+                    <div class="skeleton h-14 w-full"></div>
+                    <div class="skeleton h-14 w-full"></div>
+                    <div class="skeleton h-14 w-full"></div>
+                </div>
+
+                <!-- Actual Question card -->
+                <div id="question-wrapper" style="display:none" class="flex-1 flex flex-col gap-5 min-h-0">
+                    
+                    <!-- Question progress bar top panel -->
+                    <div class="console-card rounded-3xl p-5 md:p-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <p id="q-label" class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50 mb-0.5">SOAL AKTIF</p>
+                                <h3 id="q-count" class="font-display font-black text-xl text-white">1 / 10</h3>
+                            </div>
+                            <div id="score-badge" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-k-yellow/10 border border-k-yellow/20 font-black text-sm text-k-yellow">
+                                <span>🌟 SCORE:</span><span id="score-display">0</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-2 rounded-full overflow-hidden bg-white/5 border border-white/10">
+                            <div id="q-progress-bar" class="h-full bg-gradient-to-r from-k-blue to-teal-400 rounded-full transition-all duration-500" style="width:10%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Immersive Question options card -->
+                    <div class="console-card rounded-[2.5rem] p-8 md:p-10 flex-1 flex flex-col justify-between overflow-y-auto animate-fade min-h-[400px]">
+                        <div>
+                            <p id="question-text" class="text-lg md:text-xl lg:text-2xl font-black mb-8 leading-snug text-white tracking-tight"></p>
+                            <div id="options-list" class="space-y-3.5">
+                                <!-- Option cards dynamically injected -->
+                            </div>
+                        </div>
+                        
+                        <!-- Immediate Feedback banner -->
+                        <div id="feedback-banner" class="mt-6 rounded-2xl px-5 py-3.5 hidden">
+                            <p id="feedback-text" class="font-black text-sm flex items-center gap-2"></p>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Nav controller buttons -->
+                    <div class="flex justify-between items-center gap-4 shrink-0">
+                        <button id="prev-q-btn" onclick="changeQ(-1)" class="tab-btn w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 border border-card-border" disabled>
+                            <span class="text-sm font-bold">←</span>
+                        </button>
+                        <button id="submit-btn" onclick="submitQuiz()" class="btn-console-green font-black py-4 px-10 rounded-2xl text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed hidden">
+                            🏆 KUMPULKAN JAWABAN
+                        </button>
+                        <button id="next-q-btn" onclick="changeQ(1)" class="btn-console-blue w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 border border-card-border" disabled>
+                            <span class="text-sm font-bold">→</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Question grid navigator panel -->
+            <aside class="flex-[1] hidden lg:flex flex-col gap-6 max-w-[340px] min-w-[280px]">
+                <div id="sidebar-card" class="console-card rounded-[2.2rem] p-6 flex flex-col gap-5">
+                    <div>
+                        <p class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50 mb-0.5">PETA SOAL KEPUTUSAN</p>
+                        <h3 class="font-black text-lg text-white">Navigator 🗺️</h3>
+                    </div>
+                    <div id="question-grid" class="flex flex-wrap gap-2.5">
+                        <!-- Dots loader skeleton -->
+                    </div>
+                    <div class="h-px bg-white/5 w-full my-1"></div>
+                    <div class="flex gap-4 flex-wrap text-[10px] font-black uppercase tracking-wide">
+                        <span class="flex items-center gap-1.5 text-green-400">
+                            <span class="w-3.5 h-3.5 rounded-md bg-green-500/10 border border-green-500/40 inline-block"></span>Benar
+                        </span>
+                        <span class="flex items-center gap-1.5 text-red-400">
+                            <span class="w-3.5 h-3.5 rounded-md bg-red-500/10 border border-red-500/40 inline-block"></span>Salah
+                        </span>
+                        <span class="flex items-center gap-1.5 text-teal-400">
+                            <span class="w-3.5 h-3.5 rounded-md border border-[#339D9D] inline-block bg-[#339D9D]/10"></span>Dijawab
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Tips panel -->
+                <div class="console-card rounded-[2.2rem] p-6">
+                    <p class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50 mb-2">💡 INSTRUKSI</p>
+                    <p class="font-semibold text-xs leading-relaxed text-[#8ba2c2]/80">Baca pertanyaan dengan seksama. Setelah memilih satu opsi, sistem akan langsung memverifikasi jawabanmu secara langsung. Tekan tombol navigasi di bawah kuis untuk berpindah soal.</p>
+                </div>
+            </aside>
+
+        </div>
+
+    </div>
+
+    <!-- FULLSCREEN RESULTS DASHBOARD PANEL OVERLAY -->
+    <div id="result-view" class="flex-col">
+        <div class="relative w-full max-w-2xl">
+            
+            <!-- Result Overview card -->
+            <div class="console-card rounded-[2.5rem] p-8 md:p-10 text-center mb-6">
+                <div class="trophy-pop text-7xl mb-5" id="result-trophy">🏆</div>
+                <h2 id="result-title" class="font-display font-black text-2xl md:text-3xl mb-1.5 bg-gradient-to-r from-k-yellow to-orange-400 bg-clip-text text-transparent">Luar Biasa!</h2>
+                <p id="result-subtitle" class="font-bold text-sm text-[#8ba2c2] mb-8">Kamu berhasil menyelesaikan kuis sesi ini!</p>
+                
+                <!-- Score radial ring indicator -->
+                <div class="result-circle w-40 h-40 rounded-full flex flex-col items-center justify-center mx-auto mb-8 relative border border-white/10 shadow-xl">
+                    <p class="font-display font-black text-4xl text-k-yellow" id="result-score">0%</p>
+                    <p class="font-black text-xs uppercase tracking-widest mt-1 text-[#8ba2c2]/60" id="result-fraction">0/0</p>
+                    <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-1 text-2xl">
+                        <div id="result-stars" class="flex gap-0.5 filter drop-shadow"></div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-10 justify-center flex-wrap">
+                    <button onclick="showReview()" class="btn-console-blue font-black py-4 px-8 rounded-2xl text-xs uppercase tracking-wider">📋 Review Jawaban</button>
+                    <button onclick="window.location.href='sessions.html'" class="btn-console-yellow font-black py-4 px-8 rounded-2xl text-xs uppercase tracking-wider">Peta Orbit Sesi 🗺️</button>
+                </div>
+            </div>
+
+            <!-- Review Accoridon list answers details -->
+            <div id="review-section" style="display:none" class="console-card rounded-[2.5rem] p-6 md:p-8">
+                <h3 class="font-black text-xl text-white tracking-tight mb-5">Review Pertanyaan 📋</h3>
+                <div id="review-list" class="space-y-6 text-left"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Logic configuration scripts -->
+    <script>
+    const COURSE_SHEETS = { roblox: 'B2C_RobloxStudio_INS', scratch: 'B2C_Scratch_INS' };
+    const selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+    const studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
+    const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
+    const WEB_APP_URL = `${STUDENT_API_URL}?sheet=${(COURSE_SHEETS[selectedCourse] || 'B2C_RobloxStudio_INS')}`;
+    const THEME_KEY = 'kalanantiTheme';
+    const LABELS = ['A','B','C','D'];
+    const activeLesson = parseInt(localStorage.getItem('activeLesson') || '1');
+    
+    document.getElementById('nav-session-num').textContent = activeLesson;
+
+    function updateThemeToggle(t) {
+        const i = document.getElementById('theme-toggle-icon'), tx = document.getElementById('theme-toggle-text');
+        if (i) i.textContent = t === 'dark' ? '🌙' : '☀️';
+        if (tx) tx.textContent = t === 'dark' ? 'Dark' : 'Light';
+        
+        const sideIcon = document.getElementById('theme-icon');
+        if (sideIcon) sideIcon.textContent = t === 'dark' ? '🌙' : '☀️';
+    }
+
+    function applyTheme(t, p=true) {
+        const v = t === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', v);
+        updateThemeToggle(v);
+        if (p) {
+            try { localStorage.setItem(THEME_KEY, v); } catch(e){}
+        }
+    }
+
+    function toggleTheme() {
+        applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') || 'dark', false);
+
+    // Set usernames and navigation
+    const studentName = localStorage.getItem('studentName') || 'Kapten';
+    document.getElementById('user-name-display').textContent = studentName;
+    const sideUser = document.getElementById('sidebar-user-name');
+    if (sideUser) sideUser.textContent = studentName;
+    // ── State ─────────────────────────────────────────────────────────────────
+    let questions = [], currentQ = 0, answers = {}, score = 0, submitted = false;
+
+    // ── Load ─────────────────────────────────────────────────────────────────
+    async function loadQuestions() {
+        try {
+            const res = await fetch(WEB_APP_URL);
+            const raw = await res.json();
+            
+            const levelMatches = value => {
+                const levels = String(value || '').match(/\d+/g) || [];
+                return levels.length === 0 || levels.map(Number).includes(studentLevel);
+            };
+
+            const sesNumber = parseInt(activeLesson, 10);
+            const sessionRows = raw.filter(r => {
+                const s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                return s === sesNumber && levelMatches(r['Level'] || r['level'] || r.col_1);
+            });
+            
+            if (!sessionRows.length) throw new Error('No lesson found for session ' + activeLesson);
+
+            // Find the row that actually contains the quiz data
+            let lesson = sessionRows.find(r => (r.quiz_questions || r.col_11 || '').toString().trim().length > 0);
+            if (!lesson) lesson = sessionRows[0];
+            
+            if (!lesson) throw new Error('Data quiz sesi tidak ditemukan.');
+
+            // Access validation check!
+            const mustTasksRaw = lesson['Must Do'] || lesson.col_5 || '';
+            const mustTasks = mustTasksRaw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            
+            const isAdm = localStorage.getItem('isAdmin') === 'true';
+            const savedProgress = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+            const currentSessionProgress = savedProgress.find(s => parseInt(s.session) === activeLesson);
+            const isSubmitted = localStorage.getItem(`kalanantiSubmitted_${selectedCourse}_${activeLesson}_must-do`) === 'true' || 
+                               (currentSessionProgress?.link && currentSessionProgress.link.toUpperCase().includes('MUST DO'));
+            
+            const checkedTasks = JSON.parse(localStorage.getItem(`kalanantiTaskProgress_${selectedCourse}_${activeLesson}`) || '{}');
+            const checkedCount = (checkedTasks['must-do'] || []).length;
+            
+            if (!isAdm && !isSubmitted && checkedCount < mustTasks.length && mustTasks.length > 0) {
+                alert('❌ Quiz Terkunci! Selesaikan dan kumpulkan Misi Must Do terlebih dahulu.');
+                window.location.href = 'materials.html';
+                return;
+            }
+
+            questions = parseQuizData(lesson);
+            if (!questions.length) {
+                const legacyRaw = lesson.col_7 || '';
+                questions = parseQuestions(legacyRaw);
+            }
+
+            if (questions.length === 0) {
+                document.getElementById('quiz-loading').innerHTML = `
+                    <div class="p-10 text-center flex flex-col items-center">
+                        <span class="text-3xl mb-3">🛸</span>
+                        <h4 class="font-black text-sm text-white">Quiz Belum Tersedia</h4>
+                        <p class="text-xs text-[#8ba2c2] opacity-60">Kakak Coach belum meng-upload quiz sesi ini di kurikulum.</p>
+                    </div>`;
+                return;
+            }
+
+            document.getElementById('quiz-loading').style.display = 'none';
+            document.getElementById('question-wrapper').style.display = 'block';
+
+            loadLocalQuizProgress();
+            renderQuestion();
+            renderNavigator();
+        } catch(e) {
+            console.error(e);
+            document.getElementById('quiz-loading').innerHTML = `<p class="text-center py-20 text-xs font-black opacity-50">Gagal menyusun kuis. Cek koneksi internetmu Captain.</p>`;
+        } finally {
+            setTimeout(() => {
+                const loader = document.getElementById('mission-loader');
+                if (loader) loader.classList.add('loaded');
+            }, 600);
+        }
+    }
+
+    function parseQuizData(lesson) {
+        const rawQuestions = lesson.quiz_questions || lesson.col_11 || '';
+        const rawOptions = lesson.quiz_options || lesson.col_12 || '';
+        const rawAnswers = lesson.quiz_answers || lesson.col_13 || '';
+
+        const qLines = rawQuestions.split(/\r?\n/).filter(l => l.trim());
+        const qParsed = qLines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+
+        const optLines = rawOptions.split(/\r?\n/).filter(l => l.trim());
+        const optParsed = optLines.map(line => {
+            const clean = line.replace(/^\d+\.\s*/, '').trim();
+            const parts = clean.split(/\s*\|\s*/).filter(Boolean);
+            return parts.map(p => {
+                const match = p.match(/^([A-D])\.\s*(.+)$/i);
+                return match ? { key: match[1].toUpperCase(), text: match[2].trim() } : null;
+            }).filter(Boolean);
+        });
+
+        const ansLines = rawAnswers.split(/\r?\n/).filter(l => l.trim());
+        let ansParsed = [];
+        
+        const inlineMatches = [...rawAnswers.matchAll(/\d+\s*[\(\.\-]?\s*([A-D])/gi)];
+        if (inlineMatches.length > 0 && inlineMatches.length >= qParsed.length / 2) {
+            ansParsed = inlineMatches.map(m => m[1].toUpperCase());
+        } else {
+            ansParsed = ansLines.map(line => {
+                const strict = line.match(/^\d+[\.\)]?\s*([A-D])/i);
+                if (strict) return strict[1].toUpperCase();
+                const loose = line.match(/\b([A-D])\b/i);
+                return loose ? loose[1].toUpperCase() : null;
+            });
+        }
+
+        return qParsed.map((question, idx) => {
+            const options = optParsed[idx] || [];
+            const answer = ansParsed[idx] || (options[0]?.key) || 'A';
+            return {
+                question,
+                options: options.map(o => o.text),
+                answer
+            };
+        }).filter(q => q.question && q.options.length >= 2);
+    }
+
+    function parseQuestions(raw) {
+        const qs = []; let curr = null;
+        const optPfx = /^\s*(?:\[[ x?]\]|[A-D][.):]\s*)(.*)/;
+        const qPfx = /^(?:\d+[.):-]\s*(?:Soal[:\s]*)?)(.+)/;
+        const ansLine = /^(?:Jawaban|Jawaban Benar|Kunci|Answer)[:.\s]*([A-D])/i;
+        for (let l of raw.split('\n')) {
+            const lt = l.trim(); if (!lt) continue;
+            const am = lt.match(ansLine);
+            if (am) { if (curr) curr.answer = am[1].toUpperCase(); continue; }
+            const qm = lt.match(qPfx);
+            const bOpt = lt.match(optPfx);
+            if (qm && !bOpt) { if (curr) qs.push(curr); curr = { question: qm[1].trim(), options: [], answer: 'A' }; }
+            else if (bOpt && curr) { let opt = bOpt[1].trim(); opt = opt.replace(/^\[[x ]\]\s*/, '').replace(/^[A-D][.)]\s*/, ''); if (opt) curr.options.push(opt); }
+            else if (curr && curr.options.length === 0 && !am) { curr.question += ' ' + lt; }
+        }
+        if (curr) qs.push(curr);
+        return qs.filter(q => q.options.length >= 2);
+    }
+
+    function renderQuestion() {
+        if (!questions.length) return;
+        const q = questions[currentQ];
+        document.getElementById('q-count').textContent = `${currentQ + 1} / ${questions.length}`;
+        document.getElementById('q-progress-bar').style.width = `${((currentQ + 1) / questions.length) * 100}%`;
+        document.getElementById('question-text').textContent = q.question;
+        document.getElementById('score-display').textContent = score;
+
+        const list = document.getElementById('options-list');
+        list.innerHTML = '';
+
+        const banner = document.getElementById('feedback-banner');
+        banner.classList.add('hidden');
+
+        const userAnswer = answers[currentQ];
+        const isAnswered = userAnswer !== undefined;
+
+        q.options.forEach((opt, idx) => {
+            const card = document.createElement('div');
+            card.className = 'opt-card';
+            const lbl = LABELS[idx];
+            const isCorr = lbl === q.answer;
+            const isSel = lbl === userAnswer;
+
+            if (isAnswered) card.classList.add('disabled');
+            if (isSel) card.classList.add('selected');
+
+            // Feedback colors if answer is already confirmed
+            if (isAnswered) {
+                if (isCorr) {
+                    card.classList.add('correct');
+                } else if (isSel && !isCorr) {
+                    card.classList.add('wrong');
+                }
+            }
+
+            card.innerHTML = `
+                <div class="opt-badge">${lbl}</div>
+                <span class="text-sm font-bold text-left leading-relaxed text-[var(--text-main)]">${opt.replace(/\n/g, '<br/>')}</span>
+            `;
+
+            if (!isAnswered) {
+                card.onclick = () => selectOption(lbl);
+            }
+            list.appendChild(card);
+        });
+
+        // Show direct feedback banner if answer selected
+        if (isAnswered) {
+            const isCorr = userAnswer === q.answer;
+            banner.className = `mt-6 rounded-2xl px-5 py-3.5 block text-xs font-black uppercase tracking-wider text-center ${isCorr ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`;
+            document.getElementById('feedback-text').innerHTML = isCorr ? '✨ JAWABAN BENAR! KEREN!' : `❌ BELUM TEPAT! Kunci Jawaban: ${q.answer}`;
+            banner.classList.remove('hidden');
+        }
+
+        // Nav buttons
+        document.getElementById('prev-q-btn').disabled = currentQ === 0;
+        
+        const nextBtn = document.getElementById('next-q-btn');
+        const submitBtn = document.getElementById('submit-btn');
+
+        const isLast = currentQ === questions.length - 1;
+        const allAnswered = Object.keys(answers).length === questions.length;
+
+        if (isLast && allAnswered && !submitted) {
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+        } else {
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+            nextBtn.disabled = isLast;
+        }
+    }
+
+    function renderNavigator() {
+        const grid = document.getElementById('question-grid');
+        grid.innerHTML = '';
+
+        questions.forEach((q, idx) => {
+            const dot = document.createElement('div');
+            dot.className = 'q-dot';
+            if (idx === currentQ) dot.classList.add('current');
+            
+            const ans = answers[idx];
+            if (ans !== undefined) {
+                dot.classList.add('answered');
+                const isCorrect = ans === q.answer;
+                if (submitted) {
+                    dot.classList.add(isCorrect ? 'correct-rev' : 'wrong-rev');
+                    dot.innerHTML = isCorrect ? '✓' : '✗';
+                }
+            } else {
+                dot.textContent = idx + 1;
+            }
+
+            dot.onclick = () => {
+                currentQ = idx;
+                renderQuestion();
+                renderNavigator();
+            };
+            grid.appendChild(dot);
+        });
+    }
+
+    function selectOption(lbl) {
+        if (answers[currentQ] !== undefined) return;
+        const q = questions[currentQ];
+        answers[currentQ] = lbl;
+        const isCorr = lbl === q.answer;
+        if (isCorr) score++;
+        
+        document.getElementById('score-display').textContent = score;
+
+        renderQuestion();
+        renderNavigator();
+        saveLocalQuizProgress();
+
+        // Auto-advance
+        setTimeout(() => {
+            if (currentQ < questions.length - 1) {
+                changeQ(1);
+            } else if (Object.keys(answers).length === questions.length) {
+                document.getElementById('submit-btn').classList.remove('hidden');
+            }
+        }, 1200);
+    }
+
+    function changeQ(dir) {
+        currentQ = Math.max(0, Math.min(questions.length - 1, currentQ + dir));
+        renderQuestion();
+        renderNavigator();
+    }
+
+    function saveLocalQuizProgress() {
+        localStorage.setItem(`quiz_answers_${activeLesson}`, JSON.stringify(answers));
+        localStorage.setItem(`quiz_score_${activeLesson}`, score);
+    }
+
+    function loadLocalQuizProgress() {
+        const savedAns = localStorage.getItem(`quiz_answers_${activeLesson}`);
+        const savedScore = localStorage.getItem(`quiz_score_${activeLesson}`);
+        if (savedAns) answers = JSON.parse(savedAns);
+        if (savedScore) {
+            score = parseInt(savedScore, 10);
+            document.getElementById('score-display').textContent = score;
+        }
+    }
+
+    async function submitQuiz() {
+        if (Object.keys(answers).length !== questions.length) return;
+        submitted = true;
+        
+        const total = questions.length;
+        const pct = Math.round((score / total) * 100);
+        
+        localStorage.setItem(`quiz_${activeLesson}`, 'true');
+        
+        renderNavigator();
+        showResult(pct, score, total);
+
+        const stu = localStorage.getItem('studentName');
+        const cls = localStorage.getItem('classCode') || localStorage.getItem('className');
+        
+        if (stu && cls) {
+            try {
+                // 1. Save Quiz Results
+                await fetch(STUDENT_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'saveQuiz',
+                        studentName: stu,
+                        classCode: cls,
+                        session: activeLesson,
+                        score: score,
+                        total: total
+                    })
+                });
+
+                // 2. Set Progress to 100% after quiz
+                await fetch(STUDENT_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateProgress',
+                        studentName: stu,
+                        classCode: cls,
+                        session: activeLesson,
+                        progress: '100%'
+                    })
+                });
+            } catch(e) {
+                console.error("Gagal kumpul kuis ke server database", e);
+            }
+        }
+    }
+
+    function showResult(pct, sc, total) {
+        const stars = pct >= 90 ? 3 : pct >= 70 ? 2 : pct >= 50 ? 1 : 0;
+        const trophy = stars === 3 ? '🏆' : stars === 2 ? '🥈' : stars === 1 ? '🥉' : '💪';
+        const msg = stars === 3 ? 'Luar Biasa! Kamu Bintang!' : stars === 2 ? 'Kerja Bagus! Hampir Sempurna!' : stars === 1 ? 'Good Job! Terus Semangat!' : 'Jangan Menyerah, Coba Lagi!';
+        
+        document.getElementById('result-trophy').textContent = trophy;
+        document.getElementById('result-title').textContent = msg;
+        document.getElementById('result-subtitle').textContent = `Kamu mendapat ${sc} dari ${total} jawaban benar!`;
+        document.getElementById('result-score').textContent = pct + '%';
+        document.getElementById('result-fraction').textContent = `${sc} / ${total} Benar`;
+        document.getElementById('result-stars').innerHTML = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+        
+        document.getElementById('result-view').style.display = 'flex';
+        triggerConfetti();
+    }
+
+    function showReview() {
+        const list = document.getElementById('review-list');
+        list.innerHTML = '';
+
+        questions.forEach((q, idx) => {
+            const ans = answers[idx];
+            const isCorrect = ans === q.answer;
+            const card = document.createElement('div');
+            card.className = 'p-6 bg-white/5 border border-card-border rounded-3xl mb-4 text-left';
+            
+            const reviewOptsHTML = q.options.map((opt, oIdx) => {
+                const lbl = LABELS[oIdx];
+                let state = 'neutral';
+                let icon = '○';
+                
+                if (lbl === q.answer) {
+                    state = 'correct-a';
+                    icon = '✅';
+                } else if (ans === lbl) {
+                    state = 'wrong-a';
+                    icon = '❌';
+                }
+                
+                return `<div class="review-opt ${state}"><span class="font-black text-xs mr-2">${lbl}</span><span>${opt}</span></div>`;
+            }).join('');
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50">Pertanyaan ${idx+1}</span>
+                    <span class="text-xs font-black uppercase tracking-wider ${isCorrect ? 'text-green-400' : 'text-red-400'}">${isCorrect ? 'BENAR' : 'SALAH'}</span>
+                </div>
+                <p class="font-black text-sm text-white mb-4 leading-relaxed">${q.question}</p>
+                <div class="space-y-1">${reviewOptsHTML}</div>
+            `;
+            list.appendChild(card);
+        });
+
+        document.getElementById('review-section').style.display = 'block';
+        document.getElementById('review-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function triggerConfetti() {
+        const colors = ['#F9C013', '#4ADE80', '#60A5FA', '#F472B6', '#A78BFA'];
+        for (let i = 0; i < 80; i++) {
+            const p = document.createElement('div');
+            p.className = 'confetti-piece';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = '-10px';
+            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            p.style.transform = `rotate(${Math.random() * 360}deg)`;
+            
+            const speed = 1.2 + Math.random() * 1.5;
+            p.style.animation = `confettiFall ${speed}s cubic-bezier(0.23,1,0.32,1) forwards`;
+            
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), speed * 1000);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('studentName');
+        localStorage.removeItem('className');
+        localStorage.removeItem('isAdmin');
+        window.location.href = 'index.html';
+    }
+
+    loadLocalQuizProgress();
+    loadQuestions();
+    </script>
+</body>
+</html>

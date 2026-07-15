@@ -83,11 +83,14 @@ function handleGetSheetData(sheetName) {
 
 // ── Sync Helpers ────────────────────────────────────────────────────────────
 
+var SYNC_SHEET_NAME = "Absensi";
+var SYNC_CELL_A1 = "AQ1";
+
 function updateSyncFlag(ss) {
   try {
-    var sheet = ss.getSheetByName("Progress");
+    var sheet = ss.getSheetByName(SYNC_SHEET_NAME);
     if (sheet) {
-      sheet.getRange("Z1").setValue(new Date().getTime());
+      sheet.getRange(SYNC_CELL_A1).setValue(new Date().getTime());
     }
   } catch (e) { console.error("updateSyncFlag error", e); }
 }
@@ -99,8 +102,8 @@ function handleCheckSync(classCode) {
     if (!info || !info.ssId) return createJsonResponse({ success: false, message: "Class info not found" });
     
     var ss = SpreadsheetApp.openById(info.ssId);
-    var sheet = ss.getSheetByName("Progress");
-    var version = sheet ? sheet.getRange("Z1").getValue() : 0;
+    var sheet = ss.getSheetByName(SYNC_SHEET_NAME);
+    var version = sheet ? sheet.getRange(SYNC_CELL_A1).getValue() : 0;
     return createJsonResponse({ success: true, syncVersion: version || 0 });
   } catch (e) {
     return createJsonResponse({ success: false, message: e.toString() });
@@ -769,8 +772,9 @@ function getStudentsByClassCode(code) {
       });
     }
 
-    // Gunakan spreadsheet kelas sebagai source of truth. Dengan begitu nama
-    // yang dipilih saat login pasti sama dengan kolom tujuan upload/progress.
+    // Daftar login bersumber dari header nama siswa pada Progress!C2:J2.
+    // Batasi rentang secara tegas agar metadata di luar tabel tidak pernah
+    // dianggap sebagai nama siswa.
     var info = getClassInfo(uppercaseCode);
     if (!info || !info.ssId) {
       return createJsonResponse({
@@ -785,19 +789,15 @@ function getStudentsByClassCode(code) {
       return createJsonResponse({ success: false, message: 'Sheet "Progress" tidak ditemukan pada spreadsheet kelas.' });
     }
 
-    var lastCol = progressSheet.getLastColumn();
-    var headerRows = progressSheet.getRange(1, 1, 2, lastCol).getDisplayValues();
+    var nameValues = progressSheet.getRange(2, 3, 1, 8).getDisplayValues()[0]; // C2:J2
     var students = [];
     var seenNames = {};
 
-    // Kolom A-B adalah Materi/Matrix. Nama siswa dimulai dari kolom C.
-    for (var c = 2; c < lastCol; c++) {
-      // Baris 2 adalah header utama nama; baris 1 menjadi fallback untuk
-      // template lama yang menaruh nama di baris pertama.
-      var name = String(headerRows[1][c] || headerRows[0][c] || '').trim();
+    for (var c = 0; c < nameValues.length; c++) {
+      var name = String(nameValues[c] || '').trim();
       var normalizedName = normalizeStr(name);
       var isPlaceholder = /^student\s*[a-z0-9]+$/i.test(name) ||
-                          /^(students?|nama\s*siswa|note|catatan)$/i.test(name);
+                          /^(#ref!?|students?|students?\s*name|student's\s*name|nama\s*siswa|note|catatan)$/i.test(name);
 
       if (name && normalizedName && !isPlaceholder && !seenNames[normalizedName]) {
         students.push(name);
@@ -810,13 +810,13 @@ function getStudentsByClassCode(code) {
         success: true,
         isAdmin: false,
         className: uppercaseCode,
-        source: 'class-progress-sheet',
+        source: 'class-progress-c2-j2',
         students: students
       });
     } else {
       return createJsonResponse({
         success: false,
-        message: 'Belum ada nama siswa pada header sheet Progress untuk kelas "' + uppercaseCode + '".'
+        message: 'Belum ada nama siswa pada Progress!C2:J2 untuk kelas "' + uppercaseCode + '".'
       });
     }
 
@@ -1020,3 +1020,11 @@ function handleSaveQuiz(data) {
     return createJsonResponse({ success: false, message: err.toString() });
   }
 }
+/**
+ * LOCAL SOURCE COPY
+ *
+ * Fungsi file: backend Google Apps Script untuk Student Dashboard.
+ * Runtime produksi berada pada deployment Google Apps Script Web App.
+ * Mengubah file lokal ini tidak memperbarui produksi secara otomatis.
+ * Panduan deployment: ../docs/DEPLOYMENT.md
+ */

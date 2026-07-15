@@ -21,7 +21,7 @@
 
 ---
 
-Aku sudah roam dan membaca `code-student.gs` serta seluruh HTML di `B2C/student-dashboards/`. Tidak ada file yang diubah pada pemeriksaan awal tersebut.
+Aku sudah roam dan membaca `apps-script/code-student.gs` serta seluruh HTML di `B2C/student-dashboards/`. Tidak ada file yang diubah pada pemeriksaan awal tersebut.
 
 ## Gambaran alur besarnya
 
@@ -64,7 +64,7 @@ URL tersebut muncul di:
 - [sessions.html](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/sessions.html:263)
 - [quiz.html](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/quiz.html:275)
 
-Backend URL ini seharusnya merupakan hasil deploy dari [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/code-student.gs).
+Backend URL ini seharusnya merupakan hasil deploy dari [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/apps-script/code-student.gs).
 
 ---
 
@@ -112,7 +112,7 @@ Alurnya:
 6. Siswa yang statusnya mengandung `graduated` tidak ditampilkan.
 7. Daftar nama dikirim ke dropdown login.
 
-Implementasinya ada di [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/code-student.gs:700).
+Implementasinya ada di [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/apps-script/code-student.gs:700).
 
 Pencarian kode menggunakan `matchEntireCell(false)`, artinya pencarian tidak harus sama persis satu sel penuh. Ini berpotensi mencocokkan kode yang hanya mengandung teks serupa.
 
@@ -137,8 +137,8 @@ Contohnya, kode kelas dari login dicocokkan dengan kolom `B`. Setelah ketemu:
 
 Implementasinya ada di:
 
-- [handleGetStudentProgress()](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/code-student.gs:121)
-- [getClassInfo()](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/code-student.gs:427)
+- [handleGetStudentProgress()](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/apps-script/code-student.gs:121)
+- [getClassInfo()](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/apps-script/code-student.gs:427)
 
 Jadi link spreadsheet kelas bukan ditulis langsung dalam dashboard. Link berbeda untuk setiap kelas dan diambil dari `Class Database!J:J`.
 
@@ -556,7 +556,7 @@ taskFolder.createFile(blob);
 taskFolder.createFile(blob);
 ```
 
-Artinya satu file yang dikirim melalui jalur `submitProject` kemungkinan tersimpan dua kali di Drive. Ini terlihat di [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/code-student.gs:518).
+Artinya satu file yang dikirim melalui jalur `submitProject` kemungkinan tersimpan dua kali di Drive. Ini terlihat di [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/apps-script/code-student.gs:518).
 
 ---
 
@@ -597,7 +597,7 @@ function handleUpdateProgress(data) {
 function handleUpdateProgress(data) {
 ```
 
-Terletak di sekitar [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/code-student.gs:780).
+Terletak di sekitar [code-student.gs](/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/student-dashboards/apps-script/code-student.gs:780).
 
 Akibatnya, handler luar yang dipanggil `doPost()` kemungkinan tidak menjalankan proses update dan hanya mendefinisikan fungsi di dalamnya. Ini dapat membuat `action: updateProgress` menghasilkan respons kosong/tidak valid.
 
@@ -1547,3 +1547,12 @@ Student dashboard mengecek perubahan sekitar setiap 60 detik.
 - Submission yang sudah masuk ke spreadsheet tetap bisa ditemukan kembali dari server.
 - Sesi berikutnya tidak cukup hanya quiz `100%`; submission yang dikirim juga harus mendapat grading guru.
 - Jika siswa mengirim Must Do, Should Do, dan Aspire, backend mengharapkan penilaian yang sesuai untuk phase-phase tersebut sebelum menganggap grading lengkap.
+> **Fungsi dokumen:** menjelaskan arsitektur, komponen utama, dan perilaku Student Dashboard.
+>
+> **Baca ketika:** ingin memahami hubungan halaman, Google Apps Script, Google Sheets, Drive, dan penyimpanan browser.
+>
+> **Bukan untuk:** langkah deployment atau riwayat perubahan. Gunakan `DEPLOYMENT.md` atau `CHANGELOG.md`.
+>
+> **Terakhir diperbarui:** 16 Juli 2026.
+
+# Arsitektur Student Dashboard

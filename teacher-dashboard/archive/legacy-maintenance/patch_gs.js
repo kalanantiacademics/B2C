@@ -1,5 +1,6 @@
 const fs = require('fs');
-const file = '/Users/yazidhilmi/Documents/cloud/Kalananti-cloud/Academic_Content/B2C/teacher-dashboard/code-teacher.gs';
+const path = require('path');
+const file = path.resolve(__dirname, '..', '..', 'apps-script', 'code-teacher.gs');
 let content = fs.readFileSync(file, 'utf8');
 
 // 1. Add handleGetRubrics in doGet

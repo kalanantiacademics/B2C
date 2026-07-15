@@ -1,6 +1,11 @@
 /**
- * B2C SCL - Teacher Dashboard Backend
- * Deployment: Deploy as Web App, accessible to "Anyone".
+ * LOCAL SOURCE COPY
+ *
+ * Fungsi file: backend Google Apps Script untuk Teacher Dashboard.
+ * Runtime produksi berada pada deployment Google Apps Script Web App.
+ * Mengubah file lokal ini tidak memperbarui produksi secara otomatis.
+ * Panduan deployment: ../docs/DEPLOYMENT.md
+ * Deployment: Web App, accessible to "Anyone".
  */
 
 const DB_SPREADSHEET_ID = "1Dfm4RUOBbz3bvHT0nLnEIkYUoGxRRbC6fFqrZfKa8kQ";
@@ -648,10 +653,11 @@ function handleApproveProject(data) {
       sheet.getRange(sessionStartRow + starRowOffset, studentCol).setValue(finalStarString);
     }
 
-    // Set Date to Today if stars provided
+    // sessionStartRow menunjuk ke baris Date (S1 = row 3). Jangan dikurangi
+    // satu karena row 2 adalah header nama siswa.
     if (missionStars > 0) {
       const todayStr = Utilities.formatDate(new Date(), "Asia/Jakarta", "d MMM yyyy");
-      const dateCell = sheet.getRange(sessionStartRow - 1, studentCol);
+      const dateCell = sheet.getRange(sessionStartRow, studentCol);
       const currentVal = String(dateCell.getValue() || "");
       if (currentVal.indexOf(todayStr) === -1) {
         dateCell.setValue(currentVal ? currentVal + "\n" + todayStr : todayStr);
@@ -781,9 +787,9 @@ function findStudentAndSession(sheet, studentName, sessionNum) {
     }
   }
 
-  // Fallback: S1 @ Row 4, Block 5 rows (Row index = (Session-1)*5 + 4)
+  // Fallback menunjuk ke baris Date: S1 @ row 3, lalu setiap blok 5 baris.
   if (sessionStartRow === -1) {
-    sessionStartRow = 4 + (sessionNum - 1) * PROG_ROWS_PER_SESSION;
+    sessionStartRow = 3 + (sessionNum - 1) * PROG_ROWS_PER_SESSION;
   }
 
   return { success: true, studentCol, sessionStartRow };
@@ -803,12 +809,15 @@ function normalize(str) {
 
 
 // ── Sync Helper ─────────────────────────────────────────────────────────────
+const SYNC_SHEET_NAME = "Absensi";
+const SYNC_CELL_A1 = "AQ1";
+
 function updateSyncFlag(ss) {
   try {
-    const sheet = ss.getSheetByName("Progress");
+    const sheet = ss.getSheetByName(SYNC_SHEET_NAME);
     if (sheet) {
-      // Store current timestamp in Z1 (far to the right)
-      sheet.getRange("Z1").setValue(new Date().getTime());
+      // Metadata sinkronisasi diletakkan jauh di ujung tab Absensi.
+      sheet.getRange(SYNC_CELL_A1).setValue(new Date().getTime());
     }
   } catch (e) { console.error("updateSyncFlag error", e); }
 }
@@ -818,8 +827,8 @@ function handleCheckSync(classLink) {
   try {
     const idMatch = (classLink || "").match(/\/d\/([a-zA-Z0-9-_]+)/);
     const ss = idMatch ? SpreadsheetApp.openById(idMatch[1]) : SpreadsheetApp.openByUrl(classLink);
-    const sheet = ss.getSheetByName("Progress");
-    const version = sheet ? sheet.getRange("Z1").getValue() : 0;
+    const sheet = ss.getSheetByName(SYNC_SHEET_NAME);
+    const version = sheet ? sheet.getRange(SYNC_CELL_A1).getValue() : 0;
     return createJSONResponse({ success: true, syncVersion: version || 0 });
   } catch (e) {
     return createJSONResponse({ success: false, message: e.toString() });

@@ -1,6 +1,95 @@
-# Log Perubahan Student Dashboard
+> **Fungsi dokumen:** mencatat perubahan Student Dashboard berdasarkan tanggal, file, verifikasi, dan kebutuhan deployment.
+>
+> **Baca ketika:** ingin mengetahui apa yang berubah atau mencari riwayat perbaikan.
+>
+> **Aturan:** perubahan baru ditambahkan di bagian paling atas setelah judul dan pengantar.
+
+# Changelog Student Dashboard
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
+
+## 2026-07-16 — Refactor struktur tanpa mengubah logika produksi
+
+### Tujuan
+
+- Memisahkan halaman produksi, asset bersama, source Apps Script, dokumentasi, maintenance script, dan eksperimen.
+- Memberi nama dokumentasi yang mudah dipahami developer baru.
+- Menandai alternate UI sebagai eksperimen, bukan versi produksi.
+
+### Perubahan
+
+- Mempertahankan lima HTML produksi di root agar URL publik dan navigasi tidak berubah.
+- Memindahkan `device-guard.css` ke `assets/css/` dan `device-guard.js` ke `assets/js/`, lalu memperbarui seluruh referensi produksi.
+- Memindahkan source backend lokal ke `apps-script/code-student.gs` dan menambahkan peringatan bahwa deployment produksi tidak otomatis berubah.
+- Memindahkan patch developer ke `scripts/patch-dashboard.js` dan mengganti absolute path menjadi path relatif terhadap script.
+- Memindahkan folder nyata `alternate` ke `experiments/alternate-ui/` serta memperbarui favicon, CSS, dan JavaScript sesuai kedalaman folder baru.
+- Menambahkan README untuk root, experiments, alternate UI, dan scripts.
+- Mengganti `knowledge-st-dbr.md` menjadi `docs/ARCHITECTURE.md` dan `log-edit.md` menjadi `docs/CHANGELOG.md`.
+- Menambahkan `DATA-FLOW.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, dan `TROUBLESHOOTING.md`.
+- Menambahkan penjelasan fungsi, waktu penggunaan, dan batas dokumen pada bagian atas dokumentasi.
+- Menambahkan `scripts/check-local-links.js` untuk memeriksa target lokal `href` dan `src`.
+
+### Temuan dan alternatif
+
+- Changelog lama menyebut `alternate-version`, `alternate-theme.css`, serta salinan device guard di folder eksperimen. Filesystem saat refactor hanya memiliki folder `alternate` dengan lima HTML. Migrasi memakai filesystem sebagai sumber kebenaran dan mencatat status eksperimen melalui README baru.
+- Percobaan awal validator link gagal karena quoting shell; alternatif yang berhasil adalah membuat validator Node yang dapat digunakan ulang.
+- Static server awal ditolak sandbox; alternatif yang berhasil adalah menjalankannya dengan izin localhost yang sesuai.
+- Browser lokal mencatat beberapa `Failed to fetch` ketika halaman mencoba API eksternal dengan identitas data uji. Endpoint student kemudian diverifikasi terpisah melalui request read-only dan merespons JSON dengan benar.
+- Fallback apabila asset baru gagal adalah mengembalikan device guard ke root. Fallback tidak dipakai karena seluruh asset baru berhasil dimuat.
+
+### Verifikasi
+
+- `node --check` berhasil untuk source Apps Script student yang disalin sementara sebagai `.js`, device guard, patch script, dan validator link.
+- Validator memastikan seluruh target lokal `href` dan `src` pada student dan teacher tersedia.
+- Chromium headless membuka lima halaman produksi dan lima halaman eksperimen dengan HTTP 200.
+- Seluruh halaman student memuat `assets/css/device-guard.css` dan `assets/js/device-guard.js` tanpa request lokal gagal.
+- Endpoint Apps Script student aktif merespons request read-only; respons `Class info not found` untuk kode uji membuktikan endpoint dapat dijangkau.
+
+### Deployment
+
+- Tidak memerlukan deployment ulang Apps Script karena logika backend tidak diubah.
+- Perubahan struktur frontend perlu diterbitkan bersama seluruh file baru dan perpindahan asset dalam satu deployment agar tidak terjadi 404 sementara.
+
+## 2026-07-16 — Alternate Version untuk eksplorasi redesign
+
+### Kebutuhan
+
+- Membuat eksplorasi layout baru untuk seluruh perjalanan siswa tanpa mengubah versi aktif.
+- Alur login, dashboard, peta sesi, materi/tugas, quiz, penyimpanan browser, dan komunikasi Apps Script harus tetap sama.
+
+### Implementasi
+
+- Menambahkan folder eksperimen yang saat itu didokumentasikan sebagai `alternate-version` berisi salinan lima halaman student dashboard.
+- Menambahkan `alternate-theme.css` sebagai lapisan visual bersama dengan arah desain learning cockpit yang lebih terang, modern, tenang, dan mudah dipindai.
+- Login memakai komposisi split-panel, dashboard menekankan next action, materi menyerupai reading workspace, dan quiz memusatkan perhatian pada satu pertanyaan.
+- Mempertahankan seluruh ID, handler tombol, URL Apps Script, key `localStorage`, validasi, dan tautan internal halaman.
+- Menyalin device guard agar aturan HP/tablet tetap berlaku pada versi alternatif.
+- Menyesuaikan path favicon karena halaman berada satu folder lebih dalam.
+
+### File
+
+- `student-dashboards/experiments/alternate-ui/index.html`
+- `student-dashboards/experiments/alternate-ui/dashboard.html`
+- `student-dashboards/experiments/alternate-ui/sessions.html`
+- `student-dashboards/experiments/alternate-ui/materials.html`
+- `student-dashboards/experiments/alternate-ui/quiz.html`
+- `student-dashboards/experiments/alternate-ui/alternate-theme.css`
+- `student-dashboards/experiments/alternate-ui/device-guard.css`
+- `student-dashboards/experiments/alternate-ui/device-guard.js`
+- `student-dashboards/experiments/alternate-ui/README.md`
+
+### Deployment
+
+- Tidak memerlukan deployment ulang Apps Script.
+- Folder alternatif dapat dipreview atau dipublikasikan terpisah dari halaman student dashboard aktif.
+
+### Verifikasi
+
+- JavaScript inline kelima halaman dibandingkan dengan versi aktif dan terkonfirmasi identik.
+- Lima halaman berhasil memuat stylesheet alternatif tanpa page error pada viewport desktop 1366×768 dan tablet 820×1180.
+- Dashboard, peta sesi, materi, dan quiz tidak mengalami horizontal overflow pada kedua viewport.
+- Login diberi pengamanan `overflow-x` untuk menahan elemen dekoratif di tepi viewport.
+- Device guard versi alternatif tetap mengizinkan viewport tablet pada pengujian.
 
 ## 2026-07-16 — Pembatasan HP, dukungan iPad, dan favicon dashboard
 
@@ -36,8 +125,8 @@ File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-
 
 ### File yang diubah
 
-- `student-dashboards/device-guard.js`
-- `student-dashboards/device-guard.css`
+- `student-dashboards/assets/js/device-guard.js`
+- `student-dashboards/assets/css/device-guard.css`
 - `student-dashboards/index.html`
 - `student-dashboards/dashboard.html`
 - `student-dashboards/sessions.html`
@@ -75,7 +164,7 @@ File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-
 ### File yang diubah
 
 - `student-dashboards/dashboard.html`
-- `student-dashboards/log-edit.md`
+- `student-dashboards/docs/CHANGELOG.md`
 
 ### Deployment
 
@@ -99,21 +188,21 @@ File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-
 - `initDashboard()` serta pengecekan versi sync tetap berjalan setelah respons sukses tanpa menghapus state server.
 - Reset ke Sesi 1, bintang 0, dan progress kosong hanya dijalankan jika respons API benar-benar gagal.
 
-#### `code-student.gs`
+#### `apps-script/code-student.gs`
 
 - Mendeteksi baris `Quiz Score` secara dinamis dalam setiap blok sesi.
 - Menambahkan `quizScore` dan `quizDone` pada setiap item `sessionProgress`.
 - Mengubah syarat membuka sesi berikutnya menjadi: progress 100%, Quiz Score tersedia, dan seluruh phase submission yang dikirim sudah mendapat penilaian guru.
 - Progress 100% tanpa Quiz tidak lagi membuka sesi berikutnya.
 
-#### `knowledge-st-dbr.md`
+#### `docs/ARCHITECTURE.md`
 
 - Menambahkan diagnosis state reset dan dokumentasi syarat unlock terbaru.
 
 ### Deployment
 
 - `dashboard.html` aktif setelah GitHub Pages selesai build.
-- Perubahan `code-student.gs` memerlukan pembuatan versi baru pada deployment Apps Script dengan URL Web App yang sama.
+- Perubahan `apps-script/code-student.gs` memerlukan pembuatan versi baru pada deployment Apps Script dengan URL Web App yang sama.
 
 ## 2026-07-15 — Tombol Quiz setelah Should Do dan Aspire To dikumpulkan
 
@@ -133,7 +222,7 @@ File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-
 - Pengamanan `attemptGoToQuiz()` tetap dipertahankan, sehingga tombol tidak dapat melewati kewajiban menyelesaikan atau mengumpulkan Must Do.
 - Modal preview submission ketiga phase juga menampilkan tombol Quiz jika Must Do telah selesai dan Quiz belum dikerjakan.
 
-#### `knowledge-st-dbr.md`
+#### `docs/ARCHITECTURE.md`
 
 - Memperbarui dokumentasi alur tombol dan aturan akses Quiz setelah submission setiap phase.
 
@@ -210,7 +299,7 @@ File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-
 
 ### File yang diubah
 
-#### `code-student.gs`
+#### `apps-script/code-student.gs`
 
 - Mengubah `getStudentsByClassCode(code)` agar:
   - mencari kode kelas melalui `Class Database` menggunakan `getClassInfo()`;
@@ -250,14 +339,14 @@ File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-
 
 ### Verifikasi lokal
 
-- `code-student.gs` disalin sementara menjadi `/private/tmp/code-student-check.js` karena `node --check` tidak menerima ekstensi `.gs`.
+- `apps-script/code-student.gs` disalin sementara menjadi `/private/tmp/code-student-check.js` karena `node --check` tidak menerima ekstensi `.gs`.
 - Perintah `node --check /private/tmp/code-student-check.js` berhasil tanpa error sintaks.
 - Pemeriksaan statis memastikan login masih memanggil action API `getStudents`, sehingga perubahan backend tidak memerlukan perubahan endpoint HTML.
-- Deployment aktif belum berubah sampai `code-student.gs` versi ini dipasang ulang sebagai versi baru Google Apps Script Web App.
+- Deployment aktif belum berubah sampai `apps-script/code-student.gs` versi ini dipasang ulang sebagai versi baru Google Apps Script Web App.
 
 ### Langkah deployment yang diperlukan
 
-1. Salin versi terbaru `code-student.gs` ke project Google Apps Script student dashboard.
+1. Salin versi terbaru `apps-script/code-student.gs` ke project Google Apps Script student dashboard.
 2. Pilih **Deploy → Manage deployments → Edit**.
 3. Buat versi baru dan deploy menggunakan URL Web App yang sama.
 4. Buka halaman login menggunakan jendela incognito atau lakukan logout terlebih dahulu.
@@ -294,7 +383,7 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 
 ### File yang diubah
 
-#### `code-student.gs`
+#### `apps-script/code-student.gs`
 
 - Saat membaca baris siswa di tab `Absensi`, backend sekarang mencari kolom berheader `Level` secara dinamis.
 - Nilai level dinormalisasi menjadi angka positif.
@@ -334,7 +423,7 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 
 ### Langkah pengujian setelah deployment
 
-1. Deploy ulang `code-student.gs` sebagai versi baru Web App.
+1. Deploy ulang `apps-script/code-student.gs` sebagai versi baru Web App.
 2. Login menggunakan `SCLWER222` dan pilih `Budiyana`.
 3. Pastikan respons progress mengandung `studentLevel: 2`, `currentSession: 1`, dan `attendanceSession: 1`.
 4. Pastikan dashboard menampilkan `Level 2` dan misi aktif Sesi 1.
@@ -356,7 +445,7 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 - Remote GitHub yang digunakan adalah `kalanantiacademics/B2C`.
 - Akses memakai SSH key akademik yang tersedia di mesin ini.
 - Perubahan HTML akan aktif melalui GitHub Pages setelah push dan proses build Pages selesai.
-- `code-student.gs` tidak dijalankan oleh GitHub Pages. File tersebut tetap harus ditempel/deploy sebagai versi baru pada Google Apps Script Web App agar sumber nama dan level baru aktif di API.
+- `apps-script/code-student.gs` tidak dijalankan oleh GitHub Pages. File tersebut tetap harus ditempel/deploy sebagai versi baru pada Google Apps Script Web App agar sumber nama dan level baru aktif di API.
 
 ### Catatan pengujian browser
 
@@ -383,7 +472,7 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 - GitHub Pages build untuk commit `6ac9a64` selesai dengan status `built` pada 15 Juli 2026.
 - `dashboard.html` live sudah memuat `studentLevel` dan gerbang sesi berbasis `currentSession`; rumus lama `Math.ceil(sess/2)` sudah tidak ada.
 - `index.html` live sudah memuat `loginIdentity` dan pembersihan state lintas siswa.
-- Deployment Google Apps Script yang aktif masih mengembalikan `Buidana` dari endpoint `getStudents` untuk `SCLWER222`. Ini membuktikan backend Web App belum memakai versi lokal `code-student.gs` yang baru.
+- Deployment Google Apps Script yang aktif masih mengembalikan `Buidana` dari endpoint `getStudents` untuk `SCLWER222`. Ini membuktikan backend Web App belum memakai versi lokal `apps-script/code-student.gs` yang baru.
 
 ## 2026-07-15 — Indikator jumlah slide dan transisi otomatis ke Must Do
 
@@ -410,7 +499,7 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 
 ### Perubahan
 
-- `code-student.gs` mencari label `Jam Mulai` dan `Jam Selesai` secara dinamis di tab `Absensi`.
+- `apps-script/code-student.gs` mencari label `Jam Mulai` dan `Jam Selesai` secara dinamis di tab `Absensi`.
 - Nilai waktu dinormalisasi ke format 24 jam `HH:mm` menggunakan zona waktu `Asia/Jakarta`.
 - Respons `getStudentProgress` sekarang menyertakan `classStartTime` dan `classEndTime`.
 - `dashboard.html` menyimpan jadwal dari server dan menampilkannya pada kartu kelas.
@@ -421,3 +510,41 @@ Jadi untuk kondisi Budiyana saat ini, hasil yang diharapkan adalah **Scratch, Le
 
 - Tab `Absensi` berisi Jam Mulai `7:30 AM` dan Jam Selesai `8:00 AM`.
 - Dashboard harus menampilkan `07:30 – 08:00` setelah Apps Script versi terbaru dideploy.
+
+## 2026-07-16 — Percobaan sumber nama dari Absensi kolom B (dibatalkan)
+
+### Masalah
+
+- Dropdown login membaca header baris 1–2 sheet `Progress` sebagai daftar siswa.
+- Tanggal pada header siswa dan timestamp sinkronisasi di `Progress!Z1` ikut tampil sebagai pilihan nama.
+
+### Perubahan
+
+- `getStudentsByClassCode()` sekarang hanya membaca kolom B sheet `Absensi`.
+- Pembacaan dimulai setelah header `Students Name`, `Student Name`, `Student's Name`, atau `Nama Siswa` ditemukan.
+- Jika label header tidak ditemukan, fallback dimulai dari baris 16 agar area informasi kelas di bagian atas sheet tidak masuk dropdown.
+- Nama kosong, placeholder, dan nama duplikat tetap disaring.
+- Penanda sumber respons diubah menjadi `class-absensi-column-b`.
+
+> Perubahan ini langsung dikoreksi pada entri berikutnya setelah struktur sheet
+> dipastikan kembali. Implementasi final memakai `Progress!C2:J2`.
+
+## 2026-07-16 — Koreksi sumber nama login ke Progress C2:J2
+
+### Koreksi struktur
+
+- Sumber nama login yang benar adalah header `Progress!C2:J2`, bukan seluruh header Progress dan bukan pembacaan langsung kolom B Absensi.
+- Rentang dibatasi sampai kolom J sehingga `Progress!Z1` dan metadata lain tidak dapat masuk ke dropdown.
+- Nilai `#REF!`, placeholder, sel kosong, dan duplikat disaring.
+
+### Akar kerusakan header
+
+- Ditemukan bug pada backend guru ketika persetujuan bintang menyimpan tanggal.
+- Helper guru sudah menganggap `sessionStartRow` sebagai baris `Date` (Sesi 1 = row 3), tetapi penulisan tanggal menggunakan `sessionStartRow - 1` sehingga menulis ke row 2.
+- Akibatnya nama siswa di row 2 dapat ditambahi tanggal dan formula array `TRANSPOSE` pada C2 gagal mengembang dengan `#REF!`.
+
+## 2026-07-16 — Memindahkan metadata sinkronisasi ke Absensi AQ1
+
+- Penanda sinkronisasi dipindahkan dari `Progress!Z1` ke `Absensi!AQ1` agar tidak berada di area header Progress.
+- `updateSyncFlag()` dan `handleCheckSync()` memakai konstanta lokasi yang sama.
+- Format nilainya tetap timestamp milidetik sehingga polling dashboard tidak perlu diubah.

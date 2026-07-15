@@ -545,7 +545,7 @@
 
                 <!-- Bonus Button -->
                 <button onclick="openBonusModal()" class="w-full flex items-center justify-center gap-2 py-3 bg-k-yellow/10 border border-k-yellow/20 text-k-yellow rounded-xl font-black text-xs uppercase tracking-wider hover:bg-k-yellow/20 transition-all">
-                    <span>✨ Beri Bonus Bintang</span>
+                    <span id="bonus-action-label">✨ Beri Bonus Bintang</span>
                 </button>
                 <div class="p-8 pt-4 border-t" style="background: var(--card); border-color: var(--card-b)">
                     <div class="flex gap-3">
@@ -578,7 +578,7 @@
             <textarea id="bonus-reason" placeholder="Contoh: Sangat aktif bertanya..." class="w-full border rounded-2xl p-4 text-xs font-medium focus:border-k-yellow/50 focus:ring-1 focus:ring-k-yellow/50 transition-all outline-none resize-none h-24" style="background: var(--bg); border-color: var(--card-b); color: var(--text)"></textarea>
         </div>
 
-        <button id="btn-submit-bonus" onclick="submitBonusOnly()" class="btn-3d w-full bg-k-yellow text-[#5A3F00] font-black py-4 rounded-xl text-sm shadow-[0_5px_0_#B28400] uppercase tracking-wider font-display cursor-pointer">Kirim Bintang ✨</button>
+        <button id="btn-submit-bonus" onclick="submitBonusOnly()" class="btn-3d w-full bg-k-yellow text-[#5A3F00] font-black py-4 rounded-xl text-sm shadow-[0_5px_0_#B28400] uppercase tracking-wider font-display cursor-pointer">Simpan Bonus ✨</button>
     </div>
 </div>
 
@@ -1337,6 +1337,7 @@ async function openApprovalModal(idx, sNum) {
                 if (line.toLowerCase().includes('must')) phaseRatings.must = val;
                 else if (line.toLowerCase().includes('should')) phaseRatings.should = val;
                 else if (line.toLowerCase().includes('aspire')) phaseRatings.aspire = val;
+                else if (line.toLowerCase().includes('bonus')) bonusStarsStored = val;
             }
         });
     }
@@ -1346,6 +1347,12 @@ async function openApprovalModal(idx, sNum) {
     
     document.getElementById('appr-quiz-display').textContent = `${qVal} (${qStars} / 5 ⭐)`;
     document.getElementById('appr-quiz-stars').value = qStars;
+    const bonusActionLabel = document.getElementById('bonus-action-label');
+    if (bonusActionLabel) {
+        bonusActionLabel.textContent = bonusStarsStored > 0
+            ? `✏️ Edit Bonus (+${bonusStarsStored} Bintang)`
+            : '✨ Beri Bonus Bintang';
+    }
 
     // Sesi 12 specific
     const confGroup = document.getElementById('appr-confirmation-group');
@@ -1508,9 +1515,16 @@ function updateStarUI(phase, score) {
 // ── Bonus Modal ──────────────────────────────────────────────────────────────
 function openBonusModal() {
     document.getElementById('bonus-modal').classList.remove('hidden');
-    document.getElementById('bonus-reason').value = '';
-    tempBonus = 0;
-    updateBonusUI(0);
+    const s = students[currentApprIndex];
+    const sessInfo = s && s.sessionData ? s.sessionData[currentApprSession] : null;
+    document.getElementById('bonus-reason').value = extractBonusReason(sessInfo ? sessInfo.note : '');
+    tempBonus = bonusStarsStored;
+    updateBonusUI(tempBonus);
+}
+
+function extractBonusReason(note) {
+    const latestLine = String(note || '').split(/\r?\n/).filter(Boolean).pop() || '';
+    return latestLine.replace(/^\d{1,2}-[A-Za-z]{3}:\s*/, '').trim();
 }
 
 function updateBonusUI(val) {
@@ -1560,8 +1574,11 @@ async function submitBonusOnly() {
         const json = await res.json();
 
         if (json.success) {
+            bonusStarsStored = tempBonus;
+            const bonusActionLabel = document.getElementById('bonus-action-label');
+            if (bonusActionLabel) bonusActionLabel.textContent = `✏️ Edit Bonus (+${tempBonus} Bintang)`;
             closeBonusModal();
-            showAlert('Bonus Terkirim! ✨', `<strong>${s.name}</strong> mendapatkan +${tempBonus} bintang!`, '✨', 'yellow', 3000);
+            showAlert('Bonus Tersimpan! ✨', `Bonus <strong>${s.name}</strong> sekarang +${tempBonus} bintang.`, '✨', 'yellow', 3000);
             loadStudents();
         } else throw new Error(json.message);
     } catch (err) {

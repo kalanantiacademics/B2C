@@ -574,6 +574,16 @@ function handleApproveProject(data) {
     const quizS = parseInt(data.quizStars || 0, 10);
     if (quizS > 0) starStrs.push(`${quizS} Star - Quiz`);
 
+    // Preserve an existing bonus when the teacher edits mission/quiz ratings.
+    // Bonus is managed separately by handleGiveBonus(), but lives in the same cell.
+    let existingBonusLine = "";
+    if (starRowOffset > -1) {
+      const currentStarValue = String(sheet.getRange(sessionStartRow + starRowOffset, studentCol).getValue() || "");
+      const bonusMatch = currentStarValue.split(/\r?\n/).find(line => /\b(bonus)\b/i.test(line));
+      if (bonusMatch) existingBonusLine = bonusMatch.trim();
+    }
+    if (existingBonusLine) starStrs.push(existingBonusLine);
+
     const finalStarString = starStrs.length > 0 ? starStrs.join("\n") : "";
 
     // Sum mission stars only for the date check threshold
@@ -582,7 +592,7 @@ function handleApproveProject(data) {
     // Write values
     if (progressRowOffset > -1) sheet.getRange(sessionStartRow + progressRowOffset, studentCol).setValue("100%");
     
-    if (starRowOffset > -1 && finalStarString !== "") {
+    if (starRowOffset > -1) {
       sheet.getRange(sessionStartRow + starRowOffset, studentCol).setValue(finalStarString);
     }
 
@@ -618,6 +628,9 @@ function handleGiveBonus(data) {
     if (!classLink || !studentName || isNaN(sessionNum)) {
       return createJSONResponse({ success: false, message: "Data tidak lengkap." });
     }
+    if (isNaN(bStars) || bStars < 1 || bStars > 3) {
+      return createJSONResponse({ success: false, message: "Bonus harus antara 1 sampai 3 bintang." });
+    }
 
     const idMatch = (classLink || "").match(/\/d\/([a-zA-Z0-9-_]+)/);
     const ss = idMatch ? SpreadsheetApp.openById(idMatch[1]) : SpreadsheetApp.openByUrl(classLink);
@@ -644,21 +657,35 @@ function handleGiveBonus(data) {
     if (starRowOffset === -1) return createJSONResponse({ success: false, message: "Baris Bintang tidak ditemukan." });
 
     const cell = sheet.getRange(sessionStartRow + starRowOffset, studentCol);
-    const currentStars = parseInt(cell.getValue() || 0, 10);
-    cell.setValue(currentStars + bStars);
+    const currentValue = String(cell.getValue() || "").trim();
+    let starLines = currentValue ? currentValue.split(/\r?\n/).map(line => line.trim()).filter(Boolean) : [];
+
+    // Keep Must Do, Should Do, Aspire, and Quiz intact. Re-saving the modal edits
+    // the existing bonus line instead of repeatedly adding another bonus.
+    const bonusLine = `${bStars} Star - Bonus`;
+    const existingBonusIndex = starLines.findIndex(line => /\bbonus\b/i.test(line));
+    if (existingBonusIndex > -1) {
+      starLines[existingBonusIndex] = bonusLine;
+      // Clean up duplicate bonus lines left by any earlier malformed data.
+      starLines = starLines.filter((line, index) => !/\bbonus\b/i.test(line) || index === existingBonusIndex);
+    } else {
+      starLines.push(bonusLine);
+    }
+    cell.setValue(starLines.join("\n"));
     
-    if (reason) {
-      const existingNote = cell.getNote() || "";
+    if (String(reason || "").trim()) {
       const todayStr = Utilities.formatDate(new Date(), "Asia/Jakarta", "d-MMM");
-      const newNote = existingNote ? existingNote + "\n" + todayStr + ": " + reason : todayStr + ": " + reason;
-      cell.setNote(newNote);
+      // The note represents the current editable bonus reason, not an append-only log.
+      cell.setNote(todayStr + ": " + String(reason).trim());
+    } else {
+      cell.setNote("");
     }
 
     // Update total stars di tab Absensi kolom AA
     updateTotalStarsInAbsensi(ss, studentCol, studentName);
 
     updateSyncFlag(ss);
-    return createJSONResponse({ success: true, message: "Bonus bintang berhasil diberikan!" });
+    return createJSONResponse({ success: true, message: "Bonus bintang berhasil disimpan!", bonusStars: bStars });
   } catch (err) {
     return createJSONResponse({ success: false, message: "giveBonus Error: " + err.toString() });
   }

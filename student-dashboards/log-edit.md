@@ -2,6 +2,37 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-15 — Planet mengikuti Level dan judul sesi mengikuti Academic Spreadsheet
+
+### Masalah
+
+- Dashboard sebelumnya memilih planet berdasarkan nomor sesi, sehingga dalam satu level Sesi 1 sampai Sesi 12 tampak seperti berpindah-pindah planet.
+- Judul kartu roadmap memakai nama planet dan deskripsi hardcoded di HTML, bukan judul sesi pada spreadsheet Academic.
+- Kolom Level pada spreadsheet menggunakan sel gabungan. Baris sesi setelah baris pertama level dapat terbaca kosong dan berisiko tercampur dengan level lain.
+
+### Sumber data yang dikonfirmasi
+
+- Tab `B2C_Scratch_INS` berisi materi interaktif, tetapi tidak memiliki kolom judul sesi.
+- Tab sumber `B2C_Scratch_Modul` memiliki kolom `Session-topic`.
+- Contoh resmi Level 2: Sesi 1 `Eat Healthy Food Part 1`, Sesi 2 `Eat Healthy Food Part 2`, dan Sesi 12 `Presentation Day`.
+
+### File yang diubah
+
+#### `dashboard.html`
+
+- Planet sekarang dipilih dari `studentLevel`, sehingga semua sesi pada level yang sama memakai identitas planet yang sama.
+- Judul progress utama menampilkan nama planet level, bukan `Planet <nomor sesi>`.
+- Konfigurasi course sekarang menyimpan `topicSheet` untuk tab modul masing-masing program.
+- Roadmap mengambil tab materi INS dan tab Modul secara bersamaan.
+- Kartu sesi menampilkan nilai `Session-topic` dari spreadsheet Academic sebagai judul utama; deskripsi hardcoded hanya menjadi fallback jika data judul tidak tersedia.
+- Nama planet per sesi yang sebelumnya hardcoded di kartu dihapus.
+- Pembacaan Level meneruskan nilai level terakhir pada baris kosong akibat merged cells, lalu hanya memilih baris level siswa yang sedang login.
+
+### Deployment
+
+- Perubahan ini hanya berada di `dashboard.html`, sehingga tidak memerlukan deployment ulang Google Apps Script.
+- Setelah commit dan push, tunggu GitHub Pages selesai build lalu lakukan hard refresh pada dashboard.
+
 ## 2026-07-15 — Sumber nama login dari spreadsheet kelas dan pengamanan sesi
 
 ### Masalah

@@ -867,14 +867,12 @@
                 if (typeof data.attendanceSession !== 'undefined') {
                     localStorage.setItem('attendanceSession', data.attendanceSession);
                 }
+                initDashboard();
+                if (isSilent) showSyncToast();
+                else fetchSyncVersion();
             } else {
                 const errMsg = (data && data.message) ? data.message : JSON.stringify(data);
                 console.warn('[Dashboard] Gagal getStudentProgress:', errMsg);
-            }
-            initDashboard();
-            if (isSilent) {
-                showSyncToast();
-            } else {
                 // Fail closed: jika identitas/progress server tidak ditemukan,
                 // jangan gunakan sesi milik login lama dari localStorage.
                 if (!isAdmin) {
@@ -884,7 +882,8 @@
                     localStorage.setItem('sessionProgress', '[]');
                     localStorage.setItem('totalStars', '0');
                 }
-                fetchSyncVersion();
+                initDashboard();
+                if (!isSilent) fetchSyncVersion();
             }
         } catch (err) {
             console.error('[Dashboard] Error fetching student data:', err);

@@ -214,6 +214,7 @@ function handleGetStudentProgress(classCode, studentName) {
       var progOff = 0; // default
       var starOff = -1; // -1 = tidak ditemukan
       var linkOff = -1;
+      var quizOff = -1;
       
       for (var m = 0; m < PROG_ROWS_PER_SESSION; m++) {
         var rowIdx = baseRowIdx + m;
@@ -221,6 +222,8 @@ function handleGetStudentProgress(classCode, studentName) {
         var label = String(progData[rowIdx][1] || '').toLowerCase(); // col B = index 1
         if (label.indexOf('progres') > -1) {
           progOff = m;
+        } else if (label.indexOf('quiz') > -1) {
+          quizOff = m;
         } else if (label.indexOf('star') > -1 || label.indexOf('bintang') > -1 || label.indexOf('nilai') > -1) {
           starOff = m;
         } else if (label.indexOf('upload') > -1 || label.indexOf('project') > -1 || label.indexOf('link') > -1) {
@@ -237,6 +240,16 @@ function handleGetStudentProgress(classCode, studentName) {
       
       // 100% = nilai 1 (desimal dari Google Sheets), "100%", "1", "100"
       var isComplete = (progressVal === 1 || strVal === '100%' || strVal === '1' || strVal === '100');
+
+      // Progress 100% saja tidak cukup. Sesi berikutnya baru boleh terbuka
+      // jika baris Quiz Score benar-benar sudah berisi hasil quiz.
+      var quizScoreText = '';
+      var hasQuizScore = false;
+      if (quizOff !== -1) {
+        quizScoreText = String(progData[baseRowIdx + quizOff][studentCol] || '').trim();
+        var quizScoreLower = quizScoreText.toLowerCase();
+        hasQuizScore = quizScoreText !== '' && quizScoreLower !== 'nan' && quizScoreText !== '-';
+      }
       
       // Baca & hitung bintang sesi ini (sama persis dengan teacher dashboard)
       var sSessionStars = 0;
@@ -287,10 +300,10 @@ function handleGetStudentProgress(classCode, studentName) {
           hasTeacherStars = sSessionStars > 0 || gradedMustDo || gradedShouldDo || gradedAspire;
       }
 
-      sessionProgress.push({ session: s, progress: strVal || '0%', isComplete: isComplete, stars: sSessionStars, rawStars: rawStarsText, link: uploadedLink, graded: hasTeacherStars });
+      sessionProgress.push({ session: s, progress: strVal || '0%', isComplete: isComplete, quizScore: quizScoreText, quizDone: hasQuizScore, stars: sSessionStars, rawStars: rawStarsText, link: uploadedLink, graded: hasTeacherStars });
       
       // Unlock next session logic (Always take the highest completed session + 1)
-      if (isComplete && hasTeacherStars) {
+      if (isComplete && hasQuizScore && hasTeacherStars) {
           currentSession = Math.max(currentSession, s + 1);
       }
     }

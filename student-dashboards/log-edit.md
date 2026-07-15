@@ -2,6 +2,39 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-15 — Detail bintang kosong dan Sesi 2 tetap terkunci setelah API sukses
+
+### Masalah
+
+- API live Budiyana mengembalikan `currentSession: 2`, `totalStars: 10`, serta rincian bintang Must Do, Should Do, dan Quiz.
+- Pada initial load, dashboard tetap menjalankan reset fail-closed setelah respons sukses. State kemudian ditimpa menjadi Sesi 1, bintang 0, dan `sessionProgress` kosong.
+- Dampaknya, kartu total sempat menampilkan data dari respons server, tetapi modal detail bintang membaca array kosong dan halaman Peta Sesi menganggap Sesi 2 terkunci.
+- Backend memakai progress 100% dan penilaian guru untuk membuka sesi berikutnya, tetapi belum memeriksa keberadaan Quiz Score secara eksplisit.
+
+### File yang diubah
+
+#### `dashboard.html`
+
+- Memisahkan jalur respons API sukses dan gagal.
+- `initDashboard()` serta pengecekan versi sync tetap berjalan setelah respons sukses tanpa menghapus state server.
+- Reset ke Sesi 1, bintang 0, dan progress kosong hanya dijalankan jika respons API benar-benar gagal.
+
+#### `code-student.gs`
+
+- Mendeteksi baris `Quiz Score` secara dinamis dalam setiap blok sesi.
+- Menambahkan `quizScore` dan `quizDone` pada setiap item `sessionProgress`.
+- Mengubah syarat membuka sesi berikutnya menjadi: progress 100%, Quiz Score tersedia, dan seluruh phase submission yang dikirim sudah mendapat penilaian guru.
+- Progress 100% tanpa Quiz tidak lagi membuka sesi berikutnya.
+
+#### `knowledge-st-dbr.md`
+
+- Menambahkan diagnosis state reset dan dokumentasi syarat unlock terbaru.
+
+### Deployment
+
+- `dashboard.html` aktif setelah GitHub Pages selesai build.
+- Perubahan `code-student.gs` memerlukan pembuatan versi baru pada deployment Apps Script dengan URL Web App yang sama.
+
 ## 2026-07-15 — Tombol Quiz setelah Should Do dan Aspire To dikumpulkan
 
 ### Masalah

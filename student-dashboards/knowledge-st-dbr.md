@@ -9,6 +9,18 @@
 
 ---
 
+## 2026-07-15 — Perbaikan cache bintang, penguncian sesi, dan validasi Quiz
+
+- Respons live Budiyana telah terkonfirmasi berisi `currentSession: 2`, `totalStars: 10`, dan rincian bintang Sesi 1: `5 Star - Must do`, `3 Star - Should do`, serta `2 Star - Quiz`.
+- Initial load `dashboard.html` sebelumnya tetap menjalankan reset fail-closed walaupun API sukses. Akibatnya `currentSession` ditimpa menjadi 1, `sessionProgress` menjadi array kosong, dan `totalStars` menjadi 0 setelah dashboard selesai dirender.
+- Reset fail-closed sekarang hanya dijalankan saat respons API gagal atau identitas siswa tidak ditemukan.
+- Modal bintang sekarang dapat mempertahankan dan membaca `sessionProgress` dari respons sukses.
+- Backend membaca baris `Quiz Score` pada setiap blok sesi dan mengirim `quizScore` serta `quizDone` dalam `sessionProgress`.
+- Sesi berikutnya hanya terbuka jika tiga kondisi terpenuhi: progress 100%, Quiz Score sudah ada, dan submission yang dikirim sudah mendapat bintang guru sesuai phase.
+- Nilai progress 100% tanpa Quiz Score tidak lagi cukup untuk membuka sesi berikutnya.
+
+---
+
 Aku sudah roam dan membaca `code-student.gs` serta seluruh HTML di `B2C/student-dashboards/`. Tidak ada file yang diubah pada pemeriksaan awal tersebut.
 
 ## Gambaran alur besarnya

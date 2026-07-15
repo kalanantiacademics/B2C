@@ -1167,13 +1167,14 @@ function openHistoryModal(idx) {
 
         
         // Calculate Breakdown
-        const missS  = d.starsVal || 0;
+        // starsVal already contains every line in the star cell, including Quiz
+        // and Bonus. Do not add quizStars again or the teacher total is inflated.
+        const totalS = d.starsVal || 0;
         const quizS  = d.quizStars || 0;
-        const totalS = missS + quizS;
         const hasAnyLink = d.link && d.link.trim().length > 0;
 
         // Parse explicit mission breakdown
-        let mustS = 0, shouldS = 0, aspireS = 0;
+        let mustS = 0, shouldS = 0, aspireS = 0, bonusS = 0;
         if (d.stars) {
              const mMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Must/i);
              if (mMatch) mustS = parseInt(mMatch[1]);
@@ -1183,8 +1184,14 @@ function openHistoryModal(idx) {
              
              const aMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Aspire/i);
              if (aMatch) aspireS = parseInt(aMatch[1]);
+
+             const bMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Bonus/i);
+             if (bMatch) bonusS = parseInt(bMatch[1]);
         }
         const hasDetailedMission = (mustS > 0 || shouldS > 0 || aspireS > 0);
+        const missionS = hasDetailedMission
+            ? mustS + shouldS + aspireS
+            : Math.max(0, totalS - quizS - bonusS);
 
         html += `
         <div class="p-6 rounded-[2rem] border flex flex-col gap-5 transition-all hover:border-k-yellow/30 group" style="background: var(--chip); border-color: var(--card-b)">
@@ -1216,10 +1223,11 @@ function openHistoryModal(idx) {
                             ${shouldS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>✨ Should do</span><span class="text-indigo-500 font-black drop-shadow-md">${shouldS}⭐</span></div>` : ''}
                             ${aspireS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>🌟 Aspire to do</span><span class="text-purple-600 font-black drop-shadow-md">${aspireS}⭐</span></div>` : ''}
                         ` : `
-                            ${missS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>🚀 Mission</span><span class="text-blue-500 font-black drop-shadow-md">${missS}⭐</span></div>` : ''}
+                            ${missionS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>🚀 Mission</span><span class="text-blue-500 font-black drop-shadow-md">${missionS}⭐</span></div>` : ''}
                         `}
                         
                         ${quizS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5 border-t mt-1.5 pt-1.5" style="color: var(--text); border-color: var(--card-b)"><span>📝 Quiz</span><span class="text-emerald-500 font-black drop-shadow-md">${quizS}⭐</span></div>` : ''}
+                        ${bonusS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5 border-t mt-1.5 pt-1.5" style="color: var(--text); border-color: var(--card-b)"><span>✨ Bonus</span><span class="text-amber-500 font-black drop-shadow-md">${bonusS}⭐</span></div>` : ''}
 
                         <!-- Tooltip arrow pointer (Top-Right) -->
                         <div class="absolute -top-[5px] right-5 w-2.5 h-2.5 rotate-45 border-t border-l" style="background: var(--card); border-color: var(--card-b);"></div>
@@ -1241,8 +1249,16 @@ function openHistoryModal(idx) {
                         <span class="text-lg">🚀</span>
                         <span class="text-[10px] font-black uppercase tracking-widest" style="color: var(--text); opacity: 0.4;">Mission</span>
                     </div>
-                    <span class="text-xs font-black text-blue-500">${missS > 0 ? missS + ' ⭐' : '-'}</span>
+                    <span class="text-xs font-black text-blue-500">${missionS > 0 ? missionS + ' ⭐' : '-'}</span>
                 </div>
+                ${bonusS > 0 ? `
+                <div class="px-4 py-3 rounded-xl border flex items-center justify-between col-span-2" style="background: rgba(249,192,19,0.08); border-color: rgba(249,192,19,0.3)">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">✨</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-k-yellow">Bonus</span>
+                    </div>
+                    <span class="text-xs font-black text-amber-500">${bonusS} ⭐</span>
+                </div>` : ''}
             </div>
 
 

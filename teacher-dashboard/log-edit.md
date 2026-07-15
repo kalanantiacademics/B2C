@@ -27,6 +27,34 @@
 - `teacher-dashboard/class-detail.html`
 - `teacher-dashboard/log-edit.md`
 
+## 15 Juli 2026 - Total teacher lebih besar dan bonus tidak tampil di rincian
+
+### Masalah
+
+- `starsVal` dari backend teacher sudah merupakan jumlah seluruh baris pada sel bintang, termasuk Must Do, Should Do, Aspire, Quiz, dan Bonus.
+- Riwayat teacher menghitung total dengan `starsVal + quizStars`, sehingga bintang Quiz terhitung dua kali. Contoh data asli 12 bintang tampil sebagai 14 di teacher karena Quiz 2 ditambahkan kembali.
+- Dashboard anak dan total pada Absensi menampilkan 12 karena keduanya tidak melakukan penambahan Quiz kedua tersebut.
+- Tooltip **Score Breakdown** hanya mengenali Must Do, Should Do, Aspire, dan Quiz; baris `N Star - Bonus` belum diparsing atau ditampilkan.
+- Kotak Mission memakai seluruh `starsVal`, sehingga dapat ikut mencampurkan Quiz dan Bonus ke angka Mission.
+
+### Cara perbaikan
+
+- Menjadikan `starsVal` sebagai total akhir sesi tanpa menambahkan `quizStars` lagi.
+- Menambahkan parser khusus untuk format `N Star - Bonus`.
+- Menghitung Mission hanya dari Must Do + Should Do + Aspire. Untuk data format lama yang belum memiliki rincian, Mission menggunakan total dikurangi Quiz dan Bonus.
+- Menampilkan Bonus sebagai baris tersendiri pada tooltip Score Breakdown dan kartu rincian sesi.
+
+### Hasil
+
+- Untuk Must Do 5, Should Do 3, Quiz 2, dan Bonus 2, teacher sekarang menampilkan total 12—sama dengan dashboard anak dan Absensi.
+- Score Breakdown menampilkan keempat komponen tersebut dan jumlah rinciannya sama dengan badge total.
+- Quiz dan Bonus tidak lagi tercampur ke angka Mission.
+
+### File yang diubah
+
+- `teacher-dashboard/class-detail.html`
+- `teacher-dashboard/log-edit.md`
+
 ## 15 Juli 2026 - Bonus menimpa nilai utama dan tidak bisa diedit
 
 ### Masalah

@@ -548,7 +548,7 @@
             
             classes.forEach(c => {
                 const programName = cleanDisplayValue(c.programName, 'Program belum tersedia');
-                const branchName = cleanDisplayValue(c.branchName, 'Cabang belum tersedia');
+                const branchName = cleanDisplayValue(c.room || c.branchName, 'Lokasi belum tersedia');
                 const classLink = cleanDisplayValue(c.classLink, '');
                 const progUpper = programName.toUpperCase();
                 const isPostponed = String(c.classStatus || '').trim().toLowerCase() === 'postponed';
@@ -566,6 +566,7 @@
                 const safeTime = cleanDisplayValue(c.time, '');
                 const displayTime = safeTime ? (safeTime + (safeTime.toLowerCase().includes('wib') ? '' : ' WIB')) : 'Jam belum tersedia';
                 const displayDay = cleanDisplayValue(c.day, 'Hari belum tersedia');
+                const scheduleFromAbsensi = c.scheduleSource === 'Absensi';
                 const detailUrl = classLink
                     ? `class-detail.html?code=${encodeURIComponent(c.classCode)}&link=${encodeURIComponent(classLink)}&prog=${encodeURIComponent(programName)}`
                     : '';
@@ -604,6 +605,7 @@
                             </span>
                             ${displayDay}, ${displayTime}
                         </p>
+                        ${scheduleFromAbsensi ? `<p class="mt-2 text-[9px] font-black uppercase tracking-widest text-emerald-400/70">Jadwal dari tab Absensi</p>` : ''}
                     </div>
                     
                     <div class="relative z-10 shrink-0 mt-2 xl:mt-0 xl:mr-2 flex flex-col gap-3 items-stretch xl:items-end w-full xl:w-auto">

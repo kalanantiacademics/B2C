@@ -24,6 +24,39 @@ function cleanClassDatabaseValue(value) {
   return text;
 }
 
+function getClassDetailsFromAbsensi(classLink) {
+  const details = { day: "", startTime: "", endTime: "", room: "" };
+  if (!classLink) return details;
+
+  try {
+    const idMatch = String(classLink).match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const ss = idMatch ? SpreadsheetApp.openById(idMatch[1]) : SpreadsheetApp.openByUrl(classLink);
+    const sheet = ss.getSheetByName("Absensi");
+    if (!sheet) return details;
+
+    const rowCount = Math.min(Math.max(sheet.getLastRow(), 13), 30);
+    const colCount = Math.min(Math.max(sheet.getLastColumn(), 2), 6);
+    const displayData = sheet.getRange(1, 1, rowCount, colCount).getDisplayValues();
+
+    for (let r = 0; r < displayData.length; r++) {
+      for (let c = 0; c < displayData[r].length - 1; c++) {
+        const label = String(displayData[r][c] || "").trim().toLowerCase().replace(/:$/, "");
+        const value = cleanClassDatabaseValue(displayData[r][c + 1]);
+        if (!value) continue;
+
+        if (label === "hari") details.day = value;
+        else if (label === "jam mulai") details.startTime = value;
+        else if (label === "jam selesai") details.endTime = value;
+        else if (label === "ruangan" || label === "room") details.room = value;
+      }
+    }
+  } catch (err) {
+    console.error("getClassDetailsFromAbsensi error: " + err.toString());
+  }
+
+  return details;
+}
+
 function getAbsensiMapping(absData) {
   let mapping = {
     dataRowStart: FALLBACK_ABS_DATA_ROW,
@@ -176,14 +209,24 @@ function handleLogin(email) {
 
       if (rowEmail === searchEmail && classCode.startsWith("SCL") && canTeacherAccess) {
         if (!teacherNameRaw) teacherNameRaw = String(row[7]).trim();
+        const classLink = cleanClassDatabaseValue(row[9]);
+        const absensiDetails = getClassDetailsFromAbsensi(classLink);
+        const fallbackDay = cleanClassDatabaseValue(row[17]);
+        const fallbackTime = cleanClassDatabaseValue(row[20]);
+        const absensiTime = absensiDetails.startTime && absensiDetails.endTime
+          ? absensiDetails.startTime + " - " + absensiDetails.endTime
+          : (absensiDetails.startTime || absensiDetails.endTime);
+
         classes.push({
           classCode:   classCode,
           classStatus: classStatus,
           branchName:  cleanClassDatabaseValue(row[0]),
           programName: cleanClassDatabaseValue(row[3]),
-          classLink:   cleanClassDatabaseValue(row[9]),
-          day:         cleanClassDatabaseValue(row[17]),
-          time:        cleanClassDatabaseValue(row[20])
+          classLink:   classLink,
+          room:        absensiDetails.room,
+          day:         absensiDetails.day || fallbackDay,
+          time:        absensiTime || fallbackTime,
+          scheduleSource: (absensiDetails.day || absensiTime) ? "Absensi" : "Class Database"
         });
       }
     }

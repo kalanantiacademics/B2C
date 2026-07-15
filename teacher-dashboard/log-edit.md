@@ -1,5 +1,40 @@
 # Log Perbaikan Teacher Dashboard
 
+## 15 Juli 2026 - Jadwal kartu kelas mengambil sumber dari tab Absensi
+
+### Masalah
+
+- Hari dan jam pada kartu teacher dashboard sebelumnya dibaca dari kolom R dan U di Class Database.
+- Kolom tersebut dapat berasal dari formula dan menghasilkan `#REF!`, sedangkan jadwal operasional kelas yang benar sudah tersedia di tab `Absensi` pada masing-masing spreadsheet kelas.
+- Tab Absensi menyimpan field **Hari**, **Jam Mulai**, dan **Jam Selesai** di area informasi atas sheet.
+
+### Cara perbaikan
+
+- Setelah kelas Active/Postponed cocok dengan email guru, backend membuka spreadsheet kelas melalui `classLink` dan membaca tab `Absensi`.
+- Label Hari, Jam Mulai, Jam Selesai, serta Ruangan dicari secara dinamis pada 30 baris dan 6 kolom pertama agar tidak bergantung pada alamat sel tetap.
+- Nilai dibaca melalui `getDisplayValues()` agar format jam yang tampil di spreadsheet tetap dipertahankan.
+- Jam Mulai dan Jam Selesai digabung menjadi rentang, misalnya `07:30 - 08:00 WIB`.
+- Class Database hanya menjadi fallback apabila jadwal pada tab Absensi belum diisi atau spreadsheet tidak dapat dibaca.
+- Kartu menampilkan penanda kecil **Jadwal dari tab Absensi** ketika sumber tersebut berhasil digunakan.
+- Jika field Ruangan tersedia, lokasinya diprioritaskan; jika kosong, kartu tetap menggunakan nama cabang dari Class Database.
+
+### Hasil
+
+- Kartu teacher dashboard menggunakan jadwal operasional dari tab Absensi sebagai sumber utama.
+- Formula `#REF!` pada Class Database tidak lagi mengalahkan Hari/Jam yang valid di Absensi.
+- Kelas dengan Absensi belum lengkap tetap dapat tampil menggunakan fallback yang tersedia.
+
+### File yang diubah
+
+- `teacher-dashboard/code-teacher.gs`
+- `teacher-dashboard/dashboard.html`
+- `teacher-dashboard/log-edit.md`
+
+### Deployment
+
+- Wajib membuat versi baru pada deployment Apps Script teacher karena sumber jadwal dibaca oleh backend.
+- Setelah GitHub Pages selesai build, lakukan hard refresh dan login ulang agar cache `teacherClasses` diperbarui.
+
 ## 15 Juli 2026 - Detail dan tombol kelas hilang pada lebar layar tertentu
 
 ### Masalah

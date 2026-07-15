@@ -10,6 +10,9 @@
         const shortSide = Math.min(screen.width || innerWidth, screen.height || innerHeight);
         const coarsePhoneScreen = matchMedia('(pointer: coarse)').matches && shortSide <= PHONE_MAX_SHORT_SIDE;
 
+        // Device emulation and iPadOS do not always expose a recognizable tablet UA.
+        // The short side remains >= 600 CSS px on supported tablets, including landscape.
+        if (shortSide > PHONE_MAX_SHORT_SIDE) return false;
         if (tabletUA || iPadDesktopUA) return false;
         return uaDataMobile || phoneUA || coarsePhoneScreen;
     }

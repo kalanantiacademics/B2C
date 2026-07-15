@@ -1092,6 +1092,49 @@
     });
 
     // Star Modal Functions
+    function escapeStarDetail(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatStarDetail(rawStars, fallbackStars) {
+        const lines = String(rawStars || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        if (lines.length === 0) return `${fallbackStars} Bintang`;
+
+        return `<div class="mt-1 space-y-1.5">${lines.map(line => {
+            const match = line.match(/^(\d+)\s*(?:Star|Bintang)\s*-\s*(.+)$/i);
+            if (!match) return `<div class="text-xs text-white/70">${escapeStarDetail(line)}</div>`;
+
+            const value = parseInt(match[1], 10) || 0;
+            const category = match[2].trim();
+            const normalized = category.toLowerCase();
+            let icon = '⭐';
+            let label = category;
+            let colorClass = 'text-blue-300';
+
+            if (normalized.includes('must')) {
+                icon = '🎯'; label = 'Must Do';
+            } else if (normalized.includes('should')) {
+                icon = '✨'; label = 'Should Do'; colorClass = 'text-indigo-300';
+            } else if (normalized.includes('aspire')) {
+                icon = '🌟'; label = 'Aspire To'; colorClass = 'text-purple-300';
+            } else if (normalized.includes('quiz')) {
+                icon = '📝'; label = 'Quiz'; colorClass = 'text-emerald-300';
+            } else if (normalized.includes('bonus')) {
+                icon = '🎁'; label = 'Bonus'; colorClass = 'text-k-yellow';
+            }
+
+            return `<div class="flex items-center justify-between gap-4 text-xs font-bold">
+                <span class="text-white/75">${icon} ${escapeStarDetail(label)}</span>
+                <span class="${colorClass} font-black">${value} ⭐</span>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
     function openStarModal() {
         const modal = document.getElementById('star-modal');
         const modalBox = document.getElementById('star-modal-box');
@@ -1115,7 +1158,7 @@
                     let starCountHtml;
                     
                     if (s.stars > 0) {
-                        detailTxt = s.rawStars ? s.rawStars.replace(/\n/g, '<br>') : `${s.stars} Bintang`;
+                        detailTxt = formatStarDetail(s.rawStars, s.stars);
                         starCountHtml = `<div class="font-black text-xl text-k-yellow shrink-0 ml-3">+${s.stars}</div>`;
                     } else {
                         // Kondisi jika misi sudah 100% tapi guru belum kasih bintang

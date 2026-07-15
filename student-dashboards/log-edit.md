@@ -2,6 +2,36 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-15 — Bonus tampil pada popup Detail Bintang
+
+### Masalah
+
+- Popup **Detail Bintangmu** hanya mencetak isi `rawStars` sebagai teks multiline biasa.
+- Baris `N Star - Bonus` dari teacher backend tidak memiliki tampilan kategori tersendiri, sehingga bonus sulit dibedakan dari Must Do, Should Do, Aspire, dan Quiz.
+
+### Perbaikan
+
+- Menambahkan formatter rincian bintang yang membaca setiap baris dengan format `N Star - Kategori`.
+- Menampilkan Must Do, Should Do, Aspire To, Quiz, dan Bonus sebagai baris terpisah dengan ikon, label, warna, dan jumlah masing-masing.
+- Bonus ditampilkan dengan label `🎁 Bonus` dan warna emas.
+- Menambahkan escaping HTML sebelum data sheet dimasukkan ke popup agar teks tidak dapat berubah menjadi markup HTML.
+- Total di sisi kanan kartu sesi tetap menggunakan `s.stars` dari backend sehingga tidak dihitung ulang di browser.
+
+### Hasil
+
+- Jika data sesi berisi `2 Star - Bonus`, popup Detail Bintangmu menampilkan baris Bonus 2 ⭐ secara jelas.
+- Jumlah total sesi tetap konsisten dengan teacher dashboard dan Absensi.
+
+### File yang diubah
+
+- `student-dashboards/dashboard.html`
+- `student-dashboards/log-edit.md`
+
+### Deployment
+
+- Perubahan hanya pada frontend student dashboard; tidak memerlukan deployment ulang Apps Script.
+- Setelah GitHub Pages selesai build, lakukan hard refresh.
+
 ## 2026-07-15 — Detail bintang kosong dan Sesi 2 tetap terkunci setelah API sukses
 
 ### Masalah

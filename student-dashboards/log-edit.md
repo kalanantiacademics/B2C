@@ -2,6 +2,33 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-15 — Tombol Quiz setelah Should Do dan Aspire To dikumpulkan
+
+### Masalah
+
+- Setelah Must Do dikumpulkan, tombol Quiz tersedia.
+- Setelah Should Do atau Aspire To dikumpulkan, tombol Quiz justru disembunyikan karena kode membatasi akses visual hanya untuk phase Must Do.
+- Siswa yang tidak ingin melanjutkan semua tugas tambahan kesulitan menemukan jalan menuju Quiz.
+
+### File yang diubah
+
+#### `materials.html`
+
+- Menampilkan tombol Quiz setelah submission berhasil pada Must Do, Should Do, dan Aspire To selama Quiz sesi belum selesai.
+- Alur Should Do sekarang memberi dua pilihan: lanjut ke Aspire To atau langsung Quiz.
+- Setelah Aspire To terkirim, siswa dapat langsung menuju Quiz.
+- Pengamanan `attemptGoToQuiz()` tetap dipertahankan, sehingga tombol tidak dapat melewati kewajiban menyelesaikan atau mengumpulkan Must Do.
+- Modal preview submission ketiga phase juga menampilkan tombol Quiz jika Must Do telah selesai dan Quiz belum dikerjakan.
+
+#### `knowledge-st-dbr.md`
+
+- Memperbarui dokumentasi alur tombol dan aturan akses Quiz setelah submission setiap phase.
+
+### Deployment
+
+- Perubahan hanya pada HTML dan dokumentasi; tidak memerlukan deployment ulang Apps Script.
+- Setelah push, tunggu GitHub Pages selesai build lalu lakukan hard refresh.
+
 ## 2026-07-15 — Tombol kembali dari materi ke dashboard
 
 ### Masalah

@@ -1065,7 +1065,9 @@
                     const quizBtn = `<button onclick="attemptGoToQuiz()" class="w-full bg-k-green/10 border border-k-green/30 text-k-green font-black py-4 rounded-xl text-[10px] hover:bg-k-green/20 uppercase tracking-widest transition-all text-center flex items-center justify-center gap-2">Quiz ✉️</button>`;
                     
                     const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
-                    const showQuizAccess = currentPhase === 'must-do' && !quizDone; // Quiz only for Must Do
+                    // Setelah phase mana pun dikumpulkan, siswa boleh memilih Quiz.
+                    // attemptGoToQuiz() tetap memastikan Must Do sudah selesai.
+                    const showQuizAccess = !quizDone;
                     
                     const actionGrid = showQuizAccess ? `<div class="grid grid-cols-2 gap-3">${viewBtn}${quizBtn}</div>` : viewBtn;
 
@@ -1484,9 +1486,12 @@
 
                 // Quiz access check
                 const quizBox = document.getElementById('preview-quiz-box');
-                const mustDone = (checkedTasks['must-do'] || []).length === (taskContent['must-do']?.tasks?.length || 0) && (taskContent['must-do']?.tasks?.length > 0);
+                const mustTaskCount = taskContent['must-do']?.tasks?.length || 0;
+                const mustCheckedDone = (checkedTasks['must-do'] || []).length === mustTaskCount && mustTaskCount > 0;
+                const mustSubmitted = localStorage.getItem(`${SUBMISSION_KEY}_must-do`) === 'true' ||
+                    String(savedSession.link || '').toUpperCase().includes('MUST DO');
                 const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
-                if (phase === 'must-do' && mustDone && !quizDone) {
+                if ((mustCheckedDone || mustSubmitted) && !quizDone) {
                     quizBox.classList.remove('hidden');
                 } else {
                     quizBox.classList.add('hidden');

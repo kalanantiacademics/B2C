@@ -307,8 +307,9 @@
     if (userNameSpan) userNameSpan.textContent = studentNameLoc;
 
     // Progress strip
-    const currentSession=parseInt(localStorage.getItem('currentSession')||'1',10);
+    let currentSession=parseInt(localStorage.getItem('currentSession')||'1',10);
     function updateProgressUI(totalLessons) {
+        currentSession=parseInt(localStorage.getItem('currentSession')||'1',10);
         const progPct = Math.max(8, Math.round((currentSession - 1) / totalLessons * 100));
         const bar = document.getElementById('top-prog-bar');
         const text = document.getElementById('top-prog-text');
@@ -488,6 +489,49 @@
         modal.classList.add('active');
     }
 
+    function getSessionStatus(sessionNum){
+        let savedProgress=[];
+        try{
+            savedProgress=JSON.parse(localStorage.getItem('sessionProgress')||'[]');
+        }catch(e){
+            savedProgress=[];
+        }
+        const data=Array.isArray(savedProgress)
+            ? savedProgress.find(item=>parseInt(String(item.session).replace(/[^0-9]/g,''),10)===sessionNum)
+            : null;
+        const progress=parseInt(String(data?.progress||'0').replace('%',''),10)||0;
+        const quizDone=data?.quizDone===true ||
+            (String(data?.quizScore||'').trim()!=='' && String(data?.quizScore||'').trim()!=='-');
+        const graded=data?.graded===true;
+        return{progress,quizDone,graded};
+    }
+
+    function getLockedMessage(requiredSession){
+        const status=getSessionStatus(requiredSession);
+        if(status.progress<95){
+            return{
+                title:'SELESAIKAN MISINYA DULU! 🚀',
+                message:`Yuk, selesaikan dulu materi dan Must Do di Sesi ${requiredSession}. Setelah semua misi utamanya selesai, kamu bisa lanjut ke Quiz!`
+            };
+        }
+        if(!status.quizDone){
+            return{
+                title:'QUIZ-NYA BELUM SELESAI! 🧠',
+                message:`Must Do Sesi ${requiredSession} sudah selesai. Sekarang, yuk kerjakan dulu Quiz di sesi tersebut agar perjalananmu bisa lanjut!`
+            };
+        }
+        if(!status.graded){
+            return{
+                title:'MENUNGGU NILAI KAKAK MT! ⭐',
+                message:`Hebat, Must Do dan Quiz Sesi ${requiredSession} sudah selesai! Coba minta Kakak MT memberikan nilai pada project-mu sebelum sesi berikutnya terbuka.`
+            };
+        }
+        return{
+            title:'SEDANG MEMPERBARUI MISI! 🛰️',
+            message:'Semua tugasmu sudah lengkap. Sistem sedang mengambil status terbaru dari Kakak MT. Tunggu sebentar, ya!'
+        };
+    }
+
     function goToLesson(n){
         const curSess = parseInt(localStorage.getItem('currentSession')||'1',10);
         const isAdm=localStorage.getItem('isAdmin')==='true';
@@ -495,17 +539,98 @@
         let isAllowed = (n <= curSess) || isAdm;
         
         if(!isAllowed){
-            showStatusPopup('warning', 'MASIH KE-GEMBOK! 🔒', 'Ayo selesaikan misi di sesi sebelumnya dulu bersama pengajar untuk membuka materi ini! Semangat ya! 🚀');
+            const locked=getLockedMessage(curSess);
+            showStatusPopup('warning',locked.title,locked.message);
             return;
         }
         localStorage.setItem('activeLesson',n);
         window.location.href='materials.html';
     }
 
+    const classCode=localStorage.getItem('classCode')||localStorage.getItem('className')||'';
+    const syncStorageKey=`kalanantiSyncVersion_${classCode}`;
+    let currentSyncVersion=Number(localStorage.getItem(syncStorageKey)||0);
+    let syncCheckInFlight=false;
+    let progressSyncInFlight=false;
+    let syncPollingTimer=null;
+
+    async function syncStudentProgress(){
+        if(progressSyncInFlight||!classCode||!studentNameLoc) return false;
+        progressSyncInFlight=true;
+        try{
+            const url=`${STUDENT_API_URL}?action=getStudentProgress&code=${encodeURIComponent(classCode)}&name=${encodeURIComponent(studentNameLoc)}`;
+            const res=await fetch(url);
+            if(!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data=await res.json();
+            if(!data.success) throw new Error(data.message||'Progress siswa tidak ditemukan');
+
+            const oldSession=parseInt(localStorage.getItem('currentSession')||'1',10);
+            const oldProgress=localStorage.getItem('sessionProgress')||'[]';
+            const nextSession=Math.max(1,parseInt(data.currentSession||'1',10)||1);
+            const nextProgress=JSON.stringify(Array.isArray(data.sessionProgress)?data.sessionProgress:[]);
+
+            localStorage.setItem('currentSession',String(nextSession));
+            localStorage.setItem('sessionProgress',nextProgress);
+            if(typeof data.totalStars!=='undefined') localStorage.setItem('totalStars',String(data.totalStars));
+            if(typeof data.attendanceSession!=='undefined') localStorage.setItem('attendanceSession',String(data.attendanceSession));
+
+            const changed=oldSession!==nextSession||oldProgress!==nextProgress;
+            if(changed){
+                currentSession=nextSession;
+                updateProgressUI(MAX_LESSONS);
+                if(Array.isArray(lessonCache)) renderPath(lessonCache);
+                if(nextSession>oldSession){
+                    showStatusPopup('success','SESI BARU TERBUKA! 🚀',`Nilai dari Kakak MT sudah diterima. Sesi ${nextSession} sekarang sudah bisa kamu buka!`);
+                }
+            }
+            return changed;
+        }catch(err){
+            console.warn('[Sessions] Gagal mengambil progress terbaru:',err);
+            return false;
+        }finally{
+            progressSyncInFlight=false;
+        }
+    }
+
+    async function checkForProgressUpdate(forceInitial=false){
+        if(syncCheckInFlight||!classCode) return;
+        syncCheckInFlight=true;
+        try{
+            const res=await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(classCode)}`);
+            if(!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data=await res.json();
+            if(!data.success) throw new Error(data.message||'Versi sinkronisasi tidak tersedia');
+
+            const nextVersion=Number(data.syncVersion||0);
+            const shouldRefresh=forceInitial||currentSyncVersion===0||nextVersion>currentSyncVersion;
+            currentSyncVersion=nextVersion;
+            localStorage.setItem(syncStorageKey,String(nextVersion));
+            if(shouldRefresh) await syncStudentProgress();
+        }catch(err){
+            console.warn('[Sessions] Gagal memeriksa pembaruan:',err);
+        }finally{
+            syncCheckInFlight=false;
+        }
+    }
+
+    function startSyncPolling(){
+        if(syncPollingTimer||!classCode||localStorage.getItem('isAdmin')==='true') return;
+        syncPollingTimer=setInterval(()=>{
+            if(document.visibilityState==='visible') checkForProgressUpdate();
+        },30000);
+    }
+
     let resizeTimer;
     window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{syncShellHeight();if(Array.isArray(lessonCache))renderPath(lessonCache);},200);});
+    window.addEventListener('focus',()=>checkForProgressUpdate());
+    window.addEventListener('pageshow',()=>checkForProgressUpdate());
+    document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible') checkForProgressUpdate();
+    });
 
     loadSessions();
+    checkForProgressUpdate(currentSyncVersion===0);
+    startSyncPolling();
     </script>
 </body>
 </html>

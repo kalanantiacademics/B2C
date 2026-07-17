@@ -42,7 +42,7 @@ Spreadsheet kelas:
 Guru mengisi absensi, menilai project,
 memberikan bonus, observasi, dan playlist
         ↓
-Progress!Z1 berubah
+Absensi!AQ1 berubah
         ↓
 Student dashboard dan teacher dashboard
 mengambil data terbaru
@@ -389,7 +389,7 @@ Backend:
 3. Mencari kolom sesi yang akan ditandai.
 4. Menulis tanggal.
 5. Memberi format `d MMM yyyy`.
-6. Memperbarui `Progress!Z1`.
+6. Memperbarui `Absensi!AQ1`.
 
 Hanya siswa dengan toggle `hadir` yang dikirim ke `saveAbsensi`.
 
@@ -659,7 +659,7 @@ Backend kemudian:
 5. Menulis tanggal penilaian.
 6. Menghitung ulang total bintang.
 7. Menulis observasi untuk sesi tertentu.
-8. Memperbarui `Progress!Z1`.
+8. Memperbarui `Absensi!AQ1`.
 
 Format bintang:
 
@@ -886,10 +886,10 @@ Urutan utamanya berdasarkan:
 Teacher dan student dashboard menggunakan mekanisme:
 
 ```text
-Progress!Z1
+Absensi!AQ1
 ```
 
-Setiap perubahan penting menulis timestamp baru ke `Z1`.
+Setiap perubahan penting menulis timestamp baru ke `AQ1`.
 
 Teacher dashboard mengecek `Z1` setiap 60 detik. Student dashboard juga menggunakan pola serupa.
 
@@ -972,7 +972,7 @@ Temuan utama tanpa aku ubah:
 - Pesan “History Materi tersimpan” tidak sesuai implementasi aktual.
 - Checkbox final project sesi 12 dikirim tetapi tidak disimpan backend.
 - Bonus bintang berisiko menghapus rincian bintang sebelumnya.
-- `markBolos` tidak memperbarui `Progress!Z1`.
+- `markBolos` tidak memperbarui `Absensi!AQ1`.
 - Kolom rencana sesi ditemukan oleh mapping, tetapi tidak digunakan dalam alur sekarang.
 > **Fungsi dokumen:** menjelaskan arsitektur, komponen utama, dan perilaku Teacher Dashboard.
 >

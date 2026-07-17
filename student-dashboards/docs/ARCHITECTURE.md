@@ -358,14 +358,14 @@ Semua angka tersebut dijumlahkan menjadi `totalStars`.
 Kode menggunakan:
 
 ```text
-Progress!Z1
+Absensi!AQ1
 ```
 
 Nilainya berupa timestamp.
 
-Dashboard mengecek `Z1` setiap 60 detik. Bila nilainya berubah, dashboard mengambil ulang data progress siswa.
+Dashboard utama mengecek `AQ1` setiap 60 detik. Peta sesi mengeceknya setiap 30 detik selama tab terlihat, serta ketika halaman atau tab kembali aktif. Bila nilainya berubah, dashboard mengambil ulang data progress siswa.
 
-Jadi ketika guru atau student action mengubah data dan `Z1` ikut diperbarui, tampilan siswa bisa refresh otomatis tanpa reload manual.
+Jadi ketika guru atau student action mengubah data dan `AQ1` ikut diperbarui, tampilan siswa bisa refresh otomatis tanpa reload manual.
 
 ---
 
@@ -632,7 +632,7 @@ X Star - Quiz
 ```
 
 pada baris bintang.
-8. Memperbarui `Progress!Z1`.
+8. Memperbarui `Absensi!AQ1`.
 
 Quiz juga mengirim `action: updateProgress` kedua kalinya, tetapi sebenarnya `saveQuiz` sendiri sudah menulis progress menjadi `100%`.
 
@@ -649,7 +649,7 @@ Dari sudut pandang student dashboard:
   - Nilai/bintang pada tab `Progress`
   - Absensi pada tab `Absensi`
   - Approval atau grading project
-- Jika teacher dashboard memperbarui `Progress!Z1`, student dashboard mendeteksi perubahan maksimal sekitar 60 detik kemudian.
+- Jika teacher dashboard memperbarui `Absensi!AQ1`, peta sesi siswa mendeteksi perubahan maksimal sekitar 30 detik selama tab terlihat.
 
 Materi dan quiz bukan berasal dari upload guru ke spreadsheet kelas, tetapi dari spreadsheet curriculum pusat pada tab `B2C_RobloxStudio_INS` atau `B2C_Scratch_INS`.
 
@@ -1296,7 +1296,7 @@ Ketika ditekan:
 4. Nilai dikirim ke backend.
 5. Progress sesi ditulis `100%`.
 6. Bintang quiz dihitung.
-7. `Progress!Z1` diperbarui.
+7. `Absensi!AQ1` diperbarui.
 
 Rumus bintang:
 
@@ -1494,10 +1494,10 @@ Setelah guru menyimpan penilaian:
 Progress = 100%
 Star row diperbarui
 Total stars diperbarui
-Progress!Z1 diperbarui
+Absensi!AQ1 diperbarui
 ```
 
-Student dashboard mengecek perubahan sekitar setiap 60 detik.
+Dashboard utama mengecek perubahan sekitar setiap 60 detik. Peta sesi mengecek setiap 30 detik selama tab terlihat dan langsung mengecek lagi ketika tab kembali aktif.
 
 # 19. Urutan tombol versi sederhana
 

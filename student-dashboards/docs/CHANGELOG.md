@@ -8,6 +8,34 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-17 — Auto-sync pembukaan sesi dan pesan terkunci per kondisi
+
+### Masalah
+
+- Peta sesi hanya membaca `currentSession` dari `localStorage`, sehingga nilai baru dari teacher tidak langsung membuka sesi berikutnya.
+- Siswa perlu refresh berulang kali dan semua kondisi terkunci menampilkan pesan umum yang sama.
+
+### Perubahan
+
+- Menambahkan pemeriksaan `Absensi!AQ1` setiap 30 detik selama tab peta sesi terlihat.
+- Menjalankan pemeriksaan ulang saat halaman dibuka, tab kembali aktif, atau browser kembali fokus.
+- Memanggil `getStudentProgress` hanya ketika versi sinkronisasi berubah, lalu memperbarui `sessionProgress`, `currentSession`, Orbit, dan node peta tanpa reload.
+- Menampilkan notifikasi saat nilai teacher diterima dan sesi berikutnya berhasil terbuka.
+- Membedakan pesan untuk Must Do belum selesai, Quiz belum selesai, menunggu nilai Kakak MT, dan kondisi data lengkap yang sedang disinkronkan.
+- Menyelaraskan dokumentasi penanda sinkronisasi dari lokasi lama `Progress!Z1` ke lokasi aktif `Absensi!AQ1`.
+
+### Verifikasi
+
+- Empat skenario pesan terkunci diuji melalui browser dan seluruhnya menampilkan pesan yang sesuai.
+- Simulasi perubahan sync flag berhasil mengubah `currentSession` dari 1 ke 2, memperbarui Orbit, mengaktifkan node Sesi 2, dan menampilkan notifikasi tanpa reload.
+- JavaScript inline berhasil diparse dan seluruh target lokal `href`/`src` tersedia.
+
+### Deployment
+
+- Commit `851a2ea` dipush ke `b2c/main`.
+- GitHub Pages build dan deployment berhasil; halaman produksi terverifikasi memuat auto-sync serta pesan baru.
+- Tidak memerlukan deployment ulang Apps Script karena endpoint dan logika backend tidak diubah.
+
 ## 2026-07-16 — Refactor struktur tanpa mengubah logika produksi
 
 ### Tujuan

@@ -6,6 +6,24 @@
 
 # Changelog Teacher Dashboard
 
+## 17 Juli 2026 — Penyelarasan dokumentasi sinkronisasi pembukaan sesi
+
+### Masalah
+
+- Dokumentasi arsitektur teacher masih menyebut `Progress!Z1`, padahal backend teacher dan student aktif menggunakan `Absensi!AQ1`.
+- Ketidaksesuaian tersebut membuat diagnosis keterlambatan pembukaan sesi siswa menjadi membingungkan.
+
+### Perubahan
+
+- Mengganti seluruh referensi aktif `Progress!Z1` menjadi `Absensi!AQ1` pada dokumentasi arsitektur teacher.
+- Memastikan dokumentasi menjelaskan bahwa approval project dan perubahan penting memperbarui sync flag yang dibaca dashboard siswa.
+- Perubahan teacher hanya menyentuh dokumentasi; mekanisme penyimpanan nilai dan endpoint Apps Script tidak diubah.
+
+### Verifikasi dan deployment
+
+- Referensi dokumentasi aktif telah diperiksa dan konsisten dengan `apps-script/code-teacher.gs`.
+- Dokumentasi diterbitkan bersama perbaikan auto-sync Student Dashboard melalui GitHub Pages.
+
 ## 16 Juli 2026 — Refactor struktur tanpa mengubah logika produksi
 
 ### Tujuan

@@ -444,7 +444,7 @@
                         <!-- Fix Mission Option -->
                         <div class="mt-6 pt-6 border-t border-card-b">
                             <p class="text-[9px] font-black uppercase tracking-widest text-muted mb-3 italic">Salah kirim atau ingin revisi?</p>
-                            <button id="preview-update-btn" class="w-full py-3 rounded-xl border border-dashed border-muted/30 text-muted hover:text-white hover:border-white/50 text-[9px] font-black uppercase tracking-widest transition-all">Perbaiki Misi 🛸</button>
+                            <button id="preview-update-btn" class="w-full py-3 rounded-xl border border-dashed border-muted/30 text-muted hover:text-white hover:border-white/50 text-[9px] font-black uppercase tracking-widest transition-all">Upload Ulang / Ganti Project 🔄</button>
                         </div>
                     </div>
                     
@@ -1064,8 +1064,25 @@
                 const isReadyToSubmit = currentPhase === 'aspire-do' ? (checkedCount > 0) : (checkedCount === totalTasks && totalTasks > 0);
 
                 let nextBtnHTML = '';
+                let backBtnHTML = '';
+                if (currentPhase === 'should-do') {
+                    backBtnHTML = `
+                        <button onclick="setPhase('must-do')" class="w-full mb-3 py-3.5 rounded-xl border border-k-blue/30 bg-k-blue/5 text-k-blue font-black text-[10px] hover:bg-k-blue/10 uppercase tracking-widest transition-all">
+                            ← Kembali ke Must Do
+                        </button>`;
+                } else if (currentPhase === 'aspire-do') {
+                    backBtnHTML = `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <button onclick="setPhase('must-do')" class="py-3.5 rounded-xl border border-k-blue/30 bg-k-blue/5 text-k-blue font-black text-[10px] hover:bg-k-blue/10 uppercase tracking-widest transition-all">
+                                ← Lihat Must Do
+                            </button>
+                            <button onclick="setPhase('should-do')" class="py-3.5 rounded-xl border border-k-yellow/30 bg-k-yellow/5 text-k-yellow font-black text-[10px] hover:bg-k-yellow/10 uppercase tracking-widest transition-all">
+                                ← Kembali ke Should Do
+                            </button>
+                        </div>`;
+                }
                 if (isSubmitted) {
-                    const viewBtn = `<button onclick="openPreviewModal('${currentPhase}')" class="w-full bg-white/5 border border-white/10 text-[var(--text)] font-black py-4 rounded-xl text-[10px] hover:bg-white/10 uppercase tracking-widest transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] text-center flex items-center justify-center gap-2">Tugas 👀</button>`;
+                    const viewBtn = `<button onclick="openPreviewModal('${currentPhase}')" class="w-full bg-white/5 border border-white/10 text-[var(--text)] font-black py-4 rounded-xl text-[10px] hover:bg-white/10 uppercase tracking-widest transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] text-center flex items-center justify-center gap-2">Lihat / Upload Ulang Tugas 🔄</button>`;
                     const quizBtn = `<button onclick="attemptGoToQuiz()" class="w-full bg-k-green/10 border border-k-green/30 text-k-green font-black py-4 rounded-xl text-[10px] hover:bg-k-green/20 uppercase tracking-widest transition-all text-center flex items-center justify-center gap-2">Quiz ✉️</button>`;
                     
                     const quizDone = localStorage.getItem(`quiz_${activeLesson}`) === 'true';
@@ -1099,7 +1116,7 @@
                     </button>`;
                 }
 
-                footer.innerHTML = `<div class="w-full">${nextBtnHTML}</div>`;
+                footer.innerHTML = `<div class="w-full">${backBtnHTML}${nextBtnHTML}</div>`;
             }
         }
 
@@ -1291,6 +1308,15 @@
                         localStorage.setItem('sessionProgress', JSON.stringify(data.sessionProgress));
                         // Re-render if in a phase that might need links
                         if (currentPhase !== 'learning') render();
+                    }
+                    if (data.currentSession) {
+                        localStorage.setItem('currentSession', String(data.currentSession));
+                    }
+                    if (typeof data.totalStars !== 'undefined') {
+                        localStorage.setItem('totalStars', String(data.totalStars));
+                    }
+                    if (typeof data.attendanceSession !== 'undefined') {
+                        localStorage.setItem('attendanceSession', String(data.attendanceSession));
                     }
                     if (isSilent) showSyncToast();
                 }

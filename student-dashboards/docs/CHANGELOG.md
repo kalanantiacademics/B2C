@@ -8,6 +8,33 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-17 — Navigasi phase, upload ulang, dan sync saat LMS aktif
+
+### Masalah
+
+- Dari Should Do atau Aspire, siswa tidak melihat tombol untuk kembali memeriksa Must Do.
+- Kemampuan mengganti project yang salah upload tersembunyi di balik label umum `Tugas` dan `Perbaiki Misi`.
+- Saat perubahan sesi diterima ketika siswa masih memakai halaman LMS, `sessionProgress` diperbarui tetapi `currentSession` browser belum ikut diperbarui.
+
+### Perubahan
+
+- Menambahkan tombol **Kembali ke Must Do** pada Should Do.
+- Menambahkan tombol **Lihat Must Do** dan **Kembali ke Should Do** pada Aspire.
+- Mengganti label aksi submission menjadi **Lihat / Upload Ulang Tugas**.
+- Memperjelas tombol pada preview menjadi **Upload Ulang / Ganti Project**.
+- Saat `getStudentProgress` menerima perubahan, halaman LMS sekarang ikut menyimpan `currentSession`, `totalStars`, dan `attendanceSession` terbaru tanpa memindahkan siswa dari sesi yang sedang dikerjakan.
+
+### Verifikasi
+
+- Browser memastikan seluruh tombol kembali tampil dan Should Do dapat kembali ke Must Do.
+- Browser memastikan aksi upload ulang tampil dari submission dan membuka pilihan ganti project.
+- Simulasi respons progress baru berhasil memperbarui `currentSession` dari 1 menjadi 2 selama halaman LMS tetap aktif.
+
+### Deployment
+
+- Perubahan frontend diterbitkan melalui `b2c/main` dan GitHub Pages.
+- Tidak memerlukan deployment ulang Apps Script.
+
 ## 2026-07-17 — Auto-sync pembukaan sesi dan pesan terkunci per kondisi
 
 ### Masalah

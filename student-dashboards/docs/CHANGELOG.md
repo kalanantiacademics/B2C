@@ -8,6 +8,32 @@
 
 File ini menjadi catatan berkelanjutan untuk setiap perubahan pada `B2C/student-dashboards`. Setiap pekerjaan berikutnya harus menambahkan tanggal, masalah, file yang diubah, rincian implementasi, verifikasi, serta langkah deployment bila ada.
 
+## 2026-07-17 — Cache offline aman dan sinkronisasi 30 detik
+
+### Masalah
+
+- Dashboard mereset `currentSession`, progress, dan bintang ke nilai awal ketika request gagal, termasuk saat internet siswa hanya terputus sementara.
+- Dashboard dan Materials menunggu hingga 60 detik untuk mendeteksi penilaian baru.
+
+### Perubahan
+
+- Kegagalan jaringan sekarang mempertahankan seluruh progress terakhir di `localStorage` dan menampilkan pesan mode offline.
+- Cache hanya direset jika server secara eksplisit mengonfirmasi siswa atau kelas tidak ditemukan.
+- Interval pemeriksaan sync flag Dashboard dan Materials dipercepat dari 60 menjadi 30 detik.
+- Menambahkan pemeriksaan langsung saat tab kembali aktif, browser kembali fokus, atau internet tersambung kembali.
+- Request progress lengkap tetap hanya dijalankan ketika `Absensi!AQ1` berubah.
+
+### Verifikasi
+
+- Simulasi jaringan gagal mempertahankan `currentSession=5`, `activeLesson=4`, attendance, progress, dan total bintang.
+- Simulasi respons **Siswa tidak ditemukan** mereset cache ke Sesi 1 sesuai aturan keamanan identitas.
+- Dashboard dan Materials terverifikasi memakai interval 30 detik tanpa polling 60 detik yang tersisa.
+
+### Deployment
+
+- Perubahan frontend diterbitkan melalui `b2c/main` dan GitHub Pages.
+- Tidak memerlukan deployment ulang Apps Script.
+
 ## 2026-07-17 — Navigasi phase, upload ulang, dan sync saat LMS aktif
 
 ### Masalah

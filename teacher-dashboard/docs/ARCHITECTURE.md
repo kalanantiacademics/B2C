@@ -891,7 +891,7 @@ Absensi!AQ1
 
 Setiap perubahan penting menulis timestamp baru ke `AQ1`.
 
-Teacher dashboard mengecek `Z1` setiap 60 detik. Student dashboard juga menggunakan pola serupa.
+Teacher dashboard mengecek `AQ1` setiap 60 detik. Student Dashboard, Materials, dan Peta Sesi mengeceknya setiap 30 detik selama tab terlihat.
 
 Aksi yang memperbarui sync flag:
 

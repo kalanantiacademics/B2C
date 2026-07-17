@@ -573,6 +573,7 @@
         let activeLesson = parseInt(localStorage.getItem('activeLesson') || '1');
         let currentSyncVersion = 0;
         let isPolling = false;
+        let syncCheckInFlight = false;
         const classCode = localStorage.getItem('classCode') || ''; 
         const THEME_KEY = 'kalanantiTheme';
 
@@ -1334,21 +1335,35 @@
             } catch (e) {}
         }
 
+        async function checkForSyncUpdate(forceRefresh = false) {
+            if (syncCheckInFlight || document.visibilityState === 'hidden') return;
+            syncCheckInFlight = true;
+            try {
+                const classCode = localStorage.getItem('classCode');
+                const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(classCode)}`);
+                const json = await res.json();
+                if (json.success && (forceRefresh || json.syncVersion > currentSyncVersion)) {
+                    currentSyncVersion = json.syncVersion;
+                    await syncStudentProgress(true);
+                }
+            } catch (e) {
+                console.warn('[Materials] Sync check tertunda:', e);
+            } finally {
+                syncCheckInFlight = false;
+            }
+        }
+
         function startSyncPolling() {
             if (isPolling) return;
             isPolling = true;
-            setInterval(async () => {
-                try {
-                    const classCode = localStorage.getItem('classCode');
-                    const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(classCode)}`);
-                    const json = await res.json();
-                    if (json.success && json.syncVersion > currentSyncVersion) {
-                        currentSyncVersion = json.syncVersion;
-                        syncStudentProgress(true);
-                    }
-                } catch (e) {}
-            }, 60000);
+            setInterval(() => checkForSyncUpdate(), 30000);
         }
+
+        window.addEventListener('focus', () => checkForSyncUpdate());
+        window.addEventListener('online', () => checkForSyncUpdate(true));
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') checkForSyncUpdate();
+        });
 
         function showSyncToast() {
             let toast = document.getElementById('sync-toast');

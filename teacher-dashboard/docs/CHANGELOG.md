@@ -6,6 +6,14 @@
 
 # Changelog Teacher Dashboard
 
+## 17 Juli 2026 — Dokumentasi polling student dipercepat
+
+### Perubahan
+
+- Menyelaraskan dokumentasi teacher bahwa sync flag aktif berada di `Absensi!AQ1`.
+- Mencatat bahwa Student Dashboard, Materials, dan Peta Sesi sekarang mengecek perubahan setiap 30 detik selama tab terlihat.
+- Polling teacher tetap 60 detik; logika penilaian dan Apps Script teacher tidak diubah.
+
 ## 17 Juli 2026 — Penyelarasan dokumentasi sinkronisasi pembukaan sesi
 
 ### Masalah

@@ -363,7 +363,7 @@ Absensi!AQ1
 
 Nilainya berupa timestamp.
 
-Dashboard utama mengecek `AQ1` setiap 60 detik. Peta sesi mengeceknya setiap 30 detik selama tab terlihat, serta ketika halaman atau tab kembali aktif. Bila nilainya berubah, dashboard mengambil ulang data progress siswa.
+Dashboard utama, Materials, dan Peta Sesi mengecek `AQ1` setiap 30 detik selama tab terlihat, serta ketika halaman atau tab kembali aktif. Bila internet kembali tersambung, pengecekan juga langsung dijalankan. Data progress lengkap hanya diambil ulang ketika versi sinkronisasi berubah.
 
 Jadi ketika guru atau student action mengubah data dan `AQ1` ikut diperbarui, tampilan siswa bisa refresh otomatis tanpa reload manual.
 
@@ -1497,7 +1497,7 @@ Total stars diperbarui
 Absensi!AQ1 diperbarui
 ```
 
-Dashboard utama mengecek perubahan sekitar setiap 60 detik. Peta sesi mengecek setiap 30 detik selama tab terlihat dan langsung mengecek lagi ketika tab kembali aktif.
+Dashboard utama, Materials, dan Peta Sesi mengecek perubahan setiap 30 detik selama tab terlihat dan langsung mengecek lagi ketika tab kembali aktif atau internet tersambung kembali.
 
 # 19. Urutan tombol versi sederhana
 

@@ -748,6 +748,7 @@
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
     let currentSyncVersion = 0;
     let isPolling = false;
+    let syncCheckInFlight = false;
 
     document.addEventListener('DOMContentLoaded', () => {
         loadStudentData();
@@ -755,6 +756,14 @@
         document.getElementById('nav-user-name').textContent = studentName;
         document.getElementById('hero-user-name').textContent = studentName;
         document.getElementById('class-display').textContent = isAdmin ? 'ADMIN' : className;
+    });
+    window.addEventListener('focus', () => checkForSyncUpdate());
+    window.addEventListener('online', () => {
+        showConnectionToast('Internet kembali tersambung. Menyinkronkan data...', false);
+        checkForSyncUpdate(true);
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkForSyncUpdate();
     });
 
     function logout() {
@@ -803,6 +812,22 @@
     updateCourseUI();
 
     // ── Dashboard init ───────────────────────────────────────────────────────
+    function resetLocalProgress() {
+        localStorage.setItem('currentSession', '1');
+        localStorage.setItem('attendanceSession', '1');
+        localStorage.setItem('activeLesson', '1');
+        localStorage.setItem('sessionProgress', '[]');
+        localStorage.setItem('totalStars', '0');
+    }
+
+    function isConfirmedIdentityMiss(message) {
+        const text = String(message || '').toLowerCase();
+        return text.includes('siswa tidak ditemukan') ||
+            text.includes('student not found') ||
+            text.includes('class info not found') ||
+            text.includes('kelas tidak ditemukan');
+    }
+
     async function loadStudentData(isSilent = false) {
         const loader = document.getElementById('mission-loader');
         if (loader && !isSilent) loader.classList.remove('loaded');
@@ -877,28 +902,22 @@
             } else {
                 const errMsg = (data && data.message) ? data.message : JSON.stringify(data);
                 console.warn('[Dashboard] Gagal getStudentProgress:', errMsg);
-                // Fail closed: jika identitas/progress server tidak ditemukan,
-                // jangan gunakan sesi milik login lama dari localStorage.
-                if (!isAdmin) {
-                    localStorage.setItem('currentSession', '1');
-                    localStorage.setItem('attendanceSession', '1');
-                    localStorage.setItem('activeLesson', '1');
-                    localStorage.setItem('sessionProgress', '[]');
-                    localStorage.setItem('totalStars', '0');
+                // Reset hanya ketika server benar-benar memastikan identitas
+                // siswa/kelas tidak ditemukan. Error sementara tetap memakai cache.
+                if (!isAdmin && isConfirmedIdentityMiss(errMsg)) {
+                    resetLocalProgress();
+                } else {
+                    showConnectionToast('Data terbaru belum bisa diambil. Progress terakhir tetap aman.', true);
                 }
                 initDashboard();
                 if (!isSilent) fetchSyncVersion();
             }
         } catch (err) {
             console.error('[Dashboard] Error fetching student data:', err);
-            if (!isAdmin) {
-                localStorage.setItem('currentSession', '1');
-                localStorage.setItem('attendanceSession', '1');
-                localStorage.setItem('activeLesson', '1');
-                localStorage.setItem('sessionProgress', '[]');
-                localStorage.setItem('totalStars', '0');
-            }
-            if (!isSilent) initDashboard(); // Fallback aman: hanya Sesi 1
+            // Koneksi gagal tidak boleh menghapus progress lokal. Gunakan cache
+            // terakhir sampai server dapat dijangkau kembali.
+            showConnectionToast('Mode offline: menggunakan progress terakhir yang tersimpan.', true);
+            if (!isSilent) initDashboard();
         } finally {
             if (!isSilent) {
                 setTimeout(() => {
@@ -916,19 +935,27 @@
         } catch (e) {}
     }
 
+    async function checkForSyncUpdate(forceRefresh = false) {
+        if (syncCheckInFlight || isAdmin || document.visibilityState === 'hidden') return;
+        syncCheckInFlight = true;
+        try {
+            const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(className)}`);
+            const json = await res.json();
+            if (json.success && (forceRefresh || json.syncVersion > currentSyncVersion)) {
+                currentSyncVersion = json.syncVersion;
+                await loadStudentData(true);
+            }
+        } catch (e) {
+            console.warn('[Dashboard] Sync check tertunda:', e);
+        } finally {
+            syncCheckInFlight = false;
+        }
+    }
+
     function startSyncPolling() {
         if (isPolling) return;
         isPolling = true;
-        setInterval(async () => {
-            try {
-                const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(className)}`);
-                const json = await res.json();
-                if (json.success && json.syncVersion > currentSyncVersion) {
-                    currentSyncVersion = json.syncVersion;
-                    loadStudentData(true);
-                }
-            } catch (e) {}
-        }, 60000);
+        setInterval(() => checkForSyncUpdate(), 30000);
     }
 
     function showSyncToast() {
@@ -942,6 +969,21 @@
         }
         setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
         setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 4000);
+    }
+
+    function showConnectionToast(message, isWarning) {
+        let toast = document.getElementById('connection-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'connection-toast';
+            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all duration-500 opacity-0 translate-y-10';
+            document.body.appendChild(toast);
+        }
+        toast.classList.toggle('bg-amber-600', isWarning);
+        toast.classList.toggle('bg-k-green', !isWarning);
+        toast.textContent = message;
+        setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
+        setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 5000);
     }
 
     async function initDashboard() {

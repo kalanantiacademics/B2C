@@ -27,5 +27,17 @@ student-centered/book-editor-slides/server.log
 !teacher-dashboard/
 !teacher-dashboard/**
 
+# Keep the active placement test implementation and its local visual assets.
+!placement-test/
+placement-test/*
+!placement-test/*.html
+!placement-test/*.js
+!placement-test/*.mjs
+!placement-test/*.py
+!placement-test/*.gs
+!placement-test/*.json
+!placement-test/*.md
+!placement-test/assets/
+!placement-test/assets/**
 
 knowledge-scl.md

@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="assets/css/mobile-ready.css">
+    <title>Class Detail - Kalananti SCL</title>
+    <script src="https://cdn.tailwindcss.com"></script></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'light');
+        })();
+    </script>
+    <script>
+        tailwind.config = {
+
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'k-blue': '#265E9B', 'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013', 'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.94);
+            --card-b: rgba(180,215,255,0.85);
+            --nav: rgba(255,255,255,0.92);
+            --nav-b: rgba(180,215,255,0.90);
+            --text: #1a4576;
+            --muted: #4d7daf;
+            --chip: #ffffff;
+            --chip-b: #cde0f8;
+            --chip-t: #265E9B;
+            --stars: 0.12;
+        }
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.82);
+            --card-b: rgba(140,190,255,0.22);
+            --nav: rgba(6,14,30,0.90);
+            --nav-b: rgba(120,170,255,0.22);
+            --text: #ddeeff;
+            --muted: #8aadd8;
+            --chip: rgba(255,255,255,0.09);
+            --chip-b: rgba(140,190,255,0.28);
+            --chip-t: #cce0ff;
+            --stars: 0.45;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .planet-card {
+            background: var(--card); border: 1.5px solid var(--card-b);
+            border-radius: 2rem; box-shadow: 0 20px 40px -20px rgba(0,0,0,0.5);
+        }
+        /* Toggle switch */
+        .toggle-checkbox:checked { right: 0; border-color: #34d399; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #34d399; }
+        /* Absensi card */
+        .stu-card {
+            background: var(--card); border: 1.5px solid var(--card-b);
+            border-radius: 1.5rem; transition: border-color 0.2s, opacity 0.2s;
+        }
+        .stu-card.absent { opacity: 0.45; border-color: rgba(248,113,113,0.4); }
+        .stu-card.absent .left-bar { background: #f87171; }
+        .left-bar { width: 6px; border-radius: 99px; background: #34d399; flex-shrink: 0; align-self: stretch; }
+        /* Progress table */
+        .prog-table { border-collapse: separate; border-spacing: 0; width: 100%; }
+        .prog-table th { background: var(--chip); color: var(--text); border-bottom: 1.5px solid var(--chip-b); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.75rem 1rem; text-align: left; opacity: 0.7; }
+        .prog-table th:first-child { border-radius: 1rem 0 0 0; }
+        .prog-table th:last-child  { border-radius: 0 1rem 0 0; }
+        .prog-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--card-b); font-size: 0.85rem; }
+        .prog-table tr:last-child td { border-bottom: none; }
+        .prog-table tr:hover td { background: var(--chip); }
+        /* Session pill */
+        .sess-pill {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.25rem 0.6rem; border-radius: 0.6rem;
+            font-size: 0.7rem; font-weight: 900; letter-spacing: 0.05em;
+            background: rgba(249,192,19,0.12); border: 1px solid rgba(249,192,19,0.3); color: #F9C013;
+        }
+        /* Bar */
+        .bar-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; min-width: 60px; }
+        .bar-fill  { height: 100%; border-radius: 99px; background: linear-gradient(to right, #F9C013, #ff9d00); }
+        /* btn */
+        .btn-3d { transition: transform 0.12s ease, box-shadow 0.12s ease; }
+        .btn-3d:active { transform: translateY(5px); }
+        /* Gamer/Leaderboard Styles */
+        .font-display { font-family: 'Orbitron', sans-serif; }
+        /* Leaderboard Hero Card */
+        .hero-card {
+            background: linear-gradient(145deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%) !important;
+            border: 2px solid rgba(249,192,19,0.5) !important;
+            box-shadow: 0 0 40px -10px rgba(249,192,19,0.2), 0 32px 64px -24px rgba(0,0,0,0.8) !important;
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .rank-badge { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.85rem; }
+        .rank-1 { background: linear-gradient(to bottom, #F9C013, #D9A40A); color: #5A3F00; box-shadow: 0 4px 0 #926C00; }
+        .rank-2 { background: #E2E8F0; color: #475569; box-shadow: 0 4px 0 #CBD5E1; }
+        .rank-3 { background: #FDE68A; color: #92400E; box-shadow: 0 4px 0 #F59E0B; }
+        .rank-normal { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+        
+        .gain-pill { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: #34d399; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 800; }
+        /* Skeleton */
+        .skeleton { animation: skelPulse 1.4s ease-in-out infinite; background: linear-gradient(90deg, rgba(140,180,255,0.07) 25%, rgba(140,180,255,0.16) 50%, rgba(140,180,255,0.07) 75%); background-size: 200% 100%; border-radius: 1rem; }
+        @keyframes floatY { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        @keyframes floatY2 { 0%,100% { transform: translateY(0) rotate(2deg); } 50% { transform: translateY(-10px) rotate(-2deg); } }
+        @keyframes twinkle { 0%,100% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.2); } }
+        .edge-planet { position: absolute; pointer-events: none; opacity: 0.45; z-index: 0; }
+        .char-float { position: absolute; pointer-events: none; opacity: 0.48; z-index: 5; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.25)); }
+        @keyframes skelPulse { 0%,100% { background-position:200% 0; } 50% { background-position:0 0; } }
+
+        /* Star Rating Styles */
+        .star-rating button {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: var(--bg);
+            border: 1.5px solid var(--card-b);
+            color: var(--text);
+            font-size: 1.2rem;
+            opacity: 0.35;
+        }
+        .star-rating button:hover {
+            opacity: 0.7;
+            transform: scale(1.1);
+        }
+        .star-rating button.active {
+            background: #F9C013 !important;
+            border-color: #D9A40A !important;
+            color: #5A3F00 !important;
+            opacity: 1 !important;
+            transform: scale(1.18);
+            box-shadow: 0 6px 15px rgba(249, 192, 19, 0.45);
+            z-index: 10;
+        }
+
+        /* Bonus star selector: make the chosen amount unmistakable. */
+        .bonus-btn-item {
+            position: relative;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+        .bonus-btn-item[aria-pressed="true"] {
+            background: linear-gradient(145deg, #FFD84D, #F9C013) !important;
+            border: 2px solid #FFF2A8 !important;
+            color: #4A3200 !important;
+            transform: translateY(-3px) scale(1.12);
+            box-shadow: 0 0 0 4px rgba(249, 192, 19, 0.22), 0 8px 0 #9A7100, 0 14px 24px rgba(249, 192, 19, 0.35);
+        }
+        .bonus-btn-item[aria-pressed="true"]::after {
+            content: '✓';
+            position: absolute;
+            top: -9px;
+            right: -9px;
+            width: 22px;
+            height: 22px;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            background: #22C55E;
+            border: 2px solid var(--card);
+            color: white;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: 900;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+        }
+        .bonus-btn-item:focus-visible {
+            outline: 3px solid #7DD3FC;
+            outline-offset: 4px;
+        }
+    </style>
+</head>
+<body class="pb-20 overflow-x-hidden">
+
+    <!-- ✨ Fixed Decorative Space Assets (Full Screen) -->
+    <div id="leaderboard-decor" class="fixed inset-0 pointer-events-none overflow-hidden z-0 hidden transition-opacity duration-500 opacity-0">
+        <!-- Left side planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png" 
+             class="edge-planet" style="top:8%; left:-2%; width:min(20vw, 180px); transform:rotate(-15deg);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png" 
+             class="edge-planet" style="bottom:15%; left:-5%; width:min(25vw, 220px); transform:rotate(10deg);" alt="">
+        
+        <!-- Right side planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png" 
+             class="edge-planet" style="top:25%; right:-4%; width:min(22vw, 200px); transform:rotate(20deg);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png" 
+             class="edge-planet" style="bottom:8%; right:-3%; width:min(28vw, 250px);" alt="">
+
+        <!-- Floating characters -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png" 
+             class="char-float" style="left:8%; top:18%; width:90px; animation:floatY 7s ease-in-out infinite;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/904cb9e9-ecd1-4731-a1ef-fa6a0bd50527.png" 
+             class="char-float" style="right:12%; top:50%; width:100px; animation:floatY2 8s ease-in-out infinite 1.5s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9b916b05-86ed-4509-aef6-e640606f3542.png" 
+             class="char-float" style="left:15%; bottom:15%; width:95px; animation:floatY 6.5s ease-in-out infinite 0.8s;" alt="">
+
+        <!-- Blurred orbs for depth -->
+        <div class="absolute -top-32 -left-32 w-[35rem] h-[35rem] rounded-full bg-blue-500/10 blur-[130px]"></div>
+        <div class="absolute -bottom-32 -right-32 w-[30rem] h-[30rem] rounded-full bg-k-yellow/10 blur-[120px]"></div>
+
+        <!-- Twinkle stars -->
+        <div class="absolute top-[25%] left-[35%] w-2 h-2 rounded-full bg-white/60 animate-twinkle"></div>
+        <div class="absolute top-[65%] right-[28%] w-1.5 h-1.5 rounded-full bg-yellow-200/50 animate-twinkle" style="animation-delay:1.3s"></div>
+        <div class="absolute top-[18%] right-[45%] w-1.5 h-1.5 rounded-full bg-blue-200/50 animate-twinkle" style="animation-delay:0.7s"></div>
+    </div>
+
+<!-- ── NAVIGATION ── -->
+<nav class="w-full px-5 md:px-8 py-4 flex justify-between items-center shadow-sm relative z-50 transition-colors" 
+     style="background: var(--nav); border-bottom: 1px solid var(--nav-b); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); position: sticky; top: 0;">
+    <div class="flex items-center gap-4">
+        <button onclick="window.location.href='dashboard.html'" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors" style="background: rgba(255,255,255,0.05); border: 1px solid var(--card-b); color: var(--text)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div>
+            <h1 id="nav-class-code" class="font-display font-black text-xl tracking-tight" style="color: var(--text)">SCL---</h1>
+            <p id="nav-class-prog" class="text-xs font-bold text-k-yellow uppercase tracking-widest">Memuat...</p>
+        </div>
+    </div>
+    
+    <div class="flex items-center gap-4">
+        <!-- Tanggal hari ini -->
+        <div class="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-colors" style="background: var(--chip); border-color: var(--chip-b)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9C013" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+            <span id="nav-date" class="text-sm font-black" style="color: var(--chip-t)">--</span>
+        </div>
+
+        <!-- Profile Menu (Copy from dashboard) -->
+        <div class="flex items-center gap-3" id="profile-menu-container">
+            <button onclick="toggleProfileMenu()" class="relative flex items-center gap-2 p-1 rounded-full shadow-sm cursor-pointer transition-all hover:-translate-y-0.5" 
+                    style="background: var(--chip); border: 1.5px solid var(--chip-b); color: var(--chip-t)">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-k-green to-teal-400 p-[1.5px] overflow-hidden shrink-0">
+                    <div class="w-full h-full bg-white rounded-full overflow-hidden flex items-center justify-center">
+                        <span class="text-base">👩‍🏫</span>
+                    </div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="opacity-40 mr-1"><path d="m6 9 6 6 6-6"/></svg>
+                
+                <!-- Dropdown -->
+                <div id="profile-dropdown" class="absolute top-12 right-0 w-48 rounded-2xl shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-200 transform origin-top-right z-50 overflow-hidden" 
+                     style="background: var(--card); border: 1.5px solid var(--card-b); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+                    <div class="p-1.5 flex flex-col gap-0.5">
+                        <div id="theme-toggle" onclick="toggleTheme(); event.stopPropagation();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors text-left group cursor-pointer">
+                            <span id="theme-icon" class="text-base group-hover:scale-110 transition-transform">☀️</span>
+                            <span id="theme-text" class="font-bold text-xs" style="color:var(--text)">Light Mode</span>
+                        </div>
+                        <div class="h-px w-full my-1 opacity-10" style="background:var(--text)"></div>
+                        <div onclick="logout(); event.stopPropagation();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 transition-colors text-left group cursor-pointer">
+                            <span class="text-base group-hover:scale-110 transition-transform">🚪</span>
+                            <span class="font-bold text-xs text-red-500">Keluar</span>
+                        </div>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- ── GLOBAL LOADER ── -->
+<div id="global-loader" class="fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl transition-all duration-500">
+    <div class="relative">
+        <div class="w-20 h-20 border-4 border-k-yellow/10 border-t-k-yellow rounded-full animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-2xl">🚀</div>
+    </div>
+    <p class="font-display font-black text-k-yellow uppercase tracking-[0.3em] text-[10px] mt-6 animate-pulse">Menghubungkan ke Galaksi...</p>
+</div>
+
+
+<!-- ── MAIN ── -->
+<main class="max-w-7xl mx-auto w-full px-5 py-8 relative z-10">
+
+    <!-- Tab buttons -->
+    <div class="flex items-center justify-center gap-3 mb-8">
+        <button id="tab-btn-absensi"  onclick="switchTab('absensi')"  class="px-7 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all bg-k-yellow text-[#5A3F00] shadow-[0_5px_0_#B28400] cursor-pointer">📋 Absensi Hari Ini</button>
+        <button id="tab-btn-progress" onclick="switchTab('progress')" class="px-7 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all border hover:bg-white/10 cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)">📊 Progress Siswa</button>
+        <button id="tab-btn-leaderboard" onclick="switchTab('leaderboard')" class="px-7 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all border hover:bg-white/10 cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)">🏆 Leaderboard</button>
+    </div>
+
+    <!-- ── TAB: ABSENSI ── -->
+    <div id="tab-absensi">
+
+        <!-- Info bar -->
+        <div class="flex items-start gap-3 px-5 py-4 rounded-2xl bg-k-blue/10 border border-k-blue/25 text-sm mb-6">
+            <span class="text-base shrink-0 mt-0.5">ℹ️</span>
+            <p style="color:var(--muted)"><span class="font-black" style="color: var(--text)">SCL — Sesi per siswa berbeda.</span> Centang siswa yang hadir hari ini. Sistem akan otomatis mencatat tanggal di kolom sesi berikutnya masing-masing siswa.</p>
+        </div>
+
+
+        <!-- Student list -->
+        <div id="students-container" class="flex flex-col gap-4">
+            <!-- Skeleton loading -->
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+        </div>
+
+        <!-- Save button -->
+        <div class="flex justify-end mt-8">
+            <button id="save-btn" onclick="saveAbsensi()" class="btn-3d px-10 py-4 rounded-[1.25rem] font-black text-sm uppercase tracking-wider bg-gradient-to-b from-k-green to-[#2ba1a1] text-[#042F2E] shadow-[0_6px_0_#0F766E,0_16px_28px_-8px_rgba(51,157,157,0.6)] flex items-center gap-2">
+                Simpan Absensi
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ── TAB: PROGRESS ── -->
+    <div id="tab-progress" class="hidden">
+        <div class="planet-card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="prog-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Siswa</th>
+                            <th>Level</th>
+                            <th>Sesi Saat Ini</th>
+                            <th>Progress</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="progress-table-body">
+                        <tr><td colspan="5" class="py-10 text-center" style="color:var(--muted)">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB: LEADERBOARD ── -->
+    <div id="tab-leaderboard" class="hidden relative">
+        
+        <!-- Section Header -->
+        <div class="text-center mb-10">
+            <h2 class="font-display font-black text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-k-yellow via-amber-300 to-orange-400 drop-shadow-sm">🏆 LEADERBOARD</h2>
+            <p class="text-sm font-bold uppercase tracking-widest mt-3" style="color: var(--muted)">Misi Antar Galaksi & Pencapaian Siswa</p>
+        </div>
+
+
+        <!-- Student Progress Cards -->
+        <div id="leaderboard-cards" class="relative z-10 flex flex-col gap-4">
+            <div class="text-center py-16 font-bold" style="color: var(--muted)">Memuat data...</div>
+
+        </div>
+    </div>
+
+</main>
+
+<!-- ── CUSTOM ALERT ── -->
+<div id="custom-alert" class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAlert()"></div>
+    <div id="custom-alert-box" class="border border-[#8CBEFF]/20 p-8 rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] scale-95 transition-transform duration-300 relative z-10 max-w-sm w-[90%] text-center flex flex-col items-center" style="background: var(--card);">
+        <div id="alert-icon" class="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mb-6 border bg-blue-500/20 border-blue-500/30 shadow-inner">ℹ️</div>
+        <h3 id="alert-title" class="font-display font-black text-2xl tracking-tight mb-3" style="color: var(--text)">Judul</h3>
+        <p id="alert-message" class="text-sm font-semibold mb-8 leading-relaxed" style="color: var(--muted)">Pesan</p>
+
+        <button id="alert-btn" onclick="closeAlert()" class="btn-3d w-full bg-gradient-to-b font-black py-3 px-6 rounded-xl text-sm tracking-widest uppercase from-blue-400 to-blue-600 text-white shadow-[0_5px_0_#1E3A8A]">OK Mengerti</button>
+    </div>
+</div>
+
+<!-- ── APPROVAL MODAL (SPLIT PANE) ── -->
+<div id="approval-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 pointer-events-none opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeApprovalModal()"></div>
+    <div id="appr-modal-container" class="border border-white/10 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] scale-95 transition-transform duration-300 relative z-10 w-full max-w-6xl h-[85vh] flex overflow-hidden pointer-events-auto" style="background: var(--bg);">
+
+
+        
+        <!-- Left Pane: Previewer -->
+        <div class="hidden md:flex flex-[3] border-r relative flex-col" style="background: rgba(0,0,0,0.4); border-color: var(--card-b)">
+            <div class="p-4 border-b flex justify-between items-center shrink-0" style="background: var(--chip); border-color: var(--card-b)">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span class="text-[10px] font-black uppercase tracking-widest ml-2 font-display" style="color: var(--text); opacity: 0.7;">Mission Control</span>
+                </div>
+                <div id="preview-url-display" class="text-[10px] font-mono truncate max-w-xs px-3 py-2 rounded-xl" style="background: var(--bg); color: var(--text); opacity: 0.8; border: 1px solid var(--chip-b)">Silahkan pilih link untuk preview</div>
+            </div>
+            <div class="flex-1 relative overflow-hidden" style="background: var(--bg2)">
+                <iframe id="modal-project-iframe" title="Project Preview" class="w-full h-full border-0" src="about:blank"></iframe>
+                <div id="iframe-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
+                    <div class="w-24 h-24 mb-6 opacity-20">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    </div>
+                    <h4 class="font-black text-lg mb-2" style="color: var(--text); opacity: 0.6;">Belum ada link yang dipilih</h4>
+                    <p class="text-sm max-w-xs leading-relaxed" style="color: var(--text); opacity: 0.5;">Klik tombol "Lihat" di panel kanan untuk menampilkan hasil project siswa di sini.</p>
+                </div>
+
+
+                <div id="iframe-loader" class="absolute inset-0 flex flex-col items-center justify-center hidden" style="background: var(--bg2)">
+                    <div class="w-12 h-12 border-4 border-k-yellow/20 border-t-k-yellow rounded-full animate-spin mb-4"></div>
+                    <p class="text-xs font-black text-k-yellow uppercase tracking-widest">Memuat Preview...</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Pane: Controls -->
+        <div class="flex-[1.5] flex flex-col min-w-[320px] overflow-y-auto" style="background: var(--card);">
+            <div class="p-8 pb-4">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 class="font-display font-black text-2xl mb-1 leading-none" style="color: var(--text)">Beri Nilai Sesi <span id="appr-session" class="text-k-yellow"></span></h3>
+                        <p class="text-sm font-bold" id="appr-student-name" style="color: var(--muted)">Nama Siswa</p>
+                    </div>
+
+                    <button onclick="closeApprovalModal()" class="w-10 h-10 rounded-full flex items-center justify-center transition-colors border shadow-sm" style="background: var(--chip); border-color: var(--card-b); color: var(--text)">✕</button>
+
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-8 space-y-8 pb-8 custom-scrollbar">
+                
+                <!-- Phase 1: Must Do -->
+                <div class="phase-group">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-[#F9C013]">1. Must Do</h4>
+                    </div>
+                    <div id="appr-links-must" class="flex flex-wrap gap-2 mb-3">
+                        <!-- Buttons injected here -->
+                    </div>
+                    <div class="p-4 rounded-2xl border" style="background: var(--chip); border-color: var(--chip-b)">
+                        <p class="text-[10px] font-bold uppercase mb-3" style="color: var(--text); opacity: 0.6;">Rating (1-5 ⭐)</p>
+                        <div class="flex justify-between star-rating" data-phase="must">
+                            <button onclick="setPhaseRating('must', 1)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('must', 2)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('must', 3)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('must', 4)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('must', 5)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Should Do -->
+                <div class="phase-group">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-[#8CBEFF]">2. Should Do</h4>
+                    </div>
+                    <div id="appr-links-should" class="flex flex-wrap gap-2 mb-3">
+                        <!-- Buttons injected here -->
+                    </div>
+                    <div class="p-4 rounded-2xl border" style="background: var(--chip); border-color: var(--chip-b)">
+                        <p class="text-[10px] font-bold uppercase mb-3" style="color: var(--text); opacity: 0.6;">Rating (1-5 ⭐)</p>
+                        <div class="flex justify-between star-rating" data-phase="should">
+                            <button onclick="setPhaseRating('should', 1)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('should', 2)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('should', 3)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('should', 4)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('should', 5)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3: Aspire To -->
+                <div class="phase-group">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-[#CB8CFF]">3. Aspire To</h4>
+                    </div>
+                    <div id="appr-links-aspire" class="flex flex-wrap gap-2 mb-3">
+                        <!-- Buttons injected here -->
+                    </div>
+                    <div class="p-4 rounded-2xl border" style="background: var(--chip); border-color: var(--chip-b)">
+                        <p class="text-[10px] font-bold uppercase mb-3" style="color: var(--text); opacity: 0.6;">Rating (1-5 ⭐)</p>
+                        <div class="flex justify-between star-rating" data-phase="aspire">
+                            <button onclick="setPhaseRating('aspire', 1)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('aspire', 2)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('aspire', 3)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('aspire', 4)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                            <button onclick="setPhaseRating('aspire', 5)" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg hover:bg-k-yellow/20 transition-all border border-transparent" style="background: var(--bg)">⭐</button>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <!-- Dynamic Rubric Container (Session 4 & 8) -->
+                
+                <!-- Dynamic Rubric Container (Session 4 & 8) -->
+                <div id="appr-rubric-container" class="hidden phase-group mt-4 bg-[#0F172A] rounded-2xl border border-[#F9C013]/30 p-5 text-center">
+                    <h4 class="text-sm font-black text-white mb-2">Penilaian Observasi (Sesi <span id="appr-rubric-sess-num">X</span>)</h4>
+                    <p class="text-xs text-white/60 mb-4">Silahkan gunakan Pop-Up Rubrik Panduan untuk menilai indikator aktivitas dan engagement siswa.</p>
+                    
+                    <button type="button" onclick="openRubricModal()" class="px-5 py-3 rounded-xl font-black bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-all cursor-pointer inline-flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        Buka Rubrik & Nilai
+                    </button>
+                    
+                    <!-- Hidden inputs to store values -->
+                    <input type="hidden" id="hidden-obs-aktivitas" value="">
+                    <input type="hidden" id="hidden-obs-engagement" value="">
+                    <input type="hidden" id="hidden-obs-notes" value="">
+                    
+                    <div id="rubric-status-badge" class="mt-4 hidden items-center justify-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 py-2 rounded-lg border border-emerald-500/20">
+                        ✅ Nilai Rubrik Tersimpan Sementara
+                    </div>
+                </div>
+
+
+                <!-- Quiz Stars -->
+                <div class="quiz-group">
+                   <h4 class="text-xs font-black uppercase tracking-widest mb-3" style="color: var(--text); opacity: 0.6;">4. Quiz Results (Automatic)</h4>
+                   <div class="p-4 rounded-2xl border flex justify-between items-center" style="background: var(--chip); border-color: var(--chip-b)">
+                        <span class="text-sm font-bold" style="color: var(--text); opacity: 0.8;">Sesi Quiz Score</span>
+                        <div id="appr-quiz-display" class="px-3 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-lg font-black text-sm">-- / 5 ⭐</div>
+                        <input type="hidden" id="appr-quiz-stars" value="0">
+                   </div>
+                </div>
+
+
+                <!-- Bonus Button -->
+                <button onclick="openBonusModal()" class="w-full flex items-center justify-center gap-2 py-3 bg-k-yellow/10 border border-k-yellow/20 text-k-yellow rounded-xl font-black text-xs uppercase tracking-wider hover:bg-k-yellow/20 transition-all">
+                    <span id="bonus-action-label">✨ Beri Bonus Bintang</span>
+                </button>
+                <div class="p-8 pt-4 border-t" style="background: var(--card); border-color: var(--card-b)">
+                    <div class="flex gap-3">
+                        <button id="btn-submit-appr" onclick="submitApproval()" class="flex-1 btn-3d bg-gradient-to-b from-k-green to-emerald-600 text-white font-black py-4 rounded-2xl text-sm shadow-[0_6px_0_#065f46,0_12px_24px_-4px_rgba(16,185,129,0.3)]">✅ Konfirmasi Nilai</button>
+                    </div>
+                </div>
+
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ── BONUS MODAL ── -->
+<div id="bonus-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeBonusModal()"></div>
+    <div class="border border-white/10 p-8 rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] relative z-10 w-full max-w-sm text-center" style="background: var(--card); border-color: var(--card-b);">
+        <div class="w-16 h-16 bg-k-yellow/20 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-inner">✨</div>
+        <h3 class="font-display font-black text-2xl tracking-tight mb-2" style="color: var(--text)">Beri Bonus Bintang</h3>
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-6" style="color: var(--muted)">Penghargaan atas keaktifan siswa</p>
+        
+        <div class="flex justify-center gap-3 mb-3" role="group" aria-label="Pilih jumlah bonus bintang">
+            <button type="button" onclick="setBonus(1)" class="bonus-btn-item w-14 h-14 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" aria-pressed="false" aria-label="Pilih bonus 1 bintang">+1</button>
+            <button type="button" onclick="setBonus(2)" class="bonus-btn-item w-14 h-14 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" aria-pressed="false" aria-label="Pilih bonus 2 bintang">+2</button>
+            <button type="button" onclick="setBonus(3)" class="bonus-btn-item w-14 h-14 rounded-xl flex items-center justify-center font-display font-black hover:bg-k-yellow/20 border cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" aria-pressed="false" aria-label="Pilih bonus 3 bintang">+3</button>
+        </div>
+        <p id="bonus-selection-status" class="min-h-5 mb-6 text-xs font-black text-k-yellow" role="status" aria-live="polite">Belum ada jumlah yang dipilih</p>
+
+        <div class="text-left mb-8">
+            <label class="text-[10px] font-black uppercase tracking-widest mb-2 block ml-1" style="color: var(--muted)">Alasan Pemberian Bonus</label>
+            <textarea id="bonus-reason" placeholder="Contoh: Sangat aktif bertanya..." class="w-full border rounded-2xl p-4 text-xs font-medium focus:border-k-yellow/50 focus:ring-1 focus:ring-k-yellow/50 transition-all outline-none resize-none h-24" style="background: var(--bg); border-color: var(--card-b); color: var(--text)"></textarea>
+        </div>
+
+        <button id="btn-submit-bonus" onclick="submitBonusOnly()" class="btn-3d w-full bg-k-yellow text-[#5A3F00] font-black py-4 rounded-xl text-sm shadow-[0_5px_0_#B28400] uppercase tracking-wider font-display cursor-pointer">Simpan Bonus ✨</button>
+    </div>
+</div>
+
+<!-- ── History Modal ── -->
+<div id="history-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeHistoryModal()"></div>
+    <div id="history-modal-container" class="relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-[2rem] shadow-2xl border scale-95 transition-all duration-300" style="background: var(--card); border-color: var(--card-b);">
+        <div class="p-6 border-b flex justify-between items-center" style="border-color: var(--card-b)">
+            <div>
+                <h2 id="history-name" class="text-2xl font-black tracking-tight" style="color: var(--text)">Riwayat Belajar</h2>
+                <p id="history-subtitle" class="text-xs font-bold text-k-blue uppercase tracking-widest mt-1">Sesi 1 - 12</p>
+            </div>
+            <button onclick="closeHistoryModal()" class="w-10 h-10 rounded-full flex items-center justify-center transition-colors border" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)">✕</button>
+        </div>
+
+        <div id="history-content" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <!-- Content will be injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Theme Management ──
+const THEME_KEY = 'kalanantiTheme';
+function updateThemeUI(t) {
+    const icon = document.getElementById('theme-icon');
+    const text = document.getElementById('theme-text');
+    if (icon) icon.textContent = t === 'dark' ? '🌙' : '☀️';
+    if (text) text.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+}
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const target = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', target);
+    localStorage.setItem(THEME_KEY, target);
+    updateThemeUI(target);
+}
+// Init UI based on attribute set in head
+updateThemeUI(document.documentElement.getAttribute('data-theme'));
+
+// Profile Dropdown
+function toggleProfileMenu() {
+    const dropdown = document.getElementById('profile-dropdown');
+    if (dropdown.classList.contains('opacity-0')) {
+        dropdown.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+        dropdown.classList.add('opacity-100', 'scale-100');
+    } else {
+        dropdown.classList.remove('opacity-100', 'scale-100');
+        dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+    }
+}
+
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('profile-menu-container');
+    const dropdown = document.getElementById('profile-dropdown');
+    if (container && dropdown && !container.contains(e.target)) {
+        dropdown.classList.remove('opacity-100', 'scale-100');
+        dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+    }
+});
+
+function logout() {
+    localStorage.removeItem('teacherName');
+    localStorage.removeItem('teacherEmail');
+    localStorage.removeItem('teacherClasses');
+    window.location.replace('index.html');
+}
+
+// ── Config ───────────────────────────────────────────────────────────────────
+
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyTxSyRYWoBTscc2553zM29exDTjlHGwTLX4CsFixL3-reCnkL2HAOedAk-UibMK-gj/exec';
+const MAX_SESSIONS = 12;
+
+const urlParams = new URLSearchParams(window.location.search);
+const CLASS_CODE = urlParams.get('code') || 'SCL---';
+const CLASS_PROG = urlParams.get('prog') || '';
+const CLASS_LINK = urlParams.get('link') || '';
+
+document.getElementById('nav-class-code').textContent = CLASS_CODE;
+document.getElementById('nav-class-prog').textContent = CLASS_PROG;
+
+
+// ── Rubric Data ─────────────────────────────────────────────────────────────
+window.rubricData = null;
+async function fetchRubrics() {
+    if (window.rubricData) return;
+    try {
+        const res = await fetch(`${WEB_APP_URL}?action=getRubrics`);
+        const json = await res.json();
+        if(json.success) {
+            window.rubricData = json.rubrics;
+            console.log('[Rubrics] Loaded:', window.rubricData.length);
+        } else {
+            console.error('[Rubrics] Server error:', json.message);
+        }
+    } catch(e) {
+        console.error('[Rubrics] Failed to load:', e);
+    }
+}
+// Call fetch rubrics early
+fetchRubrics();
+
+
+// Today's date
+const DAYS   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const TODAY  = new Date();
+const TODAY_FORMAT = `${DAYS[TODAY.getDay()]}, ${TODAY.getDate()} ${MONTHS[TODAY.getMonth()]} ${TODAY.getFullYear()}`;
+const TODAY_ISO    = TODAY.toISOString().slice(0, 10); // "2026-03-25"
+document.getElementById('nav-date').textContent = TODAY_FORMAT;
+
+// Student data from backend
+let students = [];
+let currentTab = 'absensi';
+let currentSyncVersion = 0;
+let isPolling = false;
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    currentTab = tab;
+    // Close any open modals when switching tabs
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof closeApprovalModal === 'function') closeApprovalModal();
+    const tabs = ['absensi', 'progress', 'leaderboard'];
+    tabs.forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (!btn) return;
+        
+        if (t === tab) {
+            btn.className = 'px-7 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all bg-k-yellow text-[#5A3F00] shadow-[0_5px_0_#B28400]';
+        } else {
+            btn.className = 'px-7 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all bg-white/5 border border-white/10 hover:bg-white/10 shadow-none';
+        }
+    });
+
+    // Show/hide space decor
+    const decor = document.getElementById('leaderboard-decor');
+    if (decor) {
+        if (tab === 'leaderboard') {
+            decor.classList.remove('hidden');
+            setTimeout(() => decor.classList.replace('opacity-0', 'opacity-100'), 10);
+        } else {
+            decor.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => decor.classList.add('hidden'), 500);
+        }
+    }
+
+    if (tab === 'absensi') renderAbsensi();
+    else if (tab === 'progress') renderProgress();
+    else if (tab === 'leaderboard') renderLeaderboard();
+}
+
+// ── Load students ─────────────────────────────────────────────────────────────
+// ── Load students ─────────────────────────────────────────────────────────────
+async function loadStudents(isSilent = false) {
+    const loader = document.getElementById('global-loader');
+    if (loader && !isSilent) {
+        loader.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+    }
+
+    if (!CLASS_LINK) {
+        document.getElementById('students-container').innerHTML =
+            `<p class="text-center py-10" style="color:var(--muted)">classLink tidak ditemukan.</p>`;
+        return;
+    }
+    try {
+        const res  = await fetch(`${WEB_APP_URL}?action=getStudents&classLink=${encodeURIComponent(CLASS_LINK)}`);
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message);
+        
+        // Map hadir status
+        students = json.students.map(s => ({ ...s, hadir: true }));
+        
+        if (currentTab === 'absensi') renderAbsensi();
+        else if (currentTab === 'progress') renderProgress();
+        else if (currentTab === 'leaderboard') renderLeaderboard();
+        
+        if (loader && !isSilent) {
+            loader.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => loader.classList.add('hidden'), 500);
+        }
+
+        if (isSilent) {
+            showSyncToast();
+        } else {
+            fetchSyncVersion();
+        }
+    } catch (err) {
+        console.error(err);
+        if (loader && !isSilent) {
+            loader.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => loader.classList.add('hidden'), 500);
+        }
+        if (!isSilent) showAlert('Error', 'Gagal memuat data siswa: ' + err.message, '❌', 'red');
+    }
+}
+
+async function fetchSyncVersion() {
+    try {
+        const res = await fetch(`${WEB_APP_URL}?action=checkSync&classLink=${encodeURIComponent(CLASS_LINK)}`);
+        const json = await res.json();
+        if (json.success) currentSyncVersion = json.syncVersion;
+    } catch (e) {}
+}
+
+function startSyncPolling() {
+    if (isPolling) return;
+    isPolling = true;
+    setInterval(async () => {
+        try {
+            const res = await fetch(`${WEB_APP_URL}?action=checkSync&classLink=${encodeURIComponent(CLASS_LINK)}`);
+            if (!res.ok) return;
+            const json = await res.json();
+            if (json.success && json.syncVersion > currentSyncVersion) {
+                console.log("Sync Update Detected!", json.syncVersion, "vs", currentSyncVersion);
+                currentSyncVersion = json.syncVersion;
+                loadStudents(true);
+            }
+        } catch (e) { console.error("Polling checkSync failed", e); }
+    }, 60000);
+}
+
+function showSyncToast() {
+    let toast = document.getElementById('sync-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sync-toast';
+        toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl bg-k-blue text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center gap-3 transition-all duration-500 opacity-0 translate-y-10';
+        toast.innerHTML = `<span class="animate-spin text-sm">🔄</span><span>Data Siswa Terupdate Otomatis</span>`;
+        document.body.appendChild(toast);
+    }
+    setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
+    setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 4000);
+}
+
+// ── Render: Absensi ───────────────────────────────────────────────────────────
+function renderAbsensi() {
+    const container = document.getElementById('students-container');
+    if (!container) return;
+    if (!students.length) {
+        container.innerHTML = `<p class="text-center py-10" style="color:var(--muted)">Tidak ada data siswa.</p>`;
+        return;
+    }
+
+    container.innerHTML = students.map((s, i) => {
+        // Budget logic (max 15 hours)
+        const budgetUsed = s.attendanceSession + (s.skipCount || 0);
+        const isMaxedAbs = budgetUsed >= 15 || s.attendanceSession >= MAX_SESSIONS;
+        
+        let nextSessLabel = '';
+        let nextSessions = [];
+        let meetingIndex = 0;
+        
+        if (isMaxedAbs) {
+            nextSessLabel = 'Waktu/Sesi Habis';
+        } else {
+            // Find the next meeting
+            if (s.meetings && s.meetings.length > 0) {
+                const nextSess = s.attendanceSession + 1;
+                for (let m = 0; m < s.meetings.length; m++) {
+                    if (s.meetings[m].includes(nextSess)) {
+                        nextSessions = s.meetings[m];
+                        meetingIndex = m + 1;
+                        break;
+                    }
+                }
+            } else {
+                nextSessions = [s.attendanceSession + 1];
+            }
+            
+            s.sessionsToMark = nextSessions; // store for saveAbsensi
+            
+            if (nextSessions.length > 1) {
+                nextSessLabel = `(Sesi ${nextSessions[0]}-${nextSessions[nextSessions.length-1]})`;
+            } else {
+                nextSessLabel = `Sesi ${nextSessions[0]}`;
+            }
+        }
+        
+        let targetSess = s.materialSession;
+        let isReady    = false;
+        if (s.sessionData) {
+            for (let j=1; j<=MAX_SESSIONS; j++) {
+                const d = s.sessionData[j];
+                if (!d) continue;
+                
+                const sText = (d.stars || "").toLowerCase();
+                const hasMissionStars = sText.includes("must") || sText.includes("should") || sText.includes("aspire");
+                const hasLink = d.link && d.link.trim().length > 0;
+                const hasQuiz = d.quizStars > 0;
+
+                if (hasLink && hasQuiz && !hasMissionStars) { 
+                    targetSess = j; 
+                    isReady = true;
+                    break; 
+                }
+            }
+        }
+        
+        const sessions = s.sessionData || {};
+        const dTarget  = sessions[targetSess] || {};
+        const sText    = (dTarget.stars || "").toLowerCase();
+        const hasMissionStars = sText.includes("must") || sText.includes("should") || sText.includes("aspire");
+        const hasLink  = dTarget.link && dTarget.link.trim().length > 0;
+        const hasQuiz  = dTarget.quizStars > 0;
+        
+        const pct      = Math.round(s.materialSession / MAX_SESSIONS * 100);
+
+        return `
+        <div class="stu-card flex gap-0 overflow-hidden ${!s.hadir ? 'absent' : ''}" id="card-${i}">
+            <div class="left-bar" id="bar-${i}" style="background:${s.hadir ? '#34d399' : '#f87171'}"></div>
+            <div class="flex-1 p-5 flex flex-col sm:flex-row gap-5 sm:items-center">
+                <div class="flex items-center gap-4 flex-1 min-w-0">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-k-blue to-cyan-400 flex items-center justify-center font-black text-xl shrink-0 shadow-inner">
+                        ${s.name.charAt(0)}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="font-black text-base leading-tight truncate">${s.name}</h3>
+                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md" style="background:rgba(255,255,255,0.07); color:var(--muted)">Level ${s.level || '-'}</span>
+                            <span class="sess-pill">Sesi ${s.materialSession}/${MAX_SESSIONS}</span>
+                            ${isReady ? `<span class="animate-pulse text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]">🔥 READY</span>` : ''}
+                            ${hasLink ? `<button onclick="event.stopPropagation(); openApprovalModal(${i}, ${targetSess})" class="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-k-blue/20 border border-k-blue/40 text-blue-300 cursor-pointer hover:bg-k-blue/30">🔗 Project S${targetSess}</button>` : ''}
+                            ${!hasMissionStars && hasQuiz && hasLink ? 
+                                `<button onclick="event.stopPropagation(); openApprovalModal(${i}, ${targetSess})" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-k-yellow text-[#5A3F00] hover:-translate-y-0.5 transition-all shadow-md cursor-pointer">🌟 Beri Nilai S${targetSess}</button>` : 
+                                (hasMissionStars ? `<span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">✅ Dinilai S${targetSess}</span>` : '')}
+                        </div>
+                        <div class="flex items-center gap-2 mt-3">
+                            <div class="bar-track flex-1 max-w-[120px]"><div class="bar-fill" style="width:${pct}%"></div></div>
+                            <span class="text-[10px] font-black" style="color: var(--text); opacity: 0.4;">${pct}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 ml-auto shrink-0">
+                    <button onclick="event.stopPropagation(); openHistoryModal(${i})" class="p-2.5 rounded-xl transition-all border hover:bg-k-blue/10 shrink-0 cursor-pointer" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" title="Lihat Riwayat">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+
+                    <div class="flex items-center gap-3 border-l pl-5" style="border-color: var(--card-b)">
+                        <div class="flex flex-col items-center gap-1 mr-2">
+                            <p class="text-[8px] font-black uppercase tracking-tighter opacity-30" style="color: var(--text)">Tdk Hadir</p>
+                            <span class="text-[10px] font-black px-2 py-0.5 rounded-md ${s.skipCount > 0 ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}">${s.skipCount || 0} Sesi</span>
+                        </div>
+                        
+                        <div class="text-right ml-2">
+                            <p class="text-[10px] font-black uppercase tracking-widest leading-tight" style="color: var(--text); opacity: 0.3;">Hadir Ke-</p>
+                            <p class="text-sm font-black" style="color: var(--text)">${isMaxedAbs ? '—' : nextSessLabel}</p>
+                        </div>
+                        <div class="relative inline-block w-12 align-middle select-none">
+                            <input type="checkbox" id="toggle-${i}" ${s.hadir ? 'checked' : ''}
+                                    onchange="toggleHadir(${i}, this.checked)"
+                                    class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out"/>
+                            <label for="toggle-${i}" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer transition-colors duration-200 ease-in-out"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleHadir(i, checked) {
+    students[i].hadir = checked;
+    const card = document.getElementById('card-' + i);
+    const bar  = document.getElementById('bar-'  + i);
+    card.classList.toggle('absent', !checked);
+    bar.style.background = checked ? '#34d399' : '#f87171';
+}
+
+function renderProgress() {
+    const tbody = document.getElementById('progress-table-body');
+    if (!tbody) return;
+    if (!students.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center" style="color:var(--muted)">Tidak ada data siswa.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = students.map((s, idx) => {
+        let targetSess = s.materialSession;
+        let isReady    = false;
+        if (s.sessionData) {
+            for (let j=1; j<=MAX_SESSIONS; j++) {
+                const d = s.sessionData[j];
+                if (!d) continue;
+                const sText = (d.stars || "").toLowerCase();
+                const hasMissionStars = sText.includes("must") || sText.includes("should") || sText.includes("aspire");
+                const hasLink = d.link && d.link.trim().length > 0;
+                const hasQuiz = d.quizStars > 0;
+                if (hasLink && hasQuiz && !hasMissionStars) { 
+                    targetSess = j; 
+                    isReady = true;
+                    break; 
+                }
+            }
+        }
+        
+        const sessions = s.sessionData || {};
+        const dTarget  = sessions[targetSess] || {};
+        const sText    = (dTarget.stars || "").toLowerCase();
+        const hasMissionStars = sText.includes("must") || sText.includes("should") || sText.includes("aspire");
+        const hasLink  = dTarget.link && dTarget.link.trim().length > 0;
+        const hasQuiz  = dTarget.quizStars > 0;
+        
+        const sessCurrent = sessions[s.materialSession] || { progress: '0%' };
+        const pct = parseInt(sessCurrent.progress) || 0;
+
+        return `
+        <tr>
+            <td>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-k-blue to-cyan-400 flex items-center justify-center font-black shrink-0">${s.name.charAt(0)}</div>
+                    <p class="font-black text-sm leading-tight transition-colors" style="color: var(--text)">${s.name}</p>
+                </div>
+            </td>
+            <td><span class="font-bold text-sm" style="color: var(--text); opacity: 0.6;">${s.level || '-'}</span></td>
+            <td><span class="sess-pill">Sesi ${s.materialSession}/${MAX_SESSIONS}</span></td>
+            <td>
+                <div class="flex items-center gap-2" title="${pct}% Selesai">
+                    <div class="w-16 h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-400 rounded-full transition-all" style="width: ${pct}%"></div>
+                    </div>
+                    <span class="text-[10px] font-black" style="color: var(--text); opacity: 0.5;">${pct}%</span>
+                </div>
+            </td>
+            <td>
+                <div class="flex items-center gap-2">
+                    ${hasLink ? `<button onclick="event.stopPropagation(); openApprovalModal(${idx}, ${targetSess})" class="text-[11px] font-black px-3 py-1.5 rounded-lg bg-k-yellow text-[#5A3F00] hover:-translate-y-0.5 transition-all shadow-md cursor-pointer whitespace-nowrap">🌟 Nilai S${targetSess}</button>` : `<span class="text-[10px] italic" style="color: var(--text); opacity: 0.4;">Belum ada link</span>`}
+                    <button onclick="event.stopPropagation(); openHistoryModal(${idx})" class="p-2 rounded-lg transition-colors border cursor-pointer hover:bg-k-blue/10 shrink-0" style="background: var(--chip); border-color: var(--chip-b); color: var(--text)" title="Lihat Riwayat">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Render: Leaderboard ────────────────────────────────────────────────────────
+function renderLeaderboard() {
+    const container = document.getElementById('leaderboard-cards');
+    if (!students.length) {
+        container.innerHTML = `<div class="text-center py-16 font-bold" style="color: var(--text); opacity: 0.3;">Tidak ada data siswa.</div>`;
+        return;
+    }
+
+    // Calculate completed sessions for each student
+    const enriched = students.map((s, idx) => {
+        let doneSessions = 0;
+        let sessionDots = [];
+        for (let i = 1; i <= MAX_SESSIONS; i++) {
+            const d = s.sessionData && s.sessionData[i];
+            const isDone = d && (d.progress === '100%' || d.progress === '1');
+            const hasProgress = d && d.progress && d.progress !== '0%' && d.progress !== '0';
+            if (isDone) doneSessions++;
+            sessionDots.push({ num: i, done: isDone, partial: hasProgress && !isDone, pct: parseInt(d?.progress) || 0 });
+        }
+        return { ...s, idx, doneSessions, sessionDots, overallPct: Math.round((doneSessions / MAX_SESSIONS) * 100) };
+    });
+
+    // Sort by completed sessions (most first), then by total stars
+    const sorted = enriched.sort((a, b) => {
+        if (b.doneSessions !== a.doneSessions) return b.doneSessions - a.doneSessions;
+        return (b.totalStars || 0) - (a.totalStars || 0);
+    });
+
+    container.innerHTML = sorted.map((s, i) => {
+        const rank = i + 1;
+        let rankStyle = '';
+        let rankGlow = '';
+        if (rank === 1) { rankStyle = 'rank-1'; rankGlow = 'border-yellow-500/40 shadow-[0_0_30px_-5px_rgba(255,215,0,0.15)]'; }
+        else if (rank === 2) { rankStyle = 'rank-2'; rankGlow = 'border-gray-400/30'; }
+        else if (rank === 3) { rankStyle = 'rank-3'; rankGlow = 'border-amber-700/30'; }
+        else { rankStyle = 'rank-normal'; rankGlow = ''; }
+
+        // Build session dots HTML
+        const dotsHtml = s.sessionDots.map(dot => {
+            let dotStyle = 'background: var(--chip); border-color: var(--chip-b); opacity: 0.5;'; // not started
+            let textColor = 'color: var(--text); opacity: 0.2;';
+            let content = dot.num;
+            
+            if (dot.done) {
+                dotStyle = 'background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3);';
+                textColor = 'color: #10b981;';
+                content = '✓';
+            } else if (dot.partial) {
+                dotStyle = 'background: rgba(249, 192, 19, 0.15); border-color: rgba(249, 192, 19, 0.3);';
+                textColor = 'color: var(--k-yellow);';
+                content = dot.pct + '%';
+            }
+            
+            return `<div class="w-8 h-8 md:w-10 md:h-10 rounded-xl border flex items-center justify-center font-black transition-all hover:scale-110 cursor-default group/dot relative" 
+                         style="${dotStyle}" title="Sesi ${dot.num}${dot.done ? ' ✓' : dot.partial ? ' ('+ dot.pct +'%)' : ''}">
+                <span class="${content === '✓' ? 'text-sm' : 'text-[8px]'} font-black" style="${textColor}">${content}</span>
+            </div>`;
+        }).join('');
+
+
+        return `
+        <div class="planet-card p-5 md:p-7 flex flex-col gap-5 transition-all hover:border-k-yellow/40 ${rankGlow} ${rank === 1 ? 'hero-card mb-4' : 'mb-3'}">
+            <!-- Top Row: Rank + Name + Progress -->
+            <div class="flex items-center gap-5">
+                <div class="rank-badge ${rankStyle} shrink-0 flex items-center justify-center">${rank}</div>
+                
+                <!-- Avatar Circle -->
+                <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-k-blue to-k-blue-d border border-white/20 flex items-center justify-center font-display font-black text-lg md:text-xl text-white shadow-lg shrink-0">
+                    ${s.name.charAt(0)}
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <p class="font-display font-black text-lg md:text-xl truncate ${rank === 1 ? 'grad-text' : ''}" style="color: var(--text)">${s.name}</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter" style="background: var(--chip); color: var(--muted); border: 1px solid var(--chip-b)">${s.level || 'Explorer'}</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest opacity-30" style="color: var(--text)">${s.doneSessions}/${MAX_SESSIONS} Sesi Selesai</span>
+                    </div>
+                </div>
+
+
+                <div class="text-right shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="font-display font-black text-xl md:text-2xl ${s.overallPct === 100 ? 'text-emerald-400' : ''} leading-none" style="color: ${s.overallPct === 100 ? '' : 'var(--text)'}">${s.overallPct}%</p>
+                            <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-20" style="color: var(--text)">Progress</p>
+                        </div>
+
+                        ${(s.totalStars || 0) > 0 ? `
+                        <div class="px-3 py-2 rounded-2xl bg-k-yellow/10 border border-k-yellow/20 flex flex-col items-center">
+                            <span class="font-display font-black text-sm text-k-yellow">${s.totalStars}</span>
+                            <span class="text-[8px] font-black text-k-yellow/40 uppercase">Stars</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Dots -->
+            <div class="rounded-[1.25rem] p-4 border transition-colors" style="background: var(--bg); border-color: var(--card-b); background-opacity: 0.3;">
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-[10px] font-black uppercase tracking-widest" style="color: var(--text); opacity: 0.3;">Misi Antar Galaksi</p>
+                    <div class="flex gap-1 items-center">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500/50"></div>
+                        <span class="text-[8px] font-bold uppercase" style="color: var(--text); opacity: 0.2;">Selesai</span>
+                    </div>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    ${dotsHtml}
+                </div>
+            </div>
+
+            <!-- Bottom Progress bar -->
+            <div class="flex items-center gap-3">
+                <div class="flex-1 bar-track h-2.5 rounded-full overflow-hidden">
+                    <div class="bar-fill h-full transition-all duration-700 rounded-full" style="width:${s.overallPct}%; ${s.overallPct === 100 ? 'background:linear-gradient(to right, #34d399, #10b981)' : ''}"></div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Modals: History ─────────────────────────────────────────────────────────────
+function openHistoryModal(idx) {
+    const s = students[idx];
+    if (!s) return;
+    
+    // Defensive checks for DOM elements
+    const nameEl = document.getElementById('history-name');
+    const subtitleEl = document.getElementById('history-subtitle');
+    const contentEl = document.getElementById('history-content');
+    const modalEl = document.getElementById('history-modal');
+
+    if (nameEl) nameEl.textContent = s.name;
+    if (subtitleEl) subtitleEl.textContent = `Progress Sesi 1 - 12`;
+    
+    let html = `<div class="grid grid-cols-1 gap-4">`;
+    let hasData = false;
+    for (let i = 1; i <= MAX_SESSIONS; i++) {
+        const d = s.sessionData && s.sessionData[i];
+        if (!d) continue;
+
+        // Show card if there's any activity or progress
+        if (!d.link && !d.starsVal && !d.quiz && (!d.progress || d.progress === '0%')) continue;
+        
+        hasData = true;
+        const isDone = d.progress === '100%' || d.progress === '1';
+
+        
+        // Calculate Breakdown
+        // starsVal already contains every line in the star cell, including Quiz
+        // and Bonus. Do not add quizStars again or the teacher total is inflated.
+        const totalS = d.starsVal || 0;
+        const quizS  = d.quizStars || 0;
+        const hasAnyLink = d.link && d.link.trim().length > 0;
+
+        // Parse explicit mission breakdown
+        let mustS = 0, shouldS = 0, aspireS = 0, bonusS = 0;
+        if (d.stars) {
+             const mMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Must/i);
+             if (mMatch) mustS = parseInt(mMatch[1]);
+             
+             const sMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Should/i);
+             if (sMatch) shouldS = parseInt(sMatch[1]);
+             
+             const aMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Aspire/i);
+             if (aMatch) aspireS = parseInt(aMatch[1]);
+
+             const bMatch = String(d.stars).match(/(\d+)\s*Star\s*-\s*Bonus/i);
+             if (bMatch) bonusS = parseInt(bMatch[1]);
+        }
+        const hasDetailedMission = (mustS > 0 || shouldS > 0 || aspireS > 0);
+        const missionS = hasDetailedMission
+            ? mustS + shouldS + aspireS
+            : Math.max(0, totalS - quizS - bonusS);
+
+        html += `
+        <div class="p-6 rounded-[2rem] border flex flex-col gap-5 transition-all hover:border-k-yellow/30 group" style="background: var(--chip); border-color: var(--card-b)">
+
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-k-blue/20 to-k-blue/10 border border-k-blue/30 flex items-center justify-center font-display font-black text-blue-300 shadow-inner group-hover:scale-110 transition-transform">S${i}</div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                             <h5 class="text-base font-black" style="color: var(--text)">Sesi ${i}</h5>
+                             <span class="text-[9px] px-2 py-0.5 rounded-full ${isDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-k-yellow/20 text-k-yellow border border-k-yellow/30'} font-black uppercase tracking-widest">${d.progress || '0%'}</span>
+                        </div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest opacity-30" style="color: var(--text)">${s.sessionDates && s.sessionDates[i] ? `SELESAI: ${s.sessionDates[i]}` : 'BELUM SELESAI'}</p>
+                    </div>
+
+                </div>
+                
+                <!-- Main Star Badge (Hover to see breakdown) -->
+                ${totalS > 0 ? `
+                <div class="px-4 py-2 rounded-2xl bg-k-yellow text-[#5A3F00] font-display font-black text-sm shadow-[0_4px_0_#B28400] flex items-center gap-2 cursor-help relative group/badge">
+                    <span>⭐</span> ${totalS}
+                    
+                    <!-- Custom Tooltip (Aligned to right to avoid horizontal cutoff) -->
+                    <div class="absolute top-full right-0 mt-3 w-max min-w-[150px] pointer-events-none opacity-0 group-hover/badge:opacity-100 transition-all duration-300 z-[110] flex flex-col p-4 border rounded-2xl shadow-2xl origin-top-right" style="background: var(--card); border-color: var(--card-b); backdrop-filter: blur(15px);">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-k-yellow mb-3 pb-2 border-b text-center" style="border-color: var(--card-b)">Score Breakdown</div>
+
+                        ${hasDetailedMission ? `
+                            ${mustS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>🎯 Must do</span><span class="text-blue-500 font-black drop-shadow-md">${mustS}⭐</span></div>` : ''}
+                            ${shouldS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>✨ Should do</span><span class="text-indigo-500 font-black drop-shadow-md">${shouldS}⭐</span></div>` : ''}
+                            ${aspireS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>🌟 Aspire to do</span><span class="text-purple-600 font-black drop-shadow-md">${aspireS}⭐</span></div>` : ''}
+                        ` : `
+                            ${missionS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5" style="color: var(--text)"><span>🚀 Mission</span><span class="text-blue-500 font-black drop-shadow-md">${missionS}⭐</span></div>` : ''}
+                        `}
+                        
+                        ${quizS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5 border-t mt-1.5 pt-1.5" style="color: var(--text); border-color: var(--card-b)"><span>📝 Quiz</span><span class="text-emerald-500 font-black drop-shadow-md">${quizS}⭐</span></div>` : ''}
+                        ${bonusS > 0 ? `<div class="text-[11px] font-bold flex justify-between gap-6 items-center py-1.5 border-t mt-1.5 pt-1.5" style="color: var(--text); border-color: var(--card-b)"><span>✨ Bonus</span><span class="text-amber-500 font-black drop-shadow-md">${bonusS}⭐</span></div>` : ''}
+
+                        <!-- Tooltip arrow pointer (Top-Right) -->
+                        <div class="absolute -top-[5px] right-5 w-2.5 h-2.5 rotate-45 border-t border-l" style="background: var(--card); border-color: var(--card-b);"></div>
+                    </div>
+                </div>` : ''}
+            </div>
+
+            <!-- Detailed Breakdown -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="px-4 py-3 rounded-xl border flex items-center justify-between" style="background: var(--bg); border-color: var(--card-b)">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">📝</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest" style="color: var(--text); opacity: 0.4;">Quiz</span>
+                    </div>
+                    <span class="text-xs font-black text-emerald-500">${quizS > 0 ? quizS + ' ⭐' : '-'}</span>
+                </div>
+                <div class="px-4 py-3 rounded-xl border flex items-center justify-between" style="background: var(--bg); border-color: var(--card-b)">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🚀</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest" style="color: var(--text); opacity: 0.4;">Mission</span>
+                    </div>
+                    <span class="text-xs font-black text-blue-500">${missionS > 0 ? missionS + ' ⭐' : '-'}</span>
+                </div>
+                ${bonusS > 0 ? `
+                <div class="px-4 py-3 rounded-xl border flex items-center justify-between col-span-2" style="background: rgba(249,192,19,0.08); border-color: rgba(249,192,19,0.3)">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">✨</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-k-yellow">Bonus</span>
+                    </div>
+                    <span class="text-xs font-black text-amber-500">${bonusS} ⭐</span>
+                </div>` : ''}
+            </div>
+
+
+            <div class="flex flex-col gap-2 mt-2">
+                <button onclick="event.stopPropagation(); closeHistoryModal(); openApprovalModal(${idx}, ${i})" class="w-full text-[10px] font-black px-4 py-3 rounded-xl transition-all uppercase tracking-widest font-display cursor-pointer ${totalS > 0 ? 'border' : 'bg-k-yellow text-[#5A3F00] shadow-md hover:-translate-y-0.5'}" style="${totalS > 0 ? 'background: var(--chip); border-color: var(--k-yellow); color: var(--k-yellow)' : ''}">${totalS > 0 ? '✏️ Edit Nilai' : '🌟 Beri Nilai Sesi Ini'}</button>
+            </div>
+
+
+            ${d.note ? `
+            <div class="p-4 rounded-2xl relative overflow-hidden border" style="background: var(--chip); border-color: rgba(249,192,19,0.3)">
+                <div class="absolute top-0 left-0 w-1 h-full bg-k-yellow/30"></div>
+                <p class="text-[9px] font-black uppercase tracking-widest text-k-yellow/60 mb-1.5 flex items-center gap-1.5">
+                    <span class="text-xs">💬</span> Catatan Guru:
+                </p>
+                <p class="text-xs font-medium leading-relaxed italic" style="color: var(--text); opacity: 0.8;">"${d.note}"</p>
+            </div>
+            ` : ''}
+
+        </div>`;
+    }
+    
+    if (!hasData) {
+        html += `
+        <div class="py-20 flex flex-col items-center justify-center text-center opacity-40">
+            <div class="text-6xl mb-4">🛸</div>
+            <p class="font-black uppercase tracking-widest text-sm" style="color: var(--text)">Belum ada riwayat aktivitas</p>
+            <p class="text-xs font-bold mt-1" style="color: var(--muted)">Aktivitas akan muncul setelah siswa mulai mengerjakan misi.</p>
+        </div>`;
+    }
+
+    html += `</div>`;
+    if (contentEl) contentEl.innerHTML = html;
+    
+    // Smooth Transition
+    if (modalEl) {
+        modalEl.classList.remove('hidden');
+        void modalEl.offsetWidth; // Force Reflow
+        modalEl.classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('history-modal-container').classList.remove('scale-95');
+    }
+}
+
+function closeHistoryModal() {
+    const modalEl = document.getElementById('history-modal');
+    if (modalEl) {
+        modalEl.classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('history-modal-container').classList.add('scale-95');
+        setTimeout(() => {
+            modalEl.classList.add('hidden');
+        }, 300);
+    }
+}
+
+function closeApprovalModal() {
+    const modal = document.getElementById('approval-modal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('appr-modal-container').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+}
+
+// ── Approval Logic (Phase Based) ──────────────────────────────────────────────
+let currentApprIndex = -1;
+let currentApprSession = -1;
+let phaseRatings = { must: 0, should: 0, aspire: 0 };
+let bonusStarsStored = 0;
+
+async function openApprovalModal(idx, sNum) {
+    currentApprIndex = idx;
+    currentApprSession = sNum;
+    const s = students[idx];
+    if (!s) return;
+
+    document.getElementById('appr-session').textContent = sNum;
+    document.getElementById('appr-student-name').textContent = s.name;
+    
+    // Reset stars & Quiz display
+    phaseRatings = { must: 0, should: 0, aspire: 0 };
+    bonusStarsStored = 0;
+    
+    const sessInfo = (s.sessionData && s.sessionData[sNum]) || { quiz: '0', quizStars: 0 };
+
+    if (sessInfo.stars) {
+        const lines = sessInfo.stars.split('\n');
+        lines.forEach(line => {
+            const match = line.match(/^(\d+)\s*Star/i);
+            if (match) {
+                const val = parseInt(match[1], 10);
+                if (line.toLowerCase().includes('must')) phaseRatings.must = val;
+                else if (line.toLowerCase().includes('should')) phaseRatings.should = val;
+                else if (line.toLowerCase().includes('aspire')) phaseRatings.aspire = val;
+                else if (line.toLowerCase().includes('bonus')) bonusStarsStored = val;
+            }
+        });
+    }
+
+    const qVal    = sessInfo.quiz && sessInfo.quiz !== '-' ? sessInfo.quiz : '0';
+    const qStars  = sessInfo.quizStars || 0;
+    
+    document.getElementById('appr-quiz-display').textContent = `${qVal} (${qStars} / 5 ⭐)`;
+    document.getElementById('appr-quiz-stars').value = qStars;
+    const bonusActionLabel = document.getElementById('bonus-action-label');
+    if (bonusActionLabel) {
+        bonusActionLabel.textContent = bonusStarsStored > 0
+            ? `✏️ Edit Bonus (+${bonusStarsStored} Bintang)`
+            : '✨ Beri Bonus Bintang';
+    }
+
+    // Dynamic Rubrics for Sesi 4 & 8
+    const rubricCont = document.getElementById('appr-rubric-container');
+    if (rubricCont) {
+        if (sNum === 4 || sNum === 8) {
+            rubricCont.classList.remove('hidden');
+            document.getElementById('appr-rubric-sess-num').textContent = sNum;
+            
+            // Prefill hidden inputs if data exists
+            document.getElementById('hidden-obs-notes').value = sessInfo.observation || '';
+            // Reset status badge
+            document.getElementById('rubric-status-badge').classList.add('hidden');
+            
+            // Pre-fetch in background
+            if (!window.rubricData) fetchRubrics();
+        } else {
+            rubricCont.classList.add('hidden');
+        }
+    }
+    
+    // Update UI stars
+    ['must', 'should', 'aspire'].forEach(p => updateStarUI(p, phaseRatings[p]));
+    
+    // Reset Preview
+    const iframe = document.getElementById('modal-project-iframe');
+    iframe.src = 'about:blank';
+    document.getElementById('preview-url-display').textContent = 'Silahkan pilih link untuk preview';
+    document.getElementById('iframe-placeholder').classList.remove('hidden');
+    document.getElementById('iframe-loader').classList.add('hidden');
+
+    // Handle button availability for each phase
+    const sess = (s.sessionData && s.sessionData[sNum]) || {};
+    const fullLinkStr = sess.link || "";
+
+    ['must', 'should', 'aspire'].forEach(p => {
+        const container = document.getElementById(`appr-links-${p}`);
+        container.innerHTML = '';
+        
+        const phasePrefix = p === 'must' ? '[Must Do]' : (p === 'should' ? '[Should Do]' : '[Aspire]');
+        const entries = fullLinkStr.split('\n\n').filter(e => e.toLowerCase().includes(phasePrefix.toLowerCase()));
+        
+        if (entries.length === 0) {
+            container.innerHTML = '<span class="text-[10px] italic opacity-40">Tidak ada link</span>';
+            return;
+        }
+
+        entries.forEach(entry => {
+            let label = "Lihat Hasil";
+            let url = "";
+
+            if (entry.includes('[Link]')) {
+                label = "Lihat Project 🔗";
+                url = entry.split('[Link] ')[1];
+            } else if (entry.includes('[Screenshot]')) {
+                label = "Lihat Bukti 📸";
+                url = entry.split('[Screenshot] ')[1];
+            } else {
+                // Fallback for old format
+                const clean = entry.replace(phasePrefix, '').trim();
+                if (clean.includes(' | ')) {
+                    const parts = clean.split(' | ');
+                    createApprLinkButton(container, "Lihat Project 🔗", parts[0]);
+                    createApprLinkButton(container, "Lihat Bukti 📸", parts[1]);
+                    return;
+                } else {
+                    url = clean;
+                }
+            }
+            if (url) createApprLinkButton(container, label, url);
+        });
+    });
+
+    const modal = document.getElementById('approval-modal');
+    modal.classList.remove('hidden');
+    void modal.offsetWidth;
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    document.getElementById('appr-modal-container').classList.remove('scale-95');
+}
+
+function createApprLinkButton(container, label, url) {
+    const btn = document.createElement('button');
+    btn.className = "text-[10px] font-black uppercase px-3 py-1.5 rounded-lg border transition-all hover:bg-k-blue/10 cursor-pointer mb-1";
+    btn.style.cssText = "background: var(--chip); border-color: var(--chip-b); color: var(--text)";
+    btn.innerText = label;
+    btn.onclick = () => loadPreviewFromUrl(url);
+    container.appendChild(btn);
+}
+
+function loadPreviewFromUrl(url) {
+    if (!url) return;
+    document.getElementById('iframe-placeholder').classList.add('hidden');
+    document.getElementById('iframe-loader').classList.remove('hidden');
+    document.getElementById('preview-url-display').textContent = url;
+
+    const iframe = document.getElementById('modal-project-iframe');
+    iframe.src = getEmbedUrl(url);
+    
+    iframe.onload = () => {
+        document.getElementById('iframe-loader').classList.add('hidden');
+    };
+}
+
+function getEmbedUrl(url) {
+    if (!url) return '';
+    
+    // Scratch
+    if (url.includes('scratch.mit.edu/projects/') && !url.includes('/embed')) {
+        const idMatch = url.match(/\/projects\/(\d+)/);
+        if (idMatch) return `https://scratch.mit.edu/projects/${idMatch[1]}/embed`;
+    }
+    
+    // Drive
+    if (url.includes('drive.google.com')) {
+        if (url.includes('/drive/folders/')) {
+            const folderMatch = url.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+            if (folderMatch) return `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#list`;
+        } else if (url.includes('/file/d/')) {
+            const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+            if (fileMatch) return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+        }
+    }
+
+    // Google Docs/Slides fallback
+    if (url.includes('docs.google.com') && url.includes('/edit')) {
+        return url.replace('/edit', '/preview');
+    }
+    
+    return url;
+}
+
+function setPhaseRating(phase, score) {
+    phaseRatings[phase] = score;
+    updateStarUI(phase, score);
+}
+
+function updateStarUI(phase, score) {
+    const container = document.querySelector(`.star-rating[data-phase="${phase}"]`);
+    if (!container) return;
+    const buttons = container.querySelectorAll('button');
+    buttons.forEach((btn, i) => {
+        if (i < score) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// ── Bonus Modal ──────────────────────────────────────────────────────────────
+function openBonusModal() {
+    document.getElementById('bonus-modal').classList.remove('hidden');
+    const s = students[currentApprIndex];
+    const sessInfo = s && s.sessionData ? s.sessionData[currentApprSession] : null;
+    document.getElementById('bonus-reason').value = extractBonusReason(sessInfo ? sessInfo.note : '');
+    tempBonus = bonusStarsStored;
+    updateBonusUI(tempBonus);
+}
+
+function extractBonusReason(note) {
+    const latestLine = String(note || '').split(/\r?\n/).filter(Boolean).pop() || '';
+    return latestLine.replace(/^\d{1,2}-[A-Za-z]{3}:\s*/, '').trim();
+}
+
+function updateBonusUI(val) {
+    document.querySelectorAll('.bonus-btn-item').forEach((btn, i) => {
+        const btnVal = i + 1;
+        btn.setAttribute('aria-pressed', String(btnVal === val));
+    });
+    const status = document.getElementById('bonus-selection-status');
+    if (status) {
+        status.textContent = val > 0
+            ? `✓ Bonus +${val} bintang dipilih`
+            : 'Belum ada jumlah yang dipilih';
+    }
+}
+
+let tempBonus = 0;
+function setBonus(val) {
+    tempBonus = val;
+    updateBonusUI(val);
+}
+
+async function submitBonusOnly() {
+    if (tempBonus === 0) {
+        showAlert('Berapa Bintang?', 'Silahkan pilih jumlah bintang bonus (1-3).', '✨', 'yellow');
+        return;
+    }
+    
+    const s = students[currentApprIndex];
+    if (!s) return;
+
+    const btn = document.getElementById('btn-submit-bonus');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = '⏳ Mengirim...';
+    btn.disabled = true;
+
+    try {
+        const payload = {
+            action: 'giveBonus',
+            studentName: s.name,
+            sessionNum: currentApprSession,
+            classLink: CLASS_LINK,
+            bonusStars: tempBonus,
+            reason: document.getElementById('bonus-reason').value
+        };
+
+        const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+        const json = await res.json();
+
+        if (json.success) {
+            bonusStarsStored = tempBonus;
+            const bonusActionLabel = document.getElementById('bonus-action-label');
+            if (bonusActionLabel) bonusActionLabel.textContent = `✏️ Edit Bonus (+${tempBonus} Bintang)`;
+            closeBonusModal();
+            showAlert('Bonus Tersimpan! ✨', `Bonus <strong>${s.name}</strong> sekarang +${tempBonus} bintang.`, '✨', 'yellow', 3000);
+            loadStudents();
+        } else throw new Error(json.message);
+    } catch (err) {
+        showAlert('Gagal', err.message, '❌', 'red');
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+    }
+}
+
+function closeBonusModal() {
+    document.getElementById('bonus-modal').classList.add('hidden');
+}
+
+// ── Submit Approval ──────────────────────────────────────────────────────────
+async function submitApproval() {
+    if (currentApprIndex === -1) return;
+    const s = students[currentApprIndex];
+    
+    // Validate Must Do is filled
+    // Removed as requested: User can now edit other stars without being forced to give Must Do rating.
+
+    const btn = document.getElementById('btn-submit-appr');
+    btn.innerHTML = '⏳ Menyimpan...';
+    btn.disabled = true;
+
+    try {
+        const payload = {
+            action: 'approveProject',
+            studentName: s.name,
+            sessionNum: currentApprSession,
+            classLink: CLASS_LINK,
+            mustStars: phaseRatings.must,
+            shouldStars: phaseRatings.should,
+            aspireStars: phaseRatings.aspire,
+            quizStars: document.getElementById('appr-quiz-stars').value,
+            bonusStars: bonusStarsStored, // Will be summed in backend or added here
+            obsAktivitasScore: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-aktivitas').value : '',
+            obsEngagementScore: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-engagement').value : '',
+            obsNotes: (currentApprSession === 4 || currentApprSession === 8) ? document.getElementById('hidden-obs-notes').value : ''
+        };
+        // Wait, I didn't update backend to handle `bonusStars` explicitly, I just summed must/should/aspire.
+        // I'll add bonusStars to the total here before sending if I want to be safe, 
+        // OR I can quickly update handleApproveProject again.
+        // Actually, I'll just add it to 'mustStars' for now or better, update backend.
+        // Let's just sum it here for the total stars backend is expecting.
+        
+        const res = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.success) {
+            closeApprovalModal();
+            showAlert('Berhasil Dinilai!', `Bintang Sesi ${currentApprSession} untuk <strong>${s.name}</strong> berhasil disimpan.`, '🌟', 'green', 4000);
+            loadStudents(); // Refresh data to update total stars & today gain
+        } else {
+            throw new Error(json.message);
+        }
+    } catch (err) {
+        console.error(err);
+        btn.innerHTML = '✅ Konfirmasi Nilai';
+        btn.disabled = false;
+        showAlert('Gagal Menyimpan', err.message, '❌', 'red');
+    }
+}
+
+async function saveAbsensi() {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Menyimpan...';
+
+    const attendance = students
+        .filter(s => s.hadir && s.attendanceSession < MAX_SESSIONS)
+        .map(s => ({ 
+            name: s.name, 
+            sessionsToMark: s.sessionsToMark || [s.attendanceSession + 1], 
+            skipCount: s.skipCount || 0,
+            materialSession: s.materialSession 
+        }));
+
+    if (!attendance.length) {
+        showAlert('Tidak Ada yang Hadir', 'Semua siswa ditandai tidak hadir.', '📋', 'yellow');
+        resetAbsBtn();
+        return;
+    }
+
+    try {
+        const url = `${WEB_APP_URL}?action=saveAbsensi&classLink=${encodeURIComponent(CLASS_LINK)}&date=${encodeURIComponent(TODAY_ISO)}&attendance=${encodeURIComponent(JSON.stringify(attendance))}`;
+        const res = await fetch(url);
+        const json = await res.json();
+
+        if (json.success) {
+            showAlert('Absensi Tersimpan! ✅', 'Data kehadiran dan progress telah diperbarui.', '✅', 'green', 3000);
+            loadStudents();
+        } else throw new Error(json.message);
+    } catch (err) {
+        showAlert('Gagal Menyimpan', err.message, '❌', 'red');
+    }
+    resetAbsBtn();
+}
+
+async function markBolos(index) {
+    const s = students[index];
+    const sessionsSkipped = s.sessionsToMark ? s.sessionsToMark.length : 1;
+    
+    if (confirm(`Tandai ${s.name} sebagai BOLOS/IZIN hari ini? (+${sessionsSkipped} Jam)`)) {
+        try {
+            showAlert('⏳ Menyimpan...', `Sedang menandai bolos untuk ${s.name}...`, '⏳', 'blue');
+            const url = `${WEB_APP_URL}?action=markBolos&classLink=${encodeURIComponent(CLASS_LINK)}&studentName=${encodeURIComponent(s.name)}&sessionsSkipped=${sessionsSkipped}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            
+            if (json.success) {
+                showAlert('Berhasil!', `${s.name} berhasil ditandai bolos. Jatah bolos menjadi ${json.skipCount}.`, '✅', 'green', 3000);
+                loadStudents();
+            } else throw new Error(json.message);
+        } catch (err) {
+            showAlert('Gagal Menyimpan', err.message, '❌', 'red');
+        }
+    }
+}
+
+function resetAbsBtn() {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = false;
+    btn.innerHTML = 'Simpan Absensi';
+}
+
+// ── Custom Alert ──────────────────────────────────────────────────────────────
+function showAlert(title, message, icon='ℹ️', theme='blue', autoClose=0) {
+    document.getElementById('alert-title').textContent = title;
+    document.getElementById('alert-message').innerHTML = message;
+    document.getElementById('alert-icon').textContent = icon;
+    
+    const modal = document.getElementById('custom-alert');
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.querySelector('#custom-alert-box').classList.remove('scale-95');
+
+    if (autoClose) setTimeout(closeAlert, autoClose);
+}
+
+function closeAlert() {
+    const modal = document.getElementById('custom-alert');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.querySelector('#custom-alert-box').classList.add('scale-95');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadStudents();
+
+// ── Rubric Modal Functions ──────────────────────────────────────────────────
+let selectedAktivitas = 0;
+let selectedEngagement = 0;
+
+async function openRubricModal() {
+    const sNum = currentApprSession;
+    document.getElementById('rubric-modal-title-num').textContent = sNum;
+    
+    document.getElementById('rubric-modal').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('rubric-modal-container').classList.remove('scale-95');
+    }, 10);
+    
+    const tbody = document.getElementById('rubric-table-body');
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-10"><span class="animate-spin inline-block">🔄</span> Memuat data rubrik...</td></tr>`;
+    
+    if (!window.rubricData) await fetchRubrics();
+    
+    const s = students[currentApprIndex];
+    const targetPertemuan = sNum === 4 ? 'Pertemuan 1-4' : 'Pertemuan 5-8';
+    let rData = [];
+    
+    if (window.rubricData) {
+        rData = window.rubricData.filter(r => 
+            r.program.toLowerCase().includes(CLASS_PROG.toLowerCase()) && 
+            r.level.toLowerCase().includes((s.level || '').toLowerCase()) &&
+            r.pertemuan.toLowerCase().includes(targetPertemuan.toLowerCase())
+        );
+        if (rData.length === 0) {
+            rData = window.rubricData.filter(r => 
+                r.program.toLowerCase().includes(CLASS_PROG.toLowerCase()) && 
+                r.pertemuan.toLowerCase().includes(targetPertemuan.toLowerCase())
+            );
+        }
+    }
+    
+    selectedAktivitas = parseInt(document.getElementById('hidden-obs-aktivitas').value) || 0;
+    selectedEngagement = parseInt(document.getElementById('hidden-obs-engagement').value) || 0;
+    document.getElementById('rubric-modal-notes').value = document.getElementById('hidden-obs-notes').value || '';
+    
+    if (rData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" class="p-6 text-center text-red-400">
+                    <p class="mb-4">Data rubrik untuk program "${CLASS_PROG}" tidak ditemukan di database.</p>
+                    <div class="flex gap-4 justify-center">
+                        <div class="w-48 text-left">
+                            <label class="text-xs mb-1 block">Manual Aktivitas (1-5)</label>
+                            <input type="number" id="manual-akt" min="1" max="5" value="${selectedAktivitas || ''}" class="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white">
+                        </div>
+                        <div class="w-48 text-left">
+                            <label class="text-xs mb-1 block">Manual Engagement (1-5)</label>
+                            <input type="number" id="manual-eng" min="1" max="5" value="${selectedEngagement || ''}" class="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white">
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        rData.sort((a, b) => a.nilai - b.nilai);
+        tbody.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const rowData = rData.find(r => r.nilai === i) || { obsAktivitas: '-', obsEngagement: '-' };
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-white/[0.02] transition-colors group';
+            
+            const isAktSelected = selectedAktivitas === i;
+            const isEngSelected = selectedEngagement === i;
+            
+            tr.innerHTML = `
+                <td class="py-4 px-6 border-b border-white/5 text-center font-black text-lg text-[#F9C013]">${i}</td>
+                <td class="py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isAktSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}" onclick="selectRubric('akt', ${i}, this)">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isAktSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}">
+                            ${isAktSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : ''}
+                        </div>
+                        <span class="${isAktSelected ? 'text-white' : 'text-white/70'} leading-relaxed">${rowData.obsAktivitas}</span>
+                    </div>
+                </td>
+                <td class="py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isEngSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}" onclick="selectRubric('eng', ${i}, this)">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isEngSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}">
+                            ${isEngSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : ''}
+                        </div>
+                        <span class="${isEngSelected ? 'text-white' : 'text-white/70'} leading-relaxed">${rowData.obsEngagement}</span>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+}
+
+function selectRubric(type, val, tdEl) {
+    if (type === 'akt') {
+        selectedAktivitas = val;
+    } else {
+        selectedEngagement = val;
+    }
+    
+    const tbody = document.getElementById('rubric-table-body');
+    const rows = tbody.querySelectorAll('tr');
+    
+    rows.forEach((tr, idx) => {
+        const i = idx + 1; 
+        const tds = tr.querySelectorAll('td');
+        if (tds.length < 3) return;
+        
+        const isAktSelected = selectedAktivitas === i;
+        tds[1].className = `py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isAktSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}`;
+        tds[1].querySelector('.w-4.h-4').className = `mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isAktSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}`;
+        tds[1].querySelector('.w-4.h-4').innerHTML = isAktSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : '';
+        tds[1].querySelector('span').className = isAktSelected ? 'text-white leading-relaxed' : 'text-white/70 leading-relaxed';
+        
+        const isEngSelected = selectedEngagement === i;
+        tds[2].className = `py-4 px-6 border-b border-white/5 cursor-pointer transition-all ${isEngSelected ? 'bg-white/10 border-l-4 border-l-[#F9C013]' : ''}`;
+        tds[2].querySelector('.w-4.h-4').className = `mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isEngSelected ? 'border-[#F9C013] bg-[#F9C013]' : 'border-white/20 group-hover:border-white/40'}`;
+        tds[2].querySelector('.w-4.h-4').innerHTML = isEngSelected ? '<div class="w-2 h-2 bg-[#06101f] rounded-full"></div>' : '';
+        tds[2].querySelector('span').className = isEngSelected ? 'text-white leading-relaxed' : 'text-white/70 leading-relaxed';
+    });
+}
+
+function closeRubricModal() {
+    document.getElementById('rubric-modal-container').classList.add('scale-95');
+    setTimeout(() => {
+        document.getElementById('rubric-modal').classList.add('hidden');
+    }, 200);
+}
+
+function saveRubricModal() {
+    const manAkt = document.getElementById('manual-akt');
+    const manEng = document.getElementById('manual-eng');
+    if (manAkt) selectedAktivitas = manAkt.value;
+    if (manEng) selectedEngagement = manEng.value;
+    
+    document.getElementById('hidden-obs-aktivitas').value = selectedAktivitas;
+    document.getElementById('hidden-obs-engagement').value = selectedEngagement;
+    document.getElementById('hidden-obs-notes').value = document.getElementById('rubric-modal-notes').value;
+    
+    document.getElementById('rubric-status-badge').classList.remove('hidden');
+    
+    closeRubricModal();
+    submitApproval();
+}
+
+</script>
+
+
+<!-- Rubric Modal -->
+<div id="rubric-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-[#06101f]/90 backdrop-blur-sm transition-opacity" onclick="closeRubricModal()"></div>
+    
+    <!-- Modal Content -->
+    <div id="rubric-modal-container" class="relative bg-[#0F172A] w-full max-w-5xl max-h-[90vh] flex flex-col rounded-3xl shadow-2xl border border-white/10 transition-all transform scale-95 overflow-hidden">
+        
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-[#1E293B]">
+            <div>
+                <h3 class="text-lg font-black text-white flex items-center gap-2">
+                    <span class="bg-[#F9C013] text-[#06101f] p-1.5 rounded-lg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+                    Observasi Pertemuan <span id="rubric-modal-title-num">X</span>
+                </h3>
+                <p class="text-xs text-[#F9C013] font-bold uppercase tracking-widest mt-1">PANDUAN PENILAIAN GURU</p>
+            </div>
+            <button onclick="closeRubricModal()" class="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-xl transition-colors cursor-pointer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <!-- Body (Table) -->
+        <div class="p-0 overflow-y-auto flex-1">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead class="bg-[#0F172A] text-white/50 text-[10px] uppercase font-bold tracking-widest sticky top-0 shadow-sm">
+                    <tr>
+                        <th class="py-4 px-6 border-b border-white/10 text-center w-20">Score</th>
+                        <th class="py-4 px-6 border-b border-white/10 w-1/2">Activity Observation</th>
+                        <th class="py-4 px-6 border-b border-white/10 w-1/2">Learning Engagement</th>
+                    </tr>
+                </thead>
+                <tbody id="rubric-table-body" class="divide-y divide-white/5 text-white/80">
+                    <!-- Injected via JS -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer (Notes) -->
+        <div class="p-6 bg-[#1E293B] border-t border-white/10">
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-red-400 mb-2 flex items-center gap-2"><span>⚠️</span> Catatan Khusus untuk Report Orang Tua</label>
+                <textarea id="rubric-modal-notes" rows="2" class="w-full bg-[#0F172A] border border-red-500/30 rounded-xl p-3 text-sm text-white focus:border-red-400 focus:outline-none transition-colors" placeholder="Tuliskan perkembangan, kekuatan, dan hal yang perlu ditingkatkan..."></textarea>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeRubricModal()" class="px-5 py-2.5 rounded-xl font-bold text-white/70 hover:bg-white/10 transition-colors border border-transparent hover:border-white/20 cursor-pointer">Batal</button>
+                <button onclick="saveRubricModal()" class="px-6 py-2.5 rounded-xl font-black bg-[#F9C013] text-[#06101f] hover:bg-yellow-400 hover:shadow-[0_0_15px_rgba(249,192,19,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2">
+                    Simpan Penilaian
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

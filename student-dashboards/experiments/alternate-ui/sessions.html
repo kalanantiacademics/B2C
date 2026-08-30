@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="../../assets/css/device-guard.css">
+    <script src="../../assets/js/device-guard.js" defer></script>
+    <title>Peta Planet Belajar – Kalananti Console</title>
+    <script>
+        if (!localStorage.getItem('studentName')) {
+            window.location.href = 'index.html';
+        } else if (!localStorage.getItem('classCode') && localStorage.getItem('className')) {
+            localStorage.setItem('classCode', localStorage.getItem('className'));
+        } else if (!localStorage.getItem('classCode')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], display: ['Orbitron', 'sans-serif'] },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (() => {
+            const s = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (s === 'light' || s === 'dark') ? s : 'dark');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #091326;
+            --bg-accent: #0f1d38;
+            --sidebar-bg: rgba(10, 20, 42, 0.85);
+            --card-bg: rgba(14, 28, 56, 0.7);
+            --card-border: rgba(138, 180, 248, 0.15);
+            --text-main: #f0f6ff;
+            --text-muted: #8ba2c2;
+            --chip-bg: rgba(255, 255, 255, 0.05);
+            --chip-border: rgba(255, 255, 255, 0.1);
+            --stars-opacity: 0.4;
+            --path-fill: #f2c14e; 
+            --path-edge: #c89500; 
+            --path-glow: rgba(255,210,80,0.40); 
+            --path-dash: rgba(255,255,255,0.75);
+            --node-done-bg: linear-gradient(135deg,#26c484,#13a070); 
+            --node-done-ring: #0d8455; 
+            --node-done-glow: rgba(26,196,132,0.5);
+            --node-active-bg: linear-gradient(135deg,#ffcf2a,#f09c00); 
+            --node-active-ring: #c88000; 
+            --node-active-glow: rgba(255,195,30,0.75);
+            --node-locked-bg: linear-gradient(135deg,rgba(100,140,200,0.1),rgba(40,70,120,0.25)); 
+            --node-locked-ring: rgba(138,180,248,0.15); 
+            --node-locked-glow: rgba(0,0,0,0);
+            --label-bg: rgba(12,23,44,0.92); 
+            --label-b: rgba(138,180,248,0.2); 
+            --label-title: #ffffff; 
+            --label-muted: #8ba2c2;
+        }
+
+        html[data-theme="light"] {
+            --bg: #f3f8fe;
+            --bg-accent: #e1edf9;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(38, 94, 155, 0.15);
+            --text-main: #1e3a60;
+            --text-muted: #5b7699;
+            --chip-bg: rgba(38, 94, 155, 0.06);
+            --chip-border: rgba(38, 94, 155, 0.12);
+            --stars-opacity: 0.12;
+            --path-fill: #4a9fd4; 
+            --path-edge: #2a6fa0; 
+            --path-glow: rgba(100,200,255,0.3); 
+            --path-dash: rgba(38,94,155,0.45);
+            --node-done-bg: linear-gradient(135deg,#1dbf88,#13a070); 
+            --node-done-ring: #0f7a54; 
+            --node-done-glow: rgba(29,191,136,0.35);
+            --node-active-bg: linear-gradient(135deg,#f9c013,#f08a00); 
+            --node-active-ring: #c88900; 
+            --node-active-glow: rgba(249,192,19,0.55);
+            --node-locked-bg: linear-gradient(135deg,#e2effd,#cfe0f4); 
+            --node-locked-ring: #b4cef3; 
+            --node-locked-glow: rgba(0,0,0,0);
+            --label-bg: rgba(255,255,255,0.96); 
+            --label-b: rgba(38,94,155,0.2); 
+            --label-title: #1e3a60; 
+            --label-muted: #5b7699;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(38, 94, 155, 0.15), transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(249, 192, 19, 0.12), transparent 30%),
+                radial-gradient(circle at 50% 90%, rgba(51, 157, 157, 0.1), transparent 35%),
+                linear-gradient(135deg, var(--bg) 0%, var(--bg-accent) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+        }
+
+        .stars-background {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -10;
+            opacity: var(--stars-opacity);
+            background-image:
+                radial-gradient(circle at 12% 18%, #ffffff 0.8px, transparent 1.2px),
+                radial-gradient(circle at 82% 64%, #ffffff 1px, transparent 1.5px),
+                radial-gradient(circle at 50% 32%, #ffffff 0.7px, transparent 1.1px);
+            background-size: 280px 280px, 240px 240px, 320px 320px;
+        }
+
+        /* Glassmorphism sidebar left */
+        aside.sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+        }
+
+        .console-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 
+                0 15px 35px -10px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn {
+            background: var(--chip-bg);
+            border: 1.5px solid var(--chip-border);
+            color: var(--text-muted);
+            transition: all 0.25s ease;
+        }
+
+        /* Map scrolling shell */
+        .map-shell {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            z-index: 10;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        .map-stage { position: relative; width: 100%; background: transparent; }
+
+        /* Connections SVG */
+        .path-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+
+        /* Nodes configuration */
+        .path-node {
+            position: absolute; transform: translate(-50%, -50%); z-index: 5; cursor: pointer;
+            width: 90px; height: 90px;
+        }
+        .node-btn {
+            width: 100%; height: 100%; border-radius: 50%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative;
+            transition: transform 0.18s cubic-bezier(0.175,0.885,0.32,1.275);
+        }
+        .node-btn::before {
+            content: ""; position: absolute; inset: 12px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.35), rgba(255,255,255,0) 60%),
+                        radial-gradient(circle at 70% 70%, rgba(0,0,0,0.15), rgba(0,0,0,0) 50%);
+            pointer-events: none;
+        }
+        .path-node:hover .node-btn { transform: translateY(-4px) scale(1.03); }
+
+        /* Done Node status color */
+        .node-done .node-btn {
+            background: var(--node-done-bg);
+            box-shadow: 0 0 0 4px var(--node-done-ring), 0 10px 24px -6px var(--node-done-glow), 0 5px 0 var(--node-done-ring);
+        }
+        /* Active Node status color */
+        .node-active .node-btn {
+            background: var(--node-active-bg);
+            box-shadow: 0 0 0 5px var(--node-active-ring), 0 12px 30px -6px var(--node-active-glow), 0 6px 0 var(--node-active-ring);
+            animation: pulseActive 2.5s ease-in-out infinite;
+        }
+        @keyframes pulseActive {
+            0%, 100% { box-shadow: 0 0 0 5px var(--node-active-ring), 0 12px 30px -6px var(--node-active-glow), 0 6px 0 var(--node-active-ring); }
+            50% { box-shadow: 0 0 0 10px rgba(249,192,19,0.2), 0 16px 36px -6px rgba(249,192,19,0.8), 0 6px 0 var(--node-active-ring); }
+        }
+        /* Locked Node status color */
+        .node-locked .node-btn {
+            background: var(--node-locked-bg);
+            box-shadow: 0 0 0 3px var(--node-locked-ring), 0 4px 0 var(--node-locked-ring);
+            cursor: default;
+        }
+        .node-locked .node-btn::before { display: none; }
+        .path-node.node-locked:hover .node-btn { transform: none; }
+
+        .node-icon { font-size: 2rem; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
+        .node-locked .node-icon { opacity: 0.35; }
+        .node-num {
+            position: absolute; top: -5px; right: -5px; width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); border: 2px solid rgba(255,255,255,0.3);
+            font-size: 0.65rem; font-weight: 900; color: white; display: grid; place-items: center;
+        }
+        .node-done .node-num { background: rgba(0,80,40,0.6); }
+
+        /* Floating label hover cards */
+        .node-label {
+            position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+            background: var(--label-bg); border: 1px solid var(--label-b); border-radius: 1rem;
+            padding: 0.5rem 0.8rem; text-align: center; min-width: 140px; max-width: 170px;
+            box-shadow: 0 8px 24px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none;
+        }
+        .node-label-title { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; color: var(--label-title); margin-bottom: 2px; }
+        .node-label-sub { font-size: 0.6rem; line-height: 1.3; color: var(--label-muted); font-weight: 600; }
+        .node-active .node-label { border-color: rgba(249,192,19,0.5); }
+        .node-done .node-label { border-color: rgba(29,191,136,0.35); }
+
+        .active-ripple::before { content:""; position:absolute; inset:-12px; border-radius:50%; border:2px solid rgba(249,192,19,0.25); animation:rippleOut 2.2s ease-out infinite; pointer-events: none; }
+        .active-ripple::after { content:""; position:absolute; inset:-22px; border-radius:50%; border:1px solid rgba(249,192,19,0.1); animation:rippleOut 2.2s ease-out infinite 0.5s; pointer-events: none; }
+        @keyframes rippleOut { 0% { opacity: 0.9; transform: scale(0.85); } 100% { opacity: 0; transform: scale(1.35); } }
+
+        /* Loader blocks */
+        #loading-state, #error-state { min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+        .loader-ring { width: 60px; height: 60px; border-radius: 50%; border: 4px solid rgba(138, 180, 248, 0.1); border-top-color: #265E9B; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Top loader line */
+        #mission-loader {
+            position: fixed; inset: 0; background: #060e1a; z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+        }
+        #mission-loader.loaded { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        /* Retro Modal standard */
+        .retro-modal {
+            position: fixed; inset: 0; background: rgba(4, 9, 20, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .retro-modal.active { opacity: 1; pointer-events: auto; }
+        .retro-box {
+            background: linear-gradient(135deg, #0e1b30 0%, #060d1a 100%); border: 1px solid rgba(138, 180, 248, 0.2);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7); transform: translateY(30px) scale(0.95); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .retro-modal.active .retro-box { transform: translateY(0) scale(1); }
+
+        .btn-console-yellow {
+            background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%);
+            color: #403000;
+            box-shadow: 0 4px 0 #b38400, 0 10px 20px -5px rgba(249, 192, 19, 0.4);
+            font-family: 'Orbitron', sans-serif;
+        }
+        .btn-console-yellow:active {
+        /* ── Background decorative assets ── */
+        .edge-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+        .edge-planet {
+            position: absolute; margin: 0;
+            pointer-events: none; display: block;
+            opacity: 0.60;
+        }
+        .edge-left  { left: 0; transform-origin: left center; }
+        .edge-right { right: 0; transform-origin: right center; }
+        .char-float {
+            position: absolute; margin: 0;
+            pointer-events: none; opacity: 0.55;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0) rotate(-1deg); }
+            50%      { transform: translateY(-18px) rotate(2deg); }
+        }
+        @keyframes floatY2 {
+            0%,100% { transform: translateY(0) rotate(2deg); }
+            50%      { transform: translateY(-14px) rotate(-2deg); }
+        }
+
+        /* Force text colors in light mode */
+        html[data-theme="light"] .text-white {
+            color: #1e3a60 !important;
+        }
+        html[data-theme="light"] .text-white\/60 {
+            color: rgba(30, 58, 96, 0.7) !important;
+        }
+        html[data-theme="light"] .text-white\/70 {
+            color: rgba(30, 58, 96, 0.8) !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\] {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\]\/50 {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .text-muted-opacity {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10 {
+            background-color: rgba(38, 94, 155, 0.15) !important;
+        }
+        html[data-theme="light"] .border-k-blue\/20 {
+            border-color: rgba(38, 94, 155, 0.25) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10.text-white,
+        html[data-theme="light"] .bg-k-blue\/10 .text-white {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a.bg-k-blue\/10 {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10) {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10):hover {
+            color: #1e3a60 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex relative">
+
+    <!-- Fixed background assets -->
+    <div class="edge-layer">
+        <!-- Left planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png"
+             class="edge-planet edge-left" style="top:8%; width:min(26vw,190px);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png"
+             class="edge-planet edge-left" style="top:68%; width:min(32vw,250px); transform:translateX(-32%);" alt="">
+        <!-- Right planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png"
+             class="edge-planet edge-right" style="top:26%; width:min(30vw,240px); transform:translateX(32%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png"
+             class="edge-planet edge-right" style="bottom:6%; width:min(34vw,275px);" alt="">
+        <!-- Floating characters -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png"
+             class="char-float" style="left:9%; top:21%; width:105px; animation: floatY 7s ease-in-out infinite;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/904cb9e9-ecd1-4731-a1ef-fa6a0bd50527.png"
+             class="char-float" style="right:13%; top:54%; width:120px; animation: floatY2 8s ease-in-out infinite 1.5s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9b916b05-86ed-4509-aef6-e640606f3542.png"
+             class="char-float" style="left:17%; bottom:10%; width:110px; animation: floatY 6s ease-in-out infinite 0.8s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/555e14a0-4087-4d33-9c20-4d822bef5dac.png"
+             class="char-float" style="left:64%; top:38%; width:88px; opacity:0.38;" alt="">
+    </div>
+
+    <!-- Ambient glows -->
+    <div class="stars-background"></div>
+
+    <!-- Mission Control Loader -->
+    <div id="mission-loader">
+        <div class="relative animate-bounce">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" class="w-24 h-auto max-h-24 object-contain filter drop-shadow-[0_0_20px_rgba(249,192,19,0.5)]" alt="Rocket">
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-3 bg-[#F9C013]/20 blur-xl rounded-full animate-pulse"></div>
+        </div>
+        <div class="w-64 h-2 bg-white/5 rounded-full mt-10 overflow-hidden border border-white/10 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-k-yellow to-[#FFD700] w-0" style="animation: loaderFill 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;"></div>
+        </div>
+        <div class="mt-6 text-center">
+            <p class="font-display font-black text-xs uppercase tracking-[0.4em] text-k-yellow animate-pulse">MENYIAPKAN MISI...</p>
+            <p class="mt-1.5 text-[9px] text-muted-opacity font-bold uppercase tracking-widest text-[#8ba2c2]/50">Mission Control Center...</p>
+        </div>
+    </div>
+    <script>
+        @keyframes loaderFill { 0% { width: 0%; } 100% { width: 100%; } }
+    </script>
+
+    <!-- SIDEBAR NAVIGATION LEFT -->
+    <aside class="sidebar fixed inset-y-0 left-0 w-64 z-40 hidden xl:flex flex-col p-6 justify-between">
+        <div class="flex flex-col gap-10">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" 
+                     alt="Kalananti Logo" class="h-8 w-auto object-contain">
+                <div class="h-6 w-px bg-white/10"></div>
+                <div class="flex flex-col">
+                    <span class="font-display font-black text-xs tracking-widest uppercase text-k-yellow">MISSION</span>
+                    <span class="text-[8px] font-bold text-opacity-50 text-[#8ba2c2] uppercase tracking-[0.2em]">CONTROL</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex flex-col gap-2">
+                <a href="dashboard.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏡</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-k-blue/10 border border-k-blue/20 text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🗓️</span>
+                    <span>Peta Sesi</span>
+                </a>
+                <a href="materials.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">📖</span>
+                    <span>Materi Belajar</span>
+                </a>
+                <a href="quiz.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏆</span>
+                    <span>Quiz Arena</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <div class="h-px w-full bg-white/10"></div>
+            <!-- Theme Changer -->
+            <button onclick="toggleTheme()" class="flex items-center justify-between w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-colors">
+                <span class="flex items-center gap-2">
+                    <span id="theme-icon">🌙</span>
+                    <span>Mode Tampilan</span>
+                </span>
+                <span class="text-[9px] uppercase tracking-wider text-k-yellow">Ubah</span>
+            </button>
+            <div class="flex items-center justify-between p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full overflow-hidden bg-k-yellow flex items-center justify-center text-xs font-bold text-white">
+                        <span>👦</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="sidebar-user-name" class="font-bold text-xs truncate max-w-[110px] text-white">Kapten</span>
+                        <span class="text-[8px] text-[#8ba2c2]/40 font-black uppercase">Active pilot</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-red-500/10 rounded-lg text-red-400 text-sm transition-colors">🚪</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONSOLE GRID PANEL FRAME -->
+    <div class="flex-1 xl:ml-64 flex flex-col min-h-screen overflow-hidden">
+        
+        <!-- Header Nav bar top -->
+        <nav class="w-full px-6 py-4 flex justify-between items-center bg-white/5 border-b border-card-b/10 sticky top-0 backdrop-blur-md z-30">
+            <div class="flex items-center gap-3 md:gap-4">
+                <div class="flex xl:hidden items-center gap-2">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" class="h-6 w-auto">
+                </div>
+                <div>
+                    <p id="nav-course-title" class="font-black text-sm md:text-base text-white">🎮 Roblox Studio</p>
+                    <p class="text-[9px] text-[#8ba2c2]/50 font-black uppercase tracking-[0.18em]">PETA ORBIT PLANET BELAJAR</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="theme-toggle" onclick="toggleTheme()" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                    <span id="theme-toggle-icon">🌙</span>
+                    <span id="theme-toggle-text" class="hidden sm:inline">Dark</span>
+                </button>
+                <a href="dashboard.html" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider">
+                    <span>← Dashboard</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Progress bar stripe top -->
+        <div class="w-full px-6 md:px-8 py-3 flex items-center gap-5 bg-white/5 border-b border-card-b/10 z-20 shrink-0">
+            <p class="text-[10px] font-black uppercase tracking-widest text-[#8ba2c2]/60 shrink-0">Orbit Progress:</p>
+            <div class="flex-1 h-2 rounded-full overflow-hidden bg-white/5 border border-white/10">
+                <div id="top-prog-bar" class="h-full rounded-full bg-gradient-to-r from-k-green to-teal-400 transition-all duration-1000" style="width:8%"></div>
+            </div>
+            <p id="top-prog-text" class="text-[10px] font-black text-[#8ba2c2] shrink-0">Orbit 1/12</p>
+        </div>
+
+        <!-- MAIN SESSIONS MAP WORKSPACE -->
+        <main class="map-shell">
+            <div id="loading-state">
+                <div class="loader-ring"></div>
+                <p class="font-black tracking-widest text-xs uppercase text-[#8ba2c2]/60 animate-pulse">Menghubungkan Radar Galaksi...</p>
+            </div>
+            
+            <div id="error-state" style="display:none" class="p-12 text-center flex flex-col items-center justify-center">
+                <span class="text-4xl mb-3">😵</span>
+                <h3 class="text-lg font-black text-white">Sambungan Terputus</h3>
+                <p class="text-xs text-[#8ba2c2] font-semibold">Gagal memuat peta orbit planet. Coba lagi Captain.</p>
+                <button onclick="loadSessions(true)" class="mt-6 btn-console-yellow px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider">Sambung Ulang Radar</button>
+            </div>
+            
+            <section id="map-section" style="display:none" class="w-full">
+                <div id="path-container" class="map-stage"></div>
+            </section>
+        </main>
+
+    </div>
+
+    <!-- Warning / Lock Popup Dialog -->
+    <div id="status-modal" class="retro-modal">
+        <div class="retro-box rounded-[2.5rem] p-8 max-w-[420px] w-full text-center relative overflow-hidden">
+            <div id="status-icon" class="text-5xl mb-4">🔒</div>
+            <h3 id="status-title" class="font-display font-black text-xl mb-3 text-k-yellow uppercase tracking-wide">PETA TERKUNCI</h3>
+            <p id="status-message" class="text-sm font-bold leading-relaxed mb-8" style="color: #ddeeff">Log alerts.</p>
+            <button onclick="document.getElementById('status-modal').classList.remove('active')" class="btn-console-yellow w-full py-4 text-xs font-black uppercase tracking-widest">
+                MENGERTI, KOMANDAN! 🛰️
+            </button>
+        </div>
+    </div>
+
+    <script>
+    const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
+    const WEB_APP_BASE = STUDENT_API_URL;
+    let MAX_LESSONS = 12;
+    const COURSES = {
+        roblox: {
+            sheet:'B2C_RobloxStudio_INS', label:'Roblox Studio', emoji:'🎮',
+            desc:['Mengenal Roblox Studio dan membuat jalur Obby sederhana.','Menggunakan Plugin F3X, 3D Text, dan GapFill.','Membuat pemandangan terra menggunakan Terrain Tools.','Menciptakan efek pencahayaan dengan Lighting Tools.','Membuat sistem Teams dan Checkpoint tanpa coding!','Merancang rintangan seru & publish game ke Roblox.','Membuat pintu otomatis berengsel dengan Hinge Constraint.','Pintu otomatis dan Kincir Angin berputar terus!']
+        },
+        scratch: {
+            sheet:'B2C_Scratch_INS', label:'Scratch', emoji:'🐱',
+            desc:['Mengenal Scratch dan antarmuka editor yang seru.','Membuat Sprite, Kostum dan Gerakan dasar.','Belajar Variabel dan Kondisi if-then.','Membuat Loop, Animasi dan Efek keren.','Menambahkan Suara dan Efek visual.','Membuat Proyek Game Sederhanamu sendiri.','Interaksi dan Event handling antar karakter.','Publikasi dan Berbagi Proyekmu ke dunia!']
+        }
+    };
+    const PLANET_NAMES = ['Aurora','Ignis','Aqua','Terra','Nimbus','Voltis','Nova','Zenith'];
+    const PLANET_ICONS = ['🪐','🔥','🌊','🌍','☁️','⚡','🌟','🚀'];
+    const THEME_KEY = 'kalanantiTheme';
+
+    function updateThemeToggle(t) {
+        const icon = document.getElementById('theme-toggle-icon');
+        const text = document.getElementById('theme-toggle-text');
+        const sidebarIcon = document.getElementById('theme-icon');
+
+        if (icon) icon.textContent = t === 'dark' ? '🌙' : '☀️';
+        if (text) text.textContent = t === 'dark' ? 'Dark' : 'Light';
+        if (sidebarIcon) sidebarIcon.textContent = t === 'dark' ? '🌙' : '☀️';
+    }
+
+    function applyTheme(t, persist=true) {
+        const v = t === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', v);
+        updateThemeToggle(v);
+        if (persist) {
+            try { localStorage.setItem(THEME_KEY, v); } catch(e){}
+        }
+    }
+
+    function toggleTheme() {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+        if (Array.isArray(lessonCache)) renderPath(lessonCache);
+        else loadSessions();
+    }
+
+    const selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+    const studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
+    const courseData = COURSES[selectedCourse] || COURSES.roblox;
+    
+    // Set headers
+    const navTitle = document.getElementById('nav-course-title');
+    if (navTitle) navTitle.textContent = `${courseData.emoji} ${courseData.label}`;
+    const studentNameLoc = localStorage.getItem('studentName') || 'Kapten';
+    const sNameSide = document.getElementById('sidebar-user-name');
+    if (sNameSide) sNameSide.textContent = studentNameLoc;
+
+    const currentSession = parseInt(localStorage.getItem('currentSession') || '1', 10);
+    function updateProgressUI(totalLessons) {
+        const progPct = Math.max(8, Math.round((currentSession - 1) / totalLessons * 100));
+        const bar = document.getElementById('top-prog-bar');
+        const text = document.getElementById('top-prog-text');
+        if (bar) bar.style.width = progPct + '%';
+        if (text) text.textContent = `Orbit ${currentSession}/${totalLessons}`;
+    }
+    updateProgressUI(MAX_LESSONS);
+
+    let lessonCache = null;
+
+    function syncShellHeight() {
+        const shell = document.querySelector('.map-shell');
+        const nav = document.querySelector('.theme-nav');
+        const strip = document.querySelector('.top-progress-bar');
+        if (!shell) return;
+        const navH = nav ? nav.offsetHeight : 0;
+        const stripH = strip ? strip.offsetHeight : 0;
+        const viewH = window.innerHeight;
+        shell.style.height = `${Math.max(320, Math.floor(viewH - navH - stripH))}px`;
+    }
+    syncShellHeight();
+
+    async function loadSessions(refetch=false) {
+        const loadEl = document.getElementById('loading-state');
+        const mapEl = document.getElementById('map-section');
+        const errEl = document.getElementById('error-state');
+        
+        if (!refetch && Array.isArray(lessonCache)) {
+            renderPath(lessonCache);
+            loadEl.style.display = 'none';
+            mapEl.style.display = 'block';
+            errEl.style.display = 'none';
+            return;
+        }
+
+        loadEl.style.display = 'flex';
+        mapEl.style.display = 'none';
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch(WEB_APP_BASE + '?sheet=' + courseData.sheet);
+            const raw = await res.json();
+            
+            const getSession = (r, idx) => {
+                let s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                if (isNaN(s)) s = idx + 1;
+                return s;
+            };
+
+            const uniqueMap = new Map();
+            const levelMatches = value => {
+                const levels = String(value || '').match(/\d+/g) || [];
+                return levels.length === 0 || levels.map(Number).includes(studentLevel);
+            };
+            raw.filter(r => levelMatches(r['Level'] || r['level'] || r.col_1)).forEach((r, idx) => {
+                const s = getSession(r, idx);
+                if (!isNaN(s) && s >= 1) {
+                    if (!uniqueMap.has(s)) {
+                        r._sessNum = s;
+                        uniqueMap.set(s, r);
+                    }
+                }
+            });
+            const lessons = Array.from(uniqueMap.values()).sort((a,b)=>a._sessNum - b._sessNum);
+            
+            MAX_LESSONS = lessons.length > 0 ? lessons.length : 12;
+            updateProgressUI(MAX_LESSONS);
+
+            lessonCache = lessons;
+            renderPath(lessons);
+            loadEl.style.display = 'none';
+            mapEl.style.display = 'block';
+        } catch(err) {
+            console.error('[Sessions] Error:', err);
+            errEl.style.display = 'flex';
+            loadEl.style.display = 'none';
+        } finally {
+            setTimeout(() => {
+                const loader = document.getElementById('mission-loader');
+                if (loader) loader.classList.add('loaded');
+            }, 600);
+        }
+    }
+
+    function buildPath(pts, W, H) {
+        let d = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 1; i < pts.length; i++) {
+            const p0 = pts[i-1], p1 = pts[i];
+            const distY = Math.abs(p1.y - p0.y);
+            const c1x = p0.x, c1y = p0.y + distY * 0.48;
+            const c2x = p1.x, c2y = p1.y - distY * 0.48;
+            d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p1.x} ${p1.y}`;
+        }
+        const defId = `pg-${Date.now()}`;
+        return `
+        <svg class="path-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true" style="width:100%;height:100%;">
+            <defs>
+                <linearGradient id="${defId}" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="var(--path-fill)" stop-opacity="0.6"/>
+                    <stop offset="50%" stop-color="var(--path-fill)" stop-opacity="1"/>
+                    <stop offset="100%" stop-color="var(--path-fill)" stop-opacity="0.6"/>
+                </linearGradient>
+            </defs>
+            <path d="${d}" stroke="var(--path-glow)" stroke-width="60" fill="none" stroke-linecap="round" opacity="0.25"/>
+            <path d="${d}" stroke="var(--path-edge)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
+            <path d="${d}" stroke="url(#${defId})" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="${d}" stroke="var(--path-dash)" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="12 16"/>
+        </svg>`;
+    }
+
+    function renderPath(lessons) {
+        const container = document.getElementById('path-container');
+        if (!Array.isArray(lessons) || lessons.length === 0) {
+            container.innerHTML = '<div style="height:400px;display:flex;align-items:center;justify-content:center"><div class="console-card px-8 py-5 text-xs font-black uppercase tracking-wider text-muted-opacity">Belum ada sesi tersedia</div></div>';
+            return;
+        }
+        const W = Math.max(container.clientWidth || 800, 680);
+        const isNarrow = W < 860;
+        const topPad = isNarrow ? 120 : 150;
+        const rowGap = isNarrow ? 200 : 220;
+        const bottomPad = isNarrow ? 260 : 300;
+        const H = Math.max(isNarrow ? 1000 : 1200, topPad + (lessons.length - 1) * rowGap + bottomPad);
+        container.style.height = `${H}px`;
+
+        const leftLane = isNarrow ? 25 : 20;
+        const rightLane = isNarrow ? 75 : 80;
+        const jitter = isNarrow ? [0, 0, 0, 0] : [2, -2, 1, -1];
+        
+        const pts = lessons.map((lesson, idx) => {
+            const lane = idx % 2 === 0 ? leftLane : rightLane;
+            const xPct = Math.max(15, Math.min(85, lane + jitter[idx % jitter.length]));
+            return { x: (xPct / 100) * W, y: topPad + idx * rowGap, xPct, lesson };
+        });
+
+        const pathPts = pts.map(p => ({ x: p.x, y: p.y }));
+        let html = buildPath(pathPts, W, H);
+
+        const curSess = parseInt(localStorage.getItem('currentSession') || '1', 10);
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+        // Add visual path star elements
+        pts.forEach((pt, idx) => {
+            if (idx < pts.length - 1) {
+                const next = pts[idx + 1];
+                const mx = (pt.x + next.x) / 2, my = (pt.y + next.y) / 2;
+                html += `<div style="position:absolute;left:${mx}px;top:${my}px;transform:translate(-50%,-50%);font-size:0.75rem;opacity:0.4;pointer-events:none;z-index:3;">✦</div>`;
+            }
+        });
+
+        pts.forEach((pt, idx) => {
+            const sNum = parseInt(pt.lesson['Session'] || pt.lesson['session'] || pt.lesson['Sesi'] || pt.lesson.col_2 || pt.lesson.col_1, 10) || (idx + 1);
+            const desc = courseData.desc[sNum - 1] || `Sesi ${sNum}`;
+            const pName = PLANET_NAMES[(sNum - 1) % PLANET_NAMES.length];
+            const pIcon = PLANET_ICONS[(sNum - 1) % PLANET_ICONS.length];
+            const shortDesc = desc.length > 40 ? desc.slice(0, 37) + '…' : desc;
+            
+            let state = 'locked', icon = '🔒';
+            if (sNum < curSess) {
+                state = 'done';
+                icon = '✅';
+            } else if (sNum === curSess) {
+                state = 'active';
+                icon = pIcon;
+            }
+            
+            if (isAdmin && state === 'locked') {
+                state = 'active';
+                icon = pIcon;
+            }
+            
+            const clickable = `onclick="goToLesson(${sNum})"`;
+            const ripple = state === 'active' ? 'active-ripple' : '';
+            
+            html += `
+            <div class="path-node node-${state} ${ripple}" style="left:${pt.xPct}%;top:${pt.y}px" ${clickable}>
+                <div class="node-btn">
+                    <div class="node-num">${sNum}</div>
+                    <span class="node-icon">${icon}</span>
+                </div>
+                <div class="node-label">
+                    <p class="node-label-title">SESI ${sNum} · ${pName}</p>
+                    <p class="node-label-sub">${shortDesc}</p>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function showStatusPopup(type, title, message) {
+        const modal = document.getElementById('status-modal');
+        const icon = document.getElementById('status-icon');
+        const titleEl = document.getElementById('status-title');
+        const msgEl = document.getElementById('status-message');
+        
+        icon.className = 'status-icon w-12 h-12 text-3xl mx-auto mb-4 flex items-center justify-center';
+        icon.innerText = type === 'success' ? '✅' : (type === 'error' ? '❌' : '🛸');
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        
+        modal.classList.add('active');
+    }
+
+    function goToLesson(n) {
+        const curSess = parseInt(localStorage.getItem('currentSession') || '1', 10);
+        const isAdm = localStorage.getItem('isAdmin') === 'true';
+        let isAllowed = (n <= curSess) || isAdm;
+        
+        if (!isAllowed) {
+            showStatusPopup('warning', 'MASIH KE-GEMBOK! 🔒', 'Ayo selesaikan misi di sesi sebelumnya dulu bersama pengajar untuk membuka materi ini ya Captain! Semangat! 🚀');
+            return;
+        }
+        localStorage.setItem('activeLesson', n);
+        window.location.href = 'materials.html';
+    }
+
+    function logout() {
+        localStorage.removeItem('studentName');
+        localStorage.removeItem('className');
+        localStorage.removeItem('isAdmin');
+        window.location.href = 'index.html';
+    }
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            syncShellHeight();
+            if (Array.isArray(lessonCache)) renderPath(lessonCache);
+        }, 150);
+    });
+
+    loadSessions();
+    </script>
+</body>
+</html>

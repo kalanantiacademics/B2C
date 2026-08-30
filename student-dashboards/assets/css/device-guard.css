@@ -1,0 +1,35 @@
+#student-device-notice { display: none; }
+
+html.phone-blocked,
+html.phone-blocked body { min-height: 100%; overflow: hidden !important; }
+
+html.phone-blocked body > :not(#student-device-notice) { display: none !important; }
+
+html.phone-blocked #student-device-notice {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    overflow-y: auto;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    color: #173f70;
+    background: radial-gradient(circle at 15% 15%, rgba(249,192,19,.22), transparent 32%), linear-gradient(145deg, #eaf4ff, #cfe6ff);
+}
+
+.device-notice-card {
+    width: min(100%, 480px);
+    padding: 32px 26px;
+    text-align: center;
+    border: 1px solid rgba(38,94,155,.18);
+    border-radius: 32px;
+    background: rgba(255,255,255,.94);
+    box-shadow: 0 24px 70px rgba(21,65,112,.22);
+}
+.device-notice-icon { font-size: 54px; margin-bottom: 14px; }
+.device-notice-eyebrow { margin: 0 0 8px; color: #d09200; font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.device-notice-card h1 { margin: 0 0 14px; font-size: clamp(24px, 7vw, 34px); line-height: 1.12; font-weight: 900; }
+.device-notice-card > p:not(.device-notice-eyebrow) { margin: 0 auto; max-width: 390px; color: #557ba6; font-size: 15px; line-height: 1.6; font-weight: 600; }
+.device-notice-devices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+.device-notice-devices span { padding: 8px 12px; border-radius: 999px; color: #265e9b; background: #e4f0ff; font-size: 12px; font-weight: 800; }

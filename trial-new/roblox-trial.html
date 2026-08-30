@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Studio Trial Class - Kalananti</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8b5cf6',   /* Kalananti Violet */
+                        secondary: '#FDB913', /* Yellow/Gold */
+                        accent: '#0d9488',    /* Teal */
+                        dark: '#0f172a',      /* Slate 900 */
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            900: '#4c1d95',
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Outfit', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-page: #f8fafc;
+            --text-main: #1e293b; /* Slate 800 */
+            --text-sub: #475569;  /* Slate 600 - Darker for better contrast */
+            --card-bg: #FFFFFF;
+            --brand-primary: #8b5cf6;
+            --brand-dark: #4c1d95;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+            background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Abstract Floating Shapes (replaces Forest) */
+        .bg-shapes {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05));
+            border-radius: 50%;
+            backdrop-filter: blur(80px);
+        }
+
+        .s1 { width: 600px; height: 600px; top: -100px; left: -100px; animation: float 10s ease-in-out infinite; }
+        .s2 { width: 400px; height: 400px; bottom: 10%; right: -50px; animation: float 14s ease-in-out infinite reverse; background: linear-gradient(135deg, rgba(253, 185, 19, 0.1), rgba(253, 185, 19, 0.05)); }
+        .s3 { width: 200px; height: 200px; top: 20%; right: 20%; animation: float 12s ease-in-out infinite 2s; }
+
+        @keyframes float { 0% { transform: translate(0, 0); } 50% { transform: translate(20px, -20px); } 100% { transform: translate(0, 0); } }
+
+        /* Card Style - Clean Modern */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 40px -10px rgba(139, 92, 246, 0.15); /* Soft Violet Shadow */
+            color: var(--text-main);
+            position: relative;
+            backdrop-filter: blur(12px);
+        }
+
+        /* Typography overrides */
+        /* Typography overrides */
+        h1, h2, h3, h4 { color: var(--text-main); }
+        .text-gray-300, .text-gray-400, .text-gray-500 { color: var(--text-sub) !important; }
+        .text-white { color: var(--text-main) !important; } /* Invert text meant for dark bg */
+        
+        .text-accent { color: #FDB913 !important; }
+        .text-primary { color: #4D4DFF !important; }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 1rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.4);
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        /* Code Block Contrast Fix */
+        .bg-\[\#282c34\] .text-gray-400 { color: #9ca3af !important; }
+        .bg-\[\#282c34\] .text-white { color: #ffffff !important; }
+
+        /* Navigation */
+        /* Navigation - Old styles removed */
+
+        /* Quiz Options */
+        .quiz-option {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: var(--text-main);
+            border-radius: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 0 #cbd5e1;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--brand-primary);
+            background: #f5f3ff;
+            transform: translateY(-2px);
+        }
+        
+        .quiz-option.correct {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #064e3b;
+        }
+        
+        .quiz-option.wrong {
+            background: #fff1f2;
+            border-color: #f43f5e;
+            color: #881337;
+        }
+
+        /* Interactive Element Overrides */
+        .bg-white\/5, .bg-white\/10 {
+            background-color: #f1f5f9 !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        kbd {
+            background: #1e293b;
+            color: white !important;
+            border: 1px solid #0f172a;
+            border-bottom: 3px solid #0f172a;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 8px;
+        }
+
+        /* Core Slide Logic */
+        .slide {
+            display: none;
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            padding: 2rem 5rem;
+            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body>
+    
+    <!-- Background Shapes -->
+    <div class="bg-shapes">
+        <div class="shape s1"></div>
+        <div class="shape s2"></div>
+        <div class="shape s3"></div>
+    </div>
+
+    <!-- Navigation Bar (Sesi 29 Style) -->
+    <div class="fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-t border-slate-200 flex items-center justify-between px-6 z-40">
+        <div class="flex items-center gap-4">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Roblox Studio Trial Class</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="prevSlide()" class="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-brand-600 transition disabled:opacity-30"><i class="fa-solid fa-chevron-left"></i></button>
+            <span class="font-mono text-sm font-bold text-slate-400"><span id="slideCounter" class="text-brand-600">1</span>/<span id="totalSlidesDisplay">30</span></span>
+            <button onclick="nextSlide()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-brand-600 transition shadow-lg shadow-brand-500/20"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="fixed bottom-16 left-0 h-1 bg-slate-200 w-full z-40">
+        <div id="progressBar" class="h-full bg-brand-500 transition-all duration-500 w-[0%]"></div>
+    </div>
+
+    <!-- Top Bar Logos -->
+    <div class="fixed top-0 left-0 right-0 p-6 flex justify-between items-start z-30 pointer-events-none">
+        <!-- Logo -->
+        <div class="bg-white/90 backdrop-blur shadow-sm border border-slate-200 px-4 py-2 rounded-full flex gap-4 items-center pointer-events-auto">
+             <img src="https://images2.imgbox.com/51/6a/xhLlGQcZ_o.png" alt="Ruangguru Coding" class="h-8 w-auto">
+             <div class="h-4 w-px bg-slate-300"></div>
+             <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Kalananti" class="h-8 w-auto">
+        </div>
+    </div>
+
+    <!-- ==================== SLIDES ==================== -->
+
+    <!-- SLIDE 1: Welcome (Sesi 29 Split Style) -->
+    <div class="slide active" id="slide1">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 z-10 w-full px-6">
+            <!-- Left Text Content -->
+            <div class="flex-1 text-center md:text-left">
+                <div class="inline-block px-4 py-1 bg-brand-50 text-brand-600 rounded-full text-sm font-bold mb-6 tracking-widest border border-brand-100">
+                    KALANANTI • CODING
+                </div>
+                <h1 class="text-6xl md:text-8xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
+                    ROBLOX<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-accent-pink">STUDIO</span>
+                </h1>
+                <p class="text-2xl text-slate-500 font-light mb-8 max-w-lg">
+                    Build Your First Game World. <br>Create, Script, Play! 🌍
+                </p>
+                <div class="flex flex-col md:flex-row gap-4 justify-center md:justify-start">
+                    <div class="flex items-center gap-3 px-6 py-4 bg-white rounded-2xl shadow-lg border border-slate-100">
+                         <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-primary font-bold"><i class="fa-solid fa-cube"></i></div>
+                         <div class="text-left">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">Software</div>
+                            <div class="font-bold text-slate-800">Roblox Studio</div>
+                         </div>
+                    </div>
+                     <div class="flex items-center gap-3 px-6 py-4 bg-white rounded-2xl shadow-lg border border-slate-100">
+                         <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-accent-gold font-bold"><i class="fa-solid fa-code"></i></div>
+                         <div class="text-left">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase">Language</div>
+                            <div class="font-bold text-slate-800">Lua Script</div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Visual Content -->
+            <div class="flex-1 relative animate-float flex justify-center">
+                <div class="relative w-[500px] h-[400px]">
+                    <!-- Main Image -->
+                    <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/f22732bd-a84c-4133-a471-b78a96260298.png" 
+                         alt="Roblox Studio Character" 
+                         class="w-full h-full object-contain drop-shadow-2xl relative z-10 filter hue-rotate-15">
+                     
+                     <!-- Floating Elements -->
+                     <div class="absolute -top-10 -right-10 bg-white p-4 rounded-xl shadow-xl z-20 animate-bounce">
+                         <span class="text-4xl">🛠️</span>
+                     </div>
+                     <div class="absolute bottom-10 -left-10 bg-white p-4 rounded-xl shadow-xl z-20 animate-pulse-slow">
+                         <span class="text-4xl">💻</span>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Rules (One-Way) -->
+    <div class="slide" id="slide2">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-8 text-gradient">Aturan Main</h2>
+            <div class="grid grid-cols-1 gap-6">
+                <div class="p-6 rounded-xl bg-white/5 border border-white/10 flex items-center gap-6">
+                    <div class="text-5xl">👀</div>
+                    <div class="text-left">
+                        <h3 class="text-2xl font-bold text-white">Fokus ke Layar</h3>
+                        <p class="text-gray-400">Ikuti alur yang Kakak jelaskan.</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-xl bg-white/5 border border-white/10 flex items-center gap-6">
+                    <div class="text-5xl">🧠</div>
+                    <div class="text-left">
+                        <h3 class="text-2xl font-bold text-white">Observasi Aktif</h3>
+                        <p class="text-gray-400">Pikirkan jawabannya dalam hati.</p>
+                    </div>
+                </div>
+                <div class="p-6 rounded-xl bg-white/5 border border-white/10 flex items-center gap-6">
+                    <div class="text-5xl">🔇</div>
+                    <div class="text-left">
+                        <h3 class="text-2xl font-bold text-white">No Chat Needed</h3>
+                        <p class="text-gray-400">Cukup perhatikan dan pahami.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Teacher Introduction -->
+    <div class="slide" id="slide3">
+        <div class="glass-card p-10 max-w-4xl w-full text-center flex flex-col items-center">
+            <div class="w-40 h-40 rounded-full bg-gradient-to-br from-primary to-secondary p-1 mb-6 shadow-2xl">
+                <div class="w-full h-full rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
+                    <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/0df9f6aa-99ca-4a46-b021-fbaa462347f6.png" alt="Instructor Avatar" class="w-full h-full object-cover object-top">
+                </div>
+            </div>
+            <h2 class="text-4xl font-bold mb-2">Halo, Adik-adik!</h2>
+            <!-- Dynamic Teacher Name -->
+            <div id="teacher-name-container" class="mb-6">
+                <!-- Input State -->
+                <div id="teacher-input-group" class="flex gap-2 items-center justify-center">
+                    <h3 class="text-2xl text-accent font-semibold">Nama Kakak</h3>
+                    <input type="text" id="teacher-input" placeholder="Isi Nama" 
+                           class="bg-white/10 border border-white/20 rounded px-3 py-1 text-white text-xl focus:outline-none focus:border-accent">
+                    <button onclick="saveTeacherName()" class="bg-primary hover:bg-primary-dark text-white px-4 py-1 rounded font-bold transition">
+                        OK
+                    </button>
+                </div>
+                
+                <!-- Display State -->
+                <div id="teacher-display-group" class="hidden flex items-center justify-center gap-3">
+                    <h3 class="text-2xl text-accent font-semibold">Kakak <span id="teacher-name-display"></span></h3>
+                    <button onclick="resetTeacherName()" class="text-gray-500 hover:text-white text-sm" title="Ganti Nama">
+                        (Ubah)
+                    </button>
+                </div>
+            </div>
+            <p class="text-xl text-gray-300 max-w-lg">
+                "Hari ini Kakak akan mengajakmu melihat dapur di balik game Roblox favoritmu."
+            </p>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Hook - Coding Roles -->
+    <div class="slide" id="slide4">
+        <h2 class="text-4xl font-bold mb-10 text-center">Coding Bisa Jadi Apa?</h2>
+        <div class="grid grid-cols-3 gap-6 max-w-6xl w-full">
+            <div class="glass-card p-8 text-center hover:bg-white/10 transition cursor-default group">
+                <div class="text-6xl mb-6 group-hover:scale-110 transition duration-300">🎮</div>
+                <h3 class="text-2xl font-bold text-primary mb-2">Game Dev</h3>
+                <p class="text-sm text-gray-400">Menciptakan aturan main yang seru.</p>
+            </div>
+            <div class="glass-card p-8 text-center hover:bg-white/10 transition cursor-default group">
+                <div class="text-6xl mb-6 group-hover:scale-110 transition duration-300">🌍</div>
+                <h3 class="text-2xl font-bold text-secondary mb-2">World Builder</h3>
+                <p class="text-sm text-gray-400">Mendesain kota dan lingkungan.</p>
+            </div>
+            <div class="glass-card p-8 text-center hover:bg-white/10 transition cursor-default group">
+                <div class="text-6xl mb-6 group-hover:scale-110 transition duration-300">🔧</div>
+                <h3 class="text-2xl font-bold text-accent mb-2">Problem Solver</h3>
+                <p class="text-sm text-gray-400">Memecahkan masalah dengan logika.</p>
+            </div>
+        </div>
+        <p class="mt-8 text-gray-400 italic">"Pilih satu yang paling membuatmu penasaran dalam hati..."</p>
+    </div>
+
+    <!-- SLIDE 5: Concept - What is Coding -->
+    <div class="slide" id="slide5">
+        <div class="glass-card p-12 max-w-5xl w-full flex items-center gap-12">
+            <div class="flex-1 text-right">
+                <h2 class="text-6xl font-black text-white mb-2">CODING</h2>
+                <div class="h-1 w-32 bg-accent ml-auto rounded-full"></div>
+            </div>
+            <div class="text-6xl">=</div>
+            <div class="flex-[2] text-left">
+                <p class="text-3xl font-light leading-relaxed">
+                    Memberi <span class="text-accent font-bold">instruksi</span> yang dipahami komputer.
+                </p>
+                <div class="mt-6 p-4 bg-black/40 rounded-lg border-l-4 border-primary font-mono text-lg text-green-400">
+                    > Human: "Jump!"<br>
+                    > Computer: *Jumps*
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: QUIZ 1 - Concept -->
+    <div class="slide" id="slide6">
+        <div class="glass-card p-10 max-w-4xl w-full text-center">
+            <span class="text-accent tracking-widest font-bold text-sm mb-4 block">QUICK QUIZ</span>
+            <h2 class="text-3xl font-bold mb-8">Manakah yang disebut Coding?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-6 rounded-xl bg-white/5 text-left">
+                    <span class="text-2xl mr-2">A.</span> Bermain game Roblox seharian
+                </button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-6 rounded-xl bg-white/5 text-left">
+                    <span class="text-2xl mr-2">B.</span> Menulis skrip agar karakter bisa terbang
+                </button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-6 rounded-xl bg-white/5 text-left">
+                    <span class="text-2xl mr-2">C.</span> Membeli Robux
+                </button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-6 rounded-xl bg-white/5 text-left">
+                    <span class="text-2xl mr-2">D.</span> Nonton YouTube Gaming
+                </button>
+            </div>
+            <p id="quiz-feedback-6" class="mt-6 text-xl font-bold h-8"></p>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: Story Mission -->
+    <div class="slide" id="slide7">
+        <div class="text-center slide-content">
+            <h2 class="text-2xl text-accent font-bold mb-4 tracking-[0.5em] uppercase">Your Mission</h2>
+            <h1 class="text-6xl font-black mb-8 leading-tight text-white drop-shadow-[0_0_15px_rgba(77,77,255,0.8)]">
+                PLANET MORA
+            </h1>
+            <p class="text-2xl text-gray-300 max-w-2xl mx-auto mb-10">
+                Bangun kota di planet baru sebagai sumber kehidupan masa depan.
+            </p>
+            <div class="flex justify-center">
+                <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com/file-uploader/images/5e3b4d49-5d2d-41c4-bcfd-897d8d0e2ef6.png" 
+                     alt="Planet Illustration" 
+                     class="rounded-full w-64 h-64 object-cover shadow-[0_0_50px_rgba(77,77,255,0.4)] border-4 border-white/10">
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SLIDE: Mayor of Mora Activity -->
+    <div class="slide">
+        <div class="glass-card p-10 max-w-5xl text-center">
+            <div class="inline-block px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold mb-4">ACTIVITY</div>
+            <h2 class="text-4xl font-bold mb-6">Walikota Mora 👑</h2>
+            
+            <div class="bg-white/10 p-4 rounded-xl border border-white/20 mb-8 max-w-2xl mx-auto shadow-lg">
+                <p class="text-2xl font-bold text-accent mb-2">🎮 Siapa yang pernah MAIN Roblox?</p>
+                <div class="w-10 h-1 bg-white/20 mx-auto my-2 rounded-full"></div>
+                <p class="text-2xl font-bold text-primary">🛠️ Siapa yang BIKIN Roblox?</p>
+            </div>
+
+            <p class="text-xl mb-8">Sebagai Walikota Planet Mora: <span class="text-white">"Untuk bangun kota besar, fasilitas apa saja yang kita butuhkan?"</span></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white/5 p-6 rounded-xl border border-white/10 hover:-translate-y-2 transition duration-300">
+                    <div class="text-5xl mb-4">🏫</div>
+                    <h3 class="text-xl font-bold text-white mb-2">Sekolah</h3>
+                    <p class="text-sm text-gray-400">Tempat warga belajar</p>
+                </div>
+                <div class="bg-white/5 p-6 rounded-xl border border-white/10 hover:-translate-y-2 transition duration-300">
+                    <div class="text-5xl mb-4">🏥</div>
+                    <h3 class="text-xl font-bold text-white mb-2">Rumah Sakit</h3>
+                    <p class="text-sm text-gray-400">Pusat kesehatan kota</p>
+                </div>
+                <div class="bg-white/5 p-6 rounded-xl border border-white/10 hover:-translate-y-2 transition duration-300">
+                    <div class="text-5xl mb-4">🌳</div>
+                    <h3 class="text-xl font-bold text-white mb-2">Taman</h3>
+                    <p class="text-sm text-gray-400">Tempat bersantai penduduk</p>
+                </div>
+            </div>
+            <p class="mt-8 text-xl font-bold text-accent animate-pulse">Sebutkan ide bangunan lainnya!</p>
+        </div>
+    </div>
+
+    <!-- NEW SLIDE: Decomposition Concept -->
+    <div class="slide">
+        <div class="glass-card p-10 max-w-4xl text-center">
+            <div class="inline-block px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-bold mb-4">CONCEPT</div>
+            <h2 class="text-4xl font-bold mb-8">Decomposition 🧩</h2>
+            <div class="flex flex-col items-center gap-6 mb-8">
+                <div class="bg-white/5 p-6 rounded-full border border-white/10 text-6xl shadow-xl">🔍</div>
+                <p class="text-2xl text-gray-300 leading-relaxed max-w-2xl">
+                    "Kita tidak bisa langsung menyulap kota besar."<br><br>
+                    Untuk membangunnya, kita harus <span class="text-white font-bold bg-primary/30 px-3 py-1 rounded">memecah</span> ("Decomposition") masalah besar menjadi <span class="text-accent font-bold">Bangunan Kecil</span> terlebih dahulu!
+                </p>
+            </div>
+            <div class="hidden md:flex justify-center items-center gap-4 text-2xl font-bold text-white bg-black/40 p-6 rounded-xl border border-white/10 shadow-inner">
+                <div class="flex flex-col items-center"><span class="text-4xl mb-2">🏙️</span> Kota Besarnya</div>
+                <i class="fa-solid fa-arrow-right text-accent text-3xl px-4"></i>
+                <div class="flex flex-col items-center"><span class="text-4xl mb-2">🏠</span> Rumah-rumahnya</div>
+                <i class="fa-solid fa-arrow-right text-accent text-3xl px-4"></i>
+                <div class="flex flex-col items-center"><span class="text-4xl mb-2">🧱</span> Part / Baloknya</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: Context - Roblox Studio -->
+    <div class="slide" id="slide8">
+        <div class="glass-card p-12 max-w-5xl w-full text-center">
+            <div class="flex justify-center items-center gap-8 mb-8">
+                <img src="https://pbs.twimg.com/media/GorZBeDWMAAcGiH.jpg" class="w-full max-w-3xl mx-auto rounded-xl shadow-2xl" alt="Roblox Player vs Studio">
+            </div>
+            <p class="text-xl text-gray-300">"Kita tidak akan bermain hari ini. Kita akan mencipta."</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: Hardware Setup -->
+    <div class="slide" id="slide9">
+        <div class="glass-card p-10 max-w-4xl w-full">
+            <h2 class="text-3xl font-bold mb-8 text-center">Checklist Kesiapan</h2>
+            <ul class="space-y-6">
+                <li class="flex items-center gap-4 bg-white/5 p-4 rounded-xl">
+                    <span class="text-3xl text-green-400">✅</span>
+                    <span class="text-xl">Laptop / PC (Windows atau Mac)</span>
+                </li>
+                <li class="flex items-center gap-4 bg-white/5 p-4 rounded-xl">
+                    <span class="text-3xl text-green-400">✅</span>
+                    <span class="text-xl">Mouse (Sangat Disarankan!) 🖱️</span>
+                </li>
+                <li class="flex items-center gap-4 bg-white/5 p-4 rounded-xl">
+                    <span class="text-3xl text-green-400">✅</span>
+                    <span class="text-xl">Koneksi Internet Stabil 🌐</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: Download -->
+    <div class="slide" id="slide10">
+        <div class="text-center">
+            <h2 class="text-4xl font-bold mb-6">Langkah 1: Download</h2>
+            <div class="glass-card p-12 inline-block">
+                <p class="text-gray-400 mb-2">Buka browser dan ketik:</p>
+                <div class="bg-black/50 p-4 rounded-xl border border-white/20 mb-8">
+                    <code class="text-3xl text-primary font-mono cursor-pointer hover:text-white transition">www.roblox.com/create</code>
+                </div>
+                <p class="text-sm text-gray-500 max-w-md mx-auto">
+                    *Jika sudah punya aplikasinya, abaikan langkah ini.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 11: QUIZ 2 - Tech Check -->
+    <div class="slide" id="slide11">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <span class="text-accent tracking-widest font-bold text-sm mb-4 block">TECH QUIZ</span>
+            <h2 class="text-3xl font-bold mb-8">Benar atau Salah?</h2>
+            <p class="text-2xl mb-8">"Aku bisa membuat game Roblox Studio menggunakan HP/Tablet."</p>
+            
+            <div class="flex justify-center gap-8">
+                <button onclick="checkQuiz(this, false)" class="quiz-option w-40 py-4 rounded-xl bg-green-500/20 text-green-400 font-bold text-xl border-green-500/50">
+                    BENAR
+                </button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option w-40 py-4 rounded-xl bg-red-500/20 text-red-400 font-bold text-xl border-red-500/50">
+                    SALAH
+                </button>
+            </div>
+            <p id="quiz-feedback-11" class="mt-6 text-xl font-bold h-8 text-accent"></p>
+        </div>
+    </div>
+
+    <!-- SLIDE 12: Open Studio -->
+    <div class="slide" id="slide12">
+        <div class="glass-card p-10 max-w-4xl w-full flex items-center gap-8">
+            <div class="flex-1">
+                <img src="https://devforum-uploads.s3.dualstack.us-east-2.amazonaws.com/uploads/original/5X/0/1/8/5/0185e60a3e5058d69c3383dca4d9b56a2c172403.png" alt="Roblox Studio Login" class="rounded-lg shadow-2xl border border-white/10 opacity-80">
+            </div>
+            <div class="flex-1 text-left">
+                <h2 class="text-3xl font-bold mb-4">Langkah 2: Buka App</h2>
+                <ol class="list-decimal pl-6 space-y-4 text-xl text-gray-300">
+                    <li>Cari <span class="bg-blue-600 px-2 py-1 rounded text-white text-sm">Roblox Studio</span> di komputer.</li>
+                    <li>Login dengan akun Roblox-mu.</li>
+                    <li>Tunggu sampai halaman utama muncul.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 13: New Project -->
+    <div class="slide" id="slide13">
+        <div class="text-center">
+            <h2 class="text-3xl font-bold mb-6">Langkah 3: New Project</h2>
+            <div class="glass-card p-2 inline-block rounded-xl overflow-hidden mb-6">
+                <!-- Visual representation of selecting Baseplate -->
+                <div class="flex justify-center">
+                    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20250310112233992581/Tamplate.png" class="w-[600px] h-auto rounded-xl border-2 border-primary shadow-lg" alt="Baseplate Selection">
+                </div>
+            </div>
+            <p class="text-xl">Pilih <strong>Baseplate</strong> untuk mulai dari nol.</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 14: Camera Control Theory -->
+    <div class="slide" id="slide14">
+        <div class="glass-card p-10 max-w-4xl w-full">
+            <h2 class="text-3xl font-bold mb-8 text-center text-primary">Camera Control 🎥</h2>
+            <div class="flex justify-center">
+                <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/54d22ca9-c456-4d09-9769-f237066e2d02.png" class="w-full max-w-2xl mx-auto rounded-xl shadow-lg" alt="Camera Controls">
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 15: Interactive Camera Practice -->
+    <div class="slide" id="slide15">
+        <div class="glass-card p-8 max-w-5xl w-full text-center">
+            <h2 class="text-2xl font-bold mb-6">Simulation: Try the Controls!</h2>
+            <div class="relative w-full h-[300px] rounded-xl overflow-hidden mb-6 flex items-center justify-center border border-white/10" id="camSimBox">
+                <img src="https://devforum-uploads.s3.dualstack.us-east-2.amazonaws.com/uploads/original/4X/2/0/3/203b8eb7d4e80d7aa64c422b9e0849ac1301b164.gif" class="w-full h-full object-cover rounded-xl" alt="Camera Control GIF">
+            </div>
+            
+            <div class="text-center text-gray-400 text-sm">
+                *Animation showing camera movement controls
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 16: Insert Project -->
+    <div class="slide" id="slide16">
+        <div class="glass-card p-12 max-w-4xl text-center">
+            <h2 class="text-4xl font-bold mb-6">Mulai Membangun!</h2>
+            <p class="mb-8 text-xl">Kita butuh bahan bangunan.</p>
+
+            <!-- New Image Added -->
+            <div class="mb-8">
+                <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com/file-uploader/images/41182a63-0843-4103-bfdf-ce0cfe2a4fdc.png" class="h-48 mx-auto rounded-lg shadow-lg border-2 border-white/20" alt="Roblox Studio Assets">
+            </div>
+            
+            <div class="bg-primary/10 p-6 rounded-2xl border-2 border-dashed border-primary mb-8">
+                <h3 class="text-2xl font-bold text-white mb-2">📦 INSERT STARTER PROJECT</h3>
+                <p class="text-gray-400 mb-4">Download Asset Pack di:</p>
+                <a href="https://bit.ly/trialcitypack" target="_blank" class="text-3xl text-accent font-bold hover:underline">bit.ly/trialcitypack</a>
+            </div>
+            <p class="text-sm text-gray-500">Klik link di atas atau ketik di browser.</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 17: Parts (Formerly 19) -->
+    <div class="slide" id="slide17">
+        <div class="glass-card p-8 max-w-6xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-4">Mulai dari Awal: Parts 🧱</h2>
+            <p class="text-gray-400 mb-6">Kita bisa membuat benda apa saja menggunakan bentuk dasar ini.</p>
+            
+            <!-- Toolbar Image -->
+            <div class="mb-8">
+                 <img src="https://prod.docsiteassets.roblox.com/assets/studio/general/Toolbar-Insert-Part-Widget.png.webp" class="h-32 w-auto mx-auto rounded-lg shadow-md border border-white/10" alt="Insert Part Toolbar">
+            </div>
+
+            <!-- Parts Grid -->
+            <div class="grid grid-cols-5 gap-4">
+                <!-- Block -->
+                <div class="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Basic-Part-Block.png.webp" class="w-20 h-20 object-contain mb-2" alt="Block">
+                    <span class="font-bold text-sm">Block</span>
+                </div>
+                <!-- Sphere -->
+                <div class="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Basic-Part-Sphere.png.webp" class="w-20 h-20 object-contain mb-2" alt="Sphere">
+                    <span class="font-bold text-sm">Sphere</span>
+                </div>
+                <!-- Cylinder -->
+                <div class="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Basic-Part-Cylinder.png.webp" class="w-20 h-20 object-contain mb-2" alt="Cylinder">
+                    <span class="font-bold text-sm">Cylinder</span>
+                </div>
+                <!-- Wedge -->
+                <div class="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Basic-Part-Wedge.png.webp" class="w-20 h-20 object-contain mb-2" alt="Wedge">
+                    <span class="font-bold text-sm">Wedge</span>
+                </div>
+                 <!-- Corner Wedge -->
+                <div class="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Basic-Part-Corner-Wedge.png.webp" class="w-20 h-20 object-contain mb-2" alt="Corner Wedge">
+                    <span class="font-bold text-sm">Corner Wedge</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 18: Modeling Tools (Formerly 16) -->
+    <div class="slide" id="slide18">
+        <h2 class="text-3xl font-bold mb-8 text-center">The Builder's Toolkit 🛠️</h2>
+        <div class="w-full max-w-5xl flex flex-col items-center gap-8">
+            <!-- Main Toolbar Image -->
+            <img src="https://prod.docsiteassets.roblox.com/assets/studio/general/Toolbar-Transform-Tools.png" class="w-full max-w-3xl rounded-xl shadow-lg border border-white/10" alt="Transform Toolbar">
+            
+            <!-- Individual Tools Grid -->
+            <div class="grid grid-cols-3 gap-6 w-full">
+                <!-- Move -->
+                <div class="glass-card p-4 flex flex-col items-center">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Transform-Move-SM.png" class="w-full rounded-lg mb-2" alt="Move Tool">
+                    <h3 class="font-bold text-lg">Pindah (Move)</h3>
+                </div>
+                <!-- Scale -->
+                <div class="glass-card p-4 flex flex-col items-center">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Transform-Scale-SM.png" class="w-full rounded-lg mb-2" alt="Scale Tool">
+                    <h3 class="font-bold text-lg">Skala (Scale)</h3>
+                </div>
+                <!-- Rotate -->
+                <div class="glass-card p-4 flex flex-col items-center">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/modeling/parts/Transform-Rotate-SM.png" class="w-full rounded-lg mb-2" alt="Rotate Tool">
+                    <h3 class="font-bold text-lg">Putar (Rotate)</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 19: QUIZ 3 - Tools (Formerly 17) -->
+    <div class="slide" id="slide19">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-8">Kuis Toolkit 🛠️</h2>
+            <p class="text-xl mb-6">"Kakak ingin membuat gedungnya menjadi lebih TINGGI."</p>
+            <p class="mb-8 text-gray-400">Alat mana yang harus dipakai?</p>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 rounded-xl bg-white/5 font-bold">MOVE</button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-4 rounded-xl bg-white/5 font-bold">SCALE</button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-4 rounded-xl bg-white/5 font-bold">ROTATE</button>
+            </div>
+             <p id="quiz-feedback-17" class="mt-6 text-xl font-bold h-8 text-secondary"></p>
+        </div>
+    </div>
+
+    <!-- SLIDE 20: Pro Shortcuts -->
+    <div class="slide" id="slide20">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-8 text-gradient-gold">✨ Pro Builder Secrets ✨</h2>
+            
+            <div class="space-y-6">
+                <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border-l-4 border-green-500">
+                    <div class="text-left">
+                        <h3 class="font-bold text-xl">Duplicate (Gandakan)</h3>
+                        <p class="text-gray-400">Copy paste super cepat</p>
+                    </div>
+                    <div>
+                        <kbd class="text-2xl bg-gray-800 text-secondary border-gray-600">Ctrl</kbd> + <kbd class="text-2xl bg-gray-800 text-secondary border-gray-600">D</kbd>
+                    </div>
+                </div>
+                
+                 <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border-l-4 border-blue-500">
+                    <div class="text-left">
+                        <h3 class="font-bold text-xl">Rotate (Putar)</h3>
+                        <p class="text-gray-400">Memutar 90 derajat</p>
+                    </div>
+                    <div>
+                        <kbd class="text-2xl bg-gray-800 text-secondary border-gray-600">R</kbd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SLIDE 21: CHALLENGE -->
+    <div class="slide" id="slide21">
+        <div class="glass-card p-10 max-w-4xl w-full text-center">
+             <h2 class="text-4xl font-bold mb-6 text-accent">🔥 SUPER CHALLENGE 🔥</h2>
+            <h3 class="text-2xl font-bold mb-6">Coba Bangun Sendiri!</h3>
+            <p class="mb-8 text-xl">Bisakah kamu membuat <strong>Sofa dan Meja</strong> sederhana?</p>
+            
+            <div class="flex justify-center mb-8">
+                <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com/file-uploader/images/8add2583-ac33-4bb6-8111-fd7ea7d2206d.png" class="max-h-80 rounded-xl shadow-2xl border-4 border-accent/50" alt="Challenge Example: Sofa and Table">
+            </div>
+            
+            <div class="bg-white/10 p-6 rounded-xl inline-block text-left">
+                <p class="font-bold mb-2">💡 Tips:</p>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-300">
+                    <li>Gunakan <strong>Block</strong> untuk dudukannya.</li>
+                    <li>Gunakan <strong>Scale</strong> untuk memipihkan blok.</li>
+                    <li>Gunakan <strong>Duplicate (Ctrl+D)</strong> untuk kaki meja.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SLIDE 22: TOOLBOX -->
+    <div class="slide" id="slide22">
+        <div class="glass-card p-10 max-w-4xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-8 text-center">Jalan Pintas: Toolbox 🧰</h2>
+            <p class="text-xl mb-6 text-gray-300">Kita bisa nambahin object 3D yang udah ada dengan toolbox!</p>
+            
+            <div class="flex flex-col items-center gap-8">
+                <!-- Toolbox Icon -->
+                <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <img src="https://prod.docsiteassets.roblox.com/assets/studio/general/Toolbar-Toolbox.png.webp" class="h-32 rounded-md shadow-lg" alt="Toolbox Button">
+                    <p class="mt-2 text-sm text-gray-400">Klik icon ini di menu bar</p>
+                </div>
+                
+                <!-- Search Example -->
+                <div class="w-full max-w-2xl">
+                    <p class="mb-4 text-lg">Kamu tinggal cari aja yang mau kamu tambahin:</p>
+                    <img src="https://prod.docsiteassets.roblox.com/assets/studio/toolbox/Model-Search-Example.png.webp" class="w-full rounded-xl shadow-2xl border-2 border-white/20" alt="Toolbox Search Example">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 23: QUIZ 4 - Shortcuts (Formerly 22) -->
+    <div class="slide" id="slide23">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <span class="text-accent tracking-widest font-bold text-sm mb-4 block">SPEED QUIZ</span>
+            <h2 class="text-3xl font-bold mb-6">Kakak mau menggandakan pohon ini!</h2>
+            <p class="mb-8 text-xl">Tombol apa yang harus ditekan?</p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-6 rounded-xl bg-white/5">
+                    <kbd>Ctrl</kbd> + <kbd>C</kbd>
+                </button>
+                <button onclick="checkQuiz(this, true)" class="quiz-option p-6 rounded-xl bg-white/5 transform hover:scale-105 transition">
+                    <kbd>Ctrl</kbd> + <kbd>D</kbd>
+                </button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option p-6 rounded-xl bg-white/5">
+                    <kbd>Alt</kbd> + <kbd>F4</kbd>
+                </button>
+                 <button onclick="checkQuiz(this, false)" class="quiz-option p-6 rounded-xl bg-white/5">
+                    <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+                </button>
+            </div>
+            <p id="quiz-feedback-23" class="mt-6 text-xl font-bold h-8 text-green-400"></p>
+        </div>
+    </div>
+
+    <!-- SLIDE 24: Add Script Step 1 -->
+    <div class="slide" id="slide24">
+        <div class="glass-card p-10 max-w-4xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-6 text-center text-accent">Coding Time! 💻</h2>
+            <p class="text-xl mb-6">Yuk kita tambahin script ke program kita.</p>
+            <p class="mb-8 text-lg">Pertama, cari dulu <span class="text-yellow-400 font-bold">ServerScriptService</span> dan tambahkan <span class="text-green-400 font-bold">Script</span> ke dalamnya.</p>
+            
+            <div class="flex justify-center">
+                <img src="https://uob-1328237036.cos.ap-singapore.myqcloud.com//file-uploader/images/dfd656dd-403b-4ce2-9d66-ee6f69d2756a.jpg" class="max-h-96 rounded-xl shadow-2xl border-2 border-white/20" alt="Add Script to ServerScriptService">
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW SLIDE 25: Write Code -->
+    <div class="slide" id="slide25">
+         <div class="glass-card p-10 max-w-5xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-6 text-accent">Tulis Kodemu! 📝</h2>
+            <p class="text-xl mb-6">Masukin kode ini yuk ke dalam script-nya:</p>
+            
+            <div class="bg-[#282c34] p-6 rounded-xl text-left font-mono text-sm md:text-base border border-white/10 shadow-inner mb-8 overflow-x-auto">
+                <pre><code class="language-lua">
+<span class="text-gray-400">-- VARIABLE --</span>
+<span class="text-purple-400">local</span> <span class="text-yellow-300">lighting</span> <span class="text-white">=</span> <span class="text-blue-300">game</span><span class="text-white">.</span><span class="text-yellow-300">Lighting</span>
+
+<span class="text-gray-400">-- FOREVER LOOPS --</span>
+<span class="text-purple-400">while</span> <span class="text-blue-300">true</span> <span class="text-purple-400">do</span>
+    <span class="text-blue-300">wait</span><span class="text-white">(</span><span class="text-orange-300">0.1</span><span class="text-white">)</span>
+    <span class="text-yellow-300">lighting</span><span class="text-white">.</span><span class="text-yellow-300">ClockTime</span> <span class="text-white">+=</span> <span class="text-orange-300">0.01</span>
+<span class="text-purple-400">end</span>
+                </code></pre>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-center gap-6">
+                <div class="bg-white/10 p-4 rounded-xl">
+                    <h3 class="font-bold text-lg mb-1">🤔 Kira-kira buat apa?</h3>
+                </div>
+                <div class="bg-green-500/20 p-4 rounded-xl border border-green-500/30 animate-pulse">
+                    <h3 class="font-bold text-lg mb-1 text-green-300">▶️ Coba Mainkan! (Play)</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 26: Save Project (Formerly 25) -->
+    <div class="slide" id="slide26">
+        <div class="glass-card p-12 max-w-4xl text-center border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+            <h2 class="text-4xl font-bold mb-6 text-red-500">⚠️ VERY IMPORTANT</h2>
+            <h3 class="text-2xl font-bold text-white mb-8">Simpan Karyamu!</h3>
+            
+            <div class="bg-black/40 p-6 rounded-xl inline-block text-left font-mono text-lg">
+                1. Klik <span class="text-blue-400">FILE</span> (Pojok Kiri Atas)<br>
+                2. Pilih <span class="text-blue-400">Save to Roblox</span><br>
+                3. Beri Nama & Klik <span class="text-green-400">Save</span>
+            </div>
+            
+            <p class="mt-8 text-gray-400">"Dunia yang tidak disimpan akan hilang selamanya..."</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 27: Review Time (Formerly 26) -->
+    <div class="slide" id="slide27">
+        <div class="glass-card p-10 max-w-3xl w-full text-center">
+            <h2 class="text-3xl font-bold mb-8">Review Time 🧠</h2>
+            <p class="text-xl mb-6">Apa langkah pertama saat membangun kota?</p>
+            
+            <div class="space-y-4">
+                 <button onclick="checkQuiz(this, true)" class="quiz-option w-full p-4 rounded-xl bg-white/5 text-left flex items-center gap-4">
+                    <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold">1</span>
+                    <span>Menaruh bangunan (Rumah)</span>
+                </button>
+                <button onclick="checkQuiz(this, false)" class="quiz-option w-full p-4 rounded-xl bg-white/5 text-left flex items-center gap-4">
+                    <span class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">2</span>
+                    <span>Membuat jalan raya</span>
+                </button>
+                 <button onclick="checkQuiz(this, false)" class="quiz-option w-full p-4 rounded-xl bg-white/5 text-left flex items-center gap-4">
+                    <span class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">3</span>
+                    <span>Menghias dengan pohon</span>
+                </button>
+            </div>
+            <p id="quiz-feedback-27" class="mt-4 text-primary font-bold h-6"></p>
+        </div>
+    </div>
+
+    <!-- SLIDE: SHOWCASE PROJECTS -->
+    <div class="slide" id="slideShowcase">
+        <div class="glass-card p-10 max-w-6xl w-full text-center">
+            <h2 class="text-4xl font-bold mb-10 text-slate-900">Apa yang Bisa Kamu Bikin? 🚀</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Project 1 -->
+                <div class="bg-white/50 p-6 rounded-2xl border border-slate-200 hover:bg-white transition-all duration-300 shadow-sm">
+                    <h3 class="text-2xl font-bold text-brand-600 mb-4">RPG Chasing Game</h3>
+                    <div class="rounded-xl overflow-hidden shadow-2xl border-2 border-brand-500/20 aspect-video flex items-center justify-center bg-slate-100">
+                        <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/0f0fb3f4-dada-403c-9898-497f6ba2381c.gif" 
+                             class="w-full h-full object-cover" 
+                             alt="RPG Chasing Game">
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="bg-white/50 p-6 rounded-2xl border border-slate-200 hover:bg-white transition-all duration-300 shadow-sm">
+                    <h3 class="text-2xl font-bold text-secondary mb-4">Interactive Collectible Obby</h3>
+                    <div class="rounded-xl overflow-hidden shadow-2xl border-2 border-secondary/20 aspect-video flex items-center justify-center bg-slate-100">
+                        <img src="https://cdn-web-2.ruangguru.com//landing-pages/assets/6836d51d-bed7-4550-b628-0488bc7be702.gif" 
+                             class="w-full h-full object-cover" 
+                             alt="Interactive Collectible Obby">
+                    </div>
+                </div>
+            </div>
+            
+            <p class="mt-8 text-xl text-slate-500 italic">"Mulai petualangan coding-mu hari ini!"</p>
+        </div>
+    </div>
+
+    <!-- COURSES & CTA -->
+    <div class="slide" id="slide28">
+        <div class="max-w-4xl mx-auto w-full flex flex-col items-center gap-8 px-6 text-center z-10">
+            <!-- Promo Image -->
+            <img src="https://roboguru-forum-cdn.ruangguru.com/image/ac921ee5-2120-43d3-baeb-4c50011cf681.jpeg" 
+                 alt="Promo Kalananti" 
+                 class="w-full rounded-3xl shadow-2xl border-4 border-white transform transition hover:scale-[1.02] duration-500">
+            
+            <!-- CTA Button -->
+            <div class="group relative inline-block w-full max-w-md" onclick="window.open('https://wa.link/mp6tvp', '_blank')">
+                 <div class="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                 <button class="relative w-full flex items-center justify-center gap-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-xl py-4 px-8 rounded-full shadow-xl transition transform hover:-translate-y-1 active:scale-95">
+                     <i class="fa-brands fa-whatsapp text-3xl"></i>
+                     <span>DAFTAR TRIAL CLASS</span>
+                 </button>
+            </div>
+        </div>
+        
+        <!-- Background Elements -->
+        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+    </div>
+
+    <script>
+        // Navigation Logic
+        let currentSlide = 1;
+        let totalSlides = 30;
+        
+        const slideCounter = document.getElementById('slideCounter');
+        const progressBar = document.getElementById('progressBar');
+        const totalSlidesDisplay = document.getElementById('totalSlidesDisplay');
+
+        function updateSlide() {
+            const slides = document.querySelectorAll('.slide');
+            totalSlides = slides.length;
+            
+            // Hide all slides
+            slides.forEach(s => s.classList.remove('active'));
+            // Show current slide
+            if (slides[currentSlide - 1]) {
+                slides[currentSlide - 1].classList.add('active');
+            }
+            
+            // Update Counter
+            if(slideCounter) slideCounter.textContent = currentSlide;
+            if(totalSlidesDisplay) totalSlidesDisplay.textContent = totalSlides;
+
+            // Update Progress Bar
+            if(progressBar) {
+                const percent = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+                progressBar.style.width = `${percent}%`;
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Quiz Logic
+        function checkQuiz(btn, isCorrect) {
+            const parent = btn.parentElement;
+            // Reset siblings
+            const siblings = parent.getElementsByClassName('quiz-option');
+            for(let sib of siblings) {
+                sib.classList.remove('correct', 'wrong');
+                sib.classList.add('opacity-50');
+            }
+            btn.classList.remove('opacity-50');
+            
+            // Show result
+            const feedbackId = btn.closest('.glass-card').querySelector('[id^="quiz-feedback"]').id;
+            const feedbackEl = document.getElementById(feedbackId);
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+                feedbackEl.textContent = "✨ BENAR! Good Job! ✨";
+                feedbackEl.style.color = "#4CC417";
+            } else {
+                btn.classList.add('wrong');
+                feedbackEl.textContent = "❌ Masih kurang tepat, coba lagi!";
+                feedbackEl.style.color = "#FF4444";
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+             updateSlide();
+             loadTeacherName();
+        });
+
+        // Teacher Name Logic
+        function loadTeacherName() {
+            const savedName = localStorage.getItem('roblox_teacher_name');
+            const inputGroup = document.getElementById('teacher-input-group');
+            const displayGroup = document.getElementById('teacher-display-group');
+            const nameDisplay = document.getElementById('teacher-name-display');
+            
+            if (savedName) {
+                inputGroup.classList.add('hidden');
+                displayGroup.classList.remove('hidden');
+                nameDisplay.textContent = savedName;
+            } else {
+                inputGroup.classList.remove('hidden');
+                displayGroup.classList.add('hidden');
+            }
+        }
+
+        function saveTeacherName() {
+            const input = document.getElementById('teacher-input');
+            const name = input.value.trim();
+            if (name) {
+                localStorage.setItem('roblox_teacher_name', name);
+                loadTeacherName();
+            }
+        }
+
+        function resetTeacherName() {
+            localStorage.removeItem('roblox_teacher_name');
+            document.getElementById('teacher-input').value = '';
+            loadTeacherName();
+        }
+    </script>
+</body>
+</html>

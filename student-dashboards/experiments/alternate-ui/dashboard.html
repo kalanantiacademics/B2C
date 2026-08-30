@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../../../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="../../assets/css/device-guard.css">
+    <script src="../../assets/js/device-guard.js" defer></script>
+    <title>Dashboard Kalananti – Mission Control Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                        'k-purple': '#8B5CF6',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        if (!localStorage.getItem('studentName') && !localStorage.getItem('isAdmin')) {
+            window.location.replace('index.html');
+        }
+    </script>
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'dark');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #091326;
+            --bg-accent: #0f1d38;
+            --sidebar-bg: rgba(10, 20, 42, 0.85);
+            --card-bg: rgba(14, 28, 56, 0.7);
+            --card-border: rgba(138, 180, 248, 0.15);
+            --text-main: #f0f6ff;
+            --text-muted: #8ba2c2;
+            --chip-bg: rgba(255, 255, 255, 0.05);
+            --chip-border: rgba(255, 255, 255, 0.1);
+            --stars-opacity: 0.4;
+        }
+
+        html[data-theme="light"] {
+            --bg: #f3f8fe;
+            --bg-accent: #e1edf9;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(38, 94, 155, 0.15);
+            --text-main: #1e3a60;
+            --text-muted: #5b7699;
+            --chip-bg: rgba(38, 94, 155, 0.06);
+            --chip-border: rgba(38, 94, 155, 0.12);
+            --stars-opacity: 0.12;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(38, 94, 155, 0.15), transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(249, 192, 19, 0.12), transparent 30%),
+                radial-gradient(circle at 50% 90%, rgba(51, 157, 157, 0.1), transparent 35%),
+                linear-gradient(135deg, var(--bg) 0%, var(--bg-accent) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient glowing background stars */
+        .stars-background {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -10;
+            opacity: var(--stars-opacity);
+            background-image:
+                radial-gradient(circle at 12% 18%, #ffffff 0.8px, transparent 1.2px),
+                radial-gradient(circle at 82% 64%, #ffffff 1px, transparent 1.5px),
+                radial-gradient(circle at 50% 32%, #ffffff 0.7px, transparent 1.1px),
+                radial-gradient(circle at 22% 78%, #ffffff 0.9px, transparent 1.3px),
+                radial-gradient(circle at 74% 20%, #ffffff 0.8px, transparent 1.2px);
+            background-size: 280px 280px, 240px 240px, 320px 320px, 260px 260px, 190px 190px;
+            animation: starScroll 250s linear infinite;
+        }
+        @keyframes starScroll {
+            from { transform: translateY(0); }
+            to { transform: translateY(-300px); }
+        }
+
+        /* Glassmorphism Sidebar */
+        aside.sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+        }
+
+        /* Premium Console Cards */
+        .console-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 
+                0 15px 35px -10px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .console-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(138, 180, 248, 0.25);
+            box-shadow: 
+                0 25px 45px -10px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        /* Hero Console Card */
+        .hero-console {
+            background: linear-gradient(135deg, #0d274c 0%, #153c6e 50%, #1f5594 100%);
+            border: 1px solid rgba(138, 180, 248, 0.25);
+            box-shadow: 
+                0 30px 60px -15px rgba(2, 10, 32, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        html[data-theme="light"] .hero-console {
+            background: linear-gradient(135deg, #d3e6fc 0%, #b8d7fa 50%, #9bc4f7 100%);
+            border-color: rgba(38, 94, 155, 0.2);
+            box-shadow: 
+                0 30px 60px -15px rgba(38, 94, 155, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* Button 3D Console Style */
+        .btn-console-yellow {
+            background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%);
+            color: #403000;
+            box-shadow: 0 4px 0 #b38400, 0 10px 20px -5px rgba(249, 192, 19, 0.4);
+            transition: all 0.1s;
+        }
+        .btn-console-yellow:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 #b38400, 0 4px 10px -5px rgba(249, 192, 19, 0.2);
+        }
+
+        .btn-console-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s;
+        }
+        .btn-console-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        html[data-theme="light"] .btn-console-secondary {
+            background: rgba(38, 94, 155, 0.08);
+            border-color: rgba(38, 94, 155, 0.15);
+        }
+        html[data-theme="light"] .btn-console-secondary:hover {
+            background: rgba(38, 94, 155, 0.15);
+        }
+
+        /* Circular Progress Track details */
+        .progress-ring-circle {
+            stroke-dasharray: 565;
+            stroke-dashoffset: 565;
+            transition: stroke-dashoffset 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Course tab toggle button styling */
+        .tab-btn {
+            background: var(--chip-bg);
+            border: 1.5px solid var(--chip-border);
+            color: var(--text-muted);
+            transition: all 0.25s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #1e5ea8, #12356a);
+            color: #ffffff;
+            border-color: rgba(138, 180, 248, 0.5);
+            box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.5);
+            transform: translateY(-1px);
+        }
+        html[data-theme="light"] .tab-btn.active {
+            background: linear-gradient(135deg, #265E9B, #1A4576);
+            color: #ffffff;
+            border-color: #265E9B;
+        }
+
+        /* Timeline roadmap item */
+        .roadmap-card {
+            background: rgba(15, 30, 60, 0.4);
+            border: 1px solid rgba(138, 180, 248, 0.1);
+            transition: all 0.25s ease;
+        }
+        .roadmap-card:hover {
+            border-color: rgba(249, 192, 19, 0.4);
+            transform: translateX(4px);
+            background: rgba(15, 30, 60, 0.6);
+        }
+        html[data-theme="light"] .roadmap-card {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(38, 94, 155, 0.1);
+        }
+        html[data-theme="light"] .roadmap-card:hover {
+            border-color: rgba(249, 192, 19, 0.45);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Loader block */
+        #mission-loader {
+            position: fixed;
+            inset: 0;
+            background: #060e1a;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+        }
+        #mission-loader.loaded {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Pulsing status badges */
+        .glow-dot {
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        /* Floating bot animation */
+        .bot-float {
+            animation: floatBot 4s ease-in-out infinite;
+        }
+        @keyframes floatBot {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+
+        /* Universal Retro style Modals */
+        .retro-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 9, 20, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .retro-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .retro-box {
+            background: linear-gradient(135deg, #0e1b30 0%, #060d1a 100%);
+            border: 1px solid rgba(138, 180, 248, 0.2);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .retro-modal.active .retro-box {
+            transform: translateY(0) scale(1);
+        }
+
+        /* Scrollbars custom style */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(138, 180, 248, 0.2);
+            border-radius: 99px;
+        }
+        /* ── Background decorative assets ── */
+        .edge-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+        .edge-planet {
+            position: absolute; margin: 0;
+            pointer-events: none; display: block;
+            opacity: 0.60;
+        }
+        .edge-left  { left: 0; transform-origin: left center; }
+        .edge-right { right: 0; transform-origin: right center; }
+        .char-float {
+            position: absolute; margin: 0;
+            pointer-events: none; opacity: 0.55;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0) rotate(-1deg); }
+            50%      { transform: translateY(-18px) rotate(2deg); }
+        }
+        @keyframes floatY2 {
+            0%,100% { transform: translateY(0) rotate(2deg); }
+            50%      { transform: translateY(-14px) rotate(-2deg); }
+        }
+
+        /* Force text colors in light mode */
+        html[data-theme="light"] .text-white {
+            color: #1e3a60 !important;
+        }
+        html[data-theme="light"] .text-white\/60 {
+            color: rgba(30, 58, 96, 0.7) !important;
+        }
+        html[data-theme="light"] .text-white\/70 {
+            color: rgba(30, 58, 96, 0.8) !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\] {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .text-\[\#8ba2c2\]\/50 {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .text-muted-opacity {
+            color: rgba(91, 118, 153, 0.6) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10 {
+            background-color: rgba(38, 94, 155, 0.15) !important;
+        }
+        html[data-theme="light"] .border-k-blue\/20 {
+            border-color: rgba(38, 94, 155, 0.25) !important;
+        }
+        html[data-theme="light"] .bg-k-blue\/10.text-white,
+        html[data-theme="light"] .bg-k-blue\/10 .text-white {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a.bg-k-blue\/10 {
+            color: #265E9B !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10) {
+            color: #5b7699 !important;
+        }
+        html[data-theme="light"] .sidebar a:not(.bg-k-blue\/10):hover {
+            color: #1e3a60 !important;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <!-- Fixed background assets -->
+    <div class="edge-layer">
+        <!-- Left planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png"
+             class="edge-planet edge-left" style="top:8%; width:min(26vw,190px);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png"
+             class="edge-planet edge-left" style="top:68%; width:min(32vw,250px); transform:translateX(-32%);" alt="">
+        <!-- Right planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png"
+             class="edge-planet edge-right" style="top:26%; width:min(30vw,240px); transform:translateX(32%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png"
+             class="edge-planet edge-right" style="bottom:6%; width:min(34vw,275px);" alt="">
+        <!-- Floating characters -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png"
+             class="char-float" style="left:9%; top:21%; width:105px; animation: floatY 7s ease-in-out infinite;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/904cb9e9-ecd1-4731-a1ef-fa6a0bd50527.png"
+             class="char-float" style="right:13%; top:54%; width:120px; animation: floatY2 8s ease-in-out infinite 1.5s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9b916b05-86ed-4509-aef6-e640606f3542.png"
+             class="char-float" style="left:17%; bottom:10%; width:110px; animation: floatY 6s ease-in-out infinite 0.8s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/555e14a0-4087-4d33-9c20-4d822bef5dac.png"
+             class="char-float" style="left:64%; top:38%; width:88px; opacity:0.38;" alt="">
+    </div>
+
+    <!-- Ambient background elements -->
+    <div class="stars-background"></div>
+
+    <!-- Mission Control System Initializing Loader -->
+    <div id="mission-loader">
+        <div class="relative">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" class="w-32 h-auto max-h-32 object-contain animate-bounce filter drop-shadow-[0_0_20px_rgba(249,192,19,0.5)]" alt="Rocket">
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-4 bg-[#F9C013]/20 blur-xl rounded-full animate-pulse"></div>
+        </div>
+        <div class="w-64 h-2 bg-white/5 rounded-full mt-10 overflow-hidden border border-white/10 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-k-yellow to-[#FFD700] w-0" style="animation: loaderFill 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;"></div>
+        </div>
+        <div class="mt-6 text-center">
+            <p class="font-display font-black text-xs uppercase tracking-[0.4em] text-k-yellow animate-pulse">MENYIAPKAN MISI...</p>
+            <p class="mt-1.5 text-[9px] text-muted-opacity font-bold uppercase tracking-widest text-[#8ba2c2]/50">Mission Control Console v3.0</p>
+        </div>
+    </div>
+    <script>
+        @keyframes loaderFill { 0% { width: 0%; } 100% { width: 100%; } }
+    </script>
+
+    <!-- SIDEBAR NAVIGATION PANEL -->
+    <aside class="sidebar fixed inset-y-0 left-0 w-64 z-40 hidden xl:flex flex-col p-6 justify-between">
+        <div class="flex flex-col gap-10">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" 
+                     alt="Kalananti Logo" class="h-8 w-auto object-contain">
+                <div class="h-6 w-px bg-white/10"></div>
+                <div class="flex flex-col">
+                    <span class="font-display font-black text-xs tracking-widest uppercase text-k-yellow">MISSION</span>
+                    <span class="text-[8px] font-bold text-opacity-50 text-[#8ba2c2] uppercase tracking-[0.2em]">CONTROL</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex flex-col gap-2">
+                <a href="#" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-k-blue/10 border border-k-blue/20 text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏡</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="sessions.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🗓️</span>
+                    <span>Peta Sesi</span>
+                </a>
+                <a href="materials.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">📖</span>
+                    <span>Materi Belajar</span>
+                </a>
+                <a href="quiz.html" class="flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/5 text-opacity-70 text-[#8ba2c2] hover:text-white font-bold text-sm transition-all">
+                    <span class="text-lg">🏆</span>
+                    <span>Quiz Arena</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="flex flex-col gap-4">
+            <div class="h-px w-full bg-white/10"></div>
+            
+            <!-- Quick Theme selector -->
+            <button onclick="toggleTheme()" class="flex items-center justify-between w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-white/10 transition-colors">
+                <span class="flex items-center gap-2">
+                    <span id="theme-icon-sidebar">🌙</span>
+                    <span id="theme-text-sidebar">Mode Gelap</span>
+                </span>
+                <span class="text-[9px] uppercase tracking-wider text-k-yellow">Ubah</span>
+            </button>
+
+            <!-- User Info display -->
+            <div class="flex items-center justify-between p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full overflow-hidden bg-k-yellow flex items-center justify-center font-bold text-xs text-white">
+                        <span>👦</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="sidebar-user-name" class="font-bold text-xs truncate max-w-[110px] text-white">Memuat...</span>
+                        <span class="text-[9px] text-[#8ba2c2]/50 font-bold uppercase">Captain</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-red-500/10 rounded-xl text-red-400 text-sm transition-colors" title="Keluar">
+                    🚪
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONSOLE GRID AREA -->
+    <div class="flex-1 xl:ml-64 flex flex-col min-h-screen">
+        
+        <!-- Header Topbar Navigation (Tablet/Desktop/Universal responsive) -->
+        <nav class="w-full px-6 py-4 flex justify-between items-center bg-white/5 border-b border-card-b/10 sticky top-0 backdrop-blur-md z-30">
+            <div class="flex items-center gap-4">
+                <!-- Mobile brand logo (visible only below XL sidebar) -->
+                <div class="flex xl:hidden items-center gap-2">
+                    <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" alt="Logo" class="h-6 w-auto">
+                </div>
+                <div class="hidden xl:flex flex-col">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/60">CONSOLA CENTRAL</span>
+                    <span class="text-xs font-mono font-bold text-[#8ba2c2]">SYSTEM::SECURE</span>
+                </div>
+            </div>
+
+            <!-- Profile actions right side -->
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='sessions.html'" class="tab-btn px-4 py-2.5 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                    <span>Peta Sesi</span> 🗓️
+                </button>
+
+                <div class="relative" id="profile-menu-container">
+                    <button onclick="toggleProfileMenu()" class="tab-btn flex items-center gap-3 p-1.5 pr-4 sm:pr-5 rounded-full shadow-sm hover:shadow-md transition-all">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-k-yellow to-yellow-300 p-[2px] overflow-hidden shadow-inner shrink-0">
+                            <div class="w-full h-full bg-white rounded-full overflow-hidden flex items-center justify-center text-xs">
+                                👦
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="nav-user-name" class="font-bold text-xs hidden sm:block">Memuat...</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="opacity-40"><path d="m6 9 6 6 6-6"/></svg>
+                        </div>
+                        
+                        <!-- Profile Dropdown overlay -->
+                        <div id="profile-dropdown" class="absolute top-14 right-0 w-52 rounded-2xl shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-200 transform origin-top-right z-50 overflow-hidden console-card">
+                            <div class="p-2 flex flex-col gap-1">
+                                <div onclick="toggleTheme(); event.stopPropagation();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-left group cursor-pointer">
+                                    <span id="theme-toggle-icon-dropdown" class="text-sm">🌙</span>
+                                    <span id="theme-toggle-text-dropdown" class="font-bold text-xs">Mode Gelap</span>
+                                </div>
+                                <div onclick="logout(); event.stopPropagation();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 transition-colors text-left group cursor-pointer">
+                                    <span class="text-sm">🚪</span>
+                                    <span class="font-bold text-xs text-red-500">Keluar</span>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN WINDOW SCROLL CONTAINER -->
+        <main class="max-w-7xl w-full mx-auto px-6 md:px-8 py-8 flex flex-col gap-8">
+            
+            <!-- GREETING SECTION -->
+            <header class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+                <div>
+                    <!-- Active Course switches -->
+                    <div class="flex items-center gap-2.5 mb-4">
+                        <button id="btn-roblox" onclick="selectCourse('roblox')" class="tab-btn flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl">
+                            🎮 Roblox Studio
+                        </button>
+                        <button id="btn-scratch" onclick="selectCourse('scratch')" class="tab-btn flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl">
+                            🐱 Scratch
+                        </button>
+                    </div>
+                    <h1 class="font-display font-black text-4xl md:text-5xl leading-tight tracking-tight text-white flex items-center gap-3 flex-wrap">
+                        Halo, <span id="hero-user-name" class="bg-gradient-to-r from-k-yellow to-orange-400 bg-clip-text text-transparent">Kapten!</span> <span class="inline-block animate-bounce">🚀</span>
+                    </h1>
+                    <p class="mt-2 text-sm md:text-base font-semibold text-[#8ba2c2]" style="color: var(--text-muted)">Siap meluncur ke koordinat planet pembelajaran berikutnya?</p>
+                </div>
+
+                <!-- Clock Console widgets -->
+                <div class="tab-btn flex items-center gap-4 px-5 py-3 rounded-2xl shadow-sm hover:scale-[1.01] transition-transform cursor-default">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-k-yellow/15 border border-k-yellow/30 text-k-yellow">
+                        🗓️
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50" id="day-name">Memuat...</p>
+                        <p class="font-black text-base text-white" id="date-display">--</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DASHBOARD GRID PANELS -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Left 8 Columns: General overview console cards -->
+                <div class="lg:col-span-8 flex flex-col gap-6 w-full">
+                    
+                    <!-- Stats summary cards row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        
+                        <!-- Card 1: Class scheduled Info -->
+                        <div class="console-card rounded-3xl p-6 flex flex-col justify-between h-40">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50">KELAS KAMU</span>
+                                <span class="w-8 h-8 rounded-lg bg-k-blue/15 border border-k-blue/30 text-k-blue flex items-center justify-center text-sm">🏫</span>
+                            </div>
+                            <div>
+                                <h3 id="class-display" class="font-black text-lg text-white">Memuat...</h3>
+                                <p class="text-[11px] font-semibold text-[#8ba2c2]/70 mt-1 flex items-center gap-1">
+                                    <span>⏱️</span> <span id="class-time-display">Memuat jadwal...</span>
+                                </p>
+                            </div>
+                            <div class="h-px bg-white/5 w-full my-1"></div>
+                            <p class="text-[10px] font-bold text-[#8ba2c2]">
+                                Coach: <span id="teacher-name" class="font-black text-k-blue ml-1">Memuat...</span>
+                            </p>
+                        </div>
+
+                        <!-- Card 2: Orbit Progress status -->
+                        <div class="console-card rounded-3xl p-6 flex flex-col justify-between h-40">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50">ORBIT PROGRESS</span>
+                                <span class="w-8 h-8 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center text-sm">🌍</span>
+                            </div>
+                            <div>
+                                <h3 id="progress-title" class="font-black text-sm text-white leading-tight">Memuat Modul...</h3>
+                                <div class="w-full h-2.5 rounded-full bg-white/5 border border-white/10 mt-3 overflow-hidden">
+                                    <div id="progress-bar" class="h-full bg-gradient-to-r from-[#339D9D] to-teal-400 rounded-full transition-all duration-1000" style="width: 8%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-[10px] font-bold mt-1 text-[#8ba2c2]">
+                                <span id="progress-sessions" class="text-k-green">Sesi 1 / 12</span>
+                                <span id="progress-pct">8%</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Stars gained history button -->
+                        <div onclick="openStarModal()" class="console-card rounded-3xl p-6 flex flex-col justify-between h-40 cursor-pointer border-k-yellow/30 bg-gradient-to-br from-[#F9C013]/5 to-transparent relative overflow-hidden group">
+                            <div class="flex justify-between items-start z-10">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-k-yellow/70">BINTANG GAIN</span>
+                                <span class="w-8 h-8 rounded-lg bg-k-yellow/20 border border-k-yellow/30 text-k-yellow flex items-center justify-center text-sm group-hover:rotate-12 transition-transform">⭐</span>
+                            </div>
+                            <div class="flex items-end gap-1.5 z-10">
+                                <span id="star-count" class="text-4xl font-black text-k-yellow select-none">–</span>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-k-yellow/60 pb-1">Stars</span>
+                            </div>
+                            <div class="h-px bg-white/5 w-full my-1 z-10"></div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2] flex items-center gap-1.5 z-10 group-hover:text-white transition-colors">
+                                Lihat Rincian Bintang ➜
+                            </p>
+                            <!-- Ambient glowing star bg design -->
+                            <div class="absolute -right-6 -bottom-6 text-k-yellow opacity-[0.05] group-hover:scale-110 transition-transform duration-500">
+                                <svg width="100" height="100" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- HERO MISSION CONSOLE LAUNCH CARD -->
+                    <div class="hero-console rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
+                        <!-- Tiny grid lines background detailing -->
+                        <div class="absolute inset-0 opacity-[0.03] pointer-events-none group-hover:scale-105 transition-transform duration-[4s]">
+                            <svg width="100%" height="100%"><pattern id="hero-grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M 30 0 L 0 0 0 30" fill="none" stroke="#ffffff" stroke-width="1"/></pattern><rect width="100%" height="100%" fill="url(#hero-grid)"/></svg>
+                        </div>
+
+                        <!-- Left float bot guide -->
+                        <div class="w-full md:w-1/3 flex justify-center shrink-0 z-10">
+                            <div class="relative bot-float">
+                                <div class="w-40 h-40 lg:w-44 h-44 rounded-full bg-gradient-to-tr from-k-blue/40 to-teal-500/30 border-4 border-white/10 flex items-center justify-center p-1 shadow-2xl">
+                                    <div class="w-full h-full bg-slate-900/60 rounded-full flex items-center justify-center">
+                                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Rocket&backgroundColor=transparent" 
+                                             class="w-32 h-32 object-contain" alt="Companion Guide">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Info console parameters -->
+                        <div class="flex-1 text-center md:text-left z-10 flex flex-col items-center md:items-start">
+                            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 border border-white/15 text-xs font-black tracking-wider uppercase text-green-400 mb-4">
+                                <span class="w-2.5 h-2.5 bg-green-400 rounded-full glow-dot text-green-400 animate-pulse"></span>
+                                <span id="active-session-badge">Sesi 1 Aktif</span>
+                            </div>
+                            <h2 class="font-display font-black text-3xl md:text-4xl text-white tracking-tight mb-2">Lanjutkan Misimu!</h2>
+                            <p class="text-base font-bold text-[#8ba2c2] mb-6">
+                                Planet Tujuan: 
+                                <span id="active-mission" class="text-k-yellow underline decoration-k-yellow/30 underline-offset-4 decoration-2">Memuat Planet...</span>
+                            </p>
+                            <div class="flex flex-wrap gap-4 justify-center md:justify-start w-full">
+                                <button onclick="window.location.href='materials.html'" class="btn-console-yellow font-black py-4 px-8 rounded-2xl text-sm tracking-widest uppercase flex items-center gap-2">
+                                    <span>MULAI MISI SEKARANG</span> 🚀
+                                </button>
+                                <button onclick="window.location.href='sessions.html'" class="btn-console-secondary font-black py-4 px-6 rounded-2xl text-xs uppercase text-white">
+                                    Peta Orbit Sesi 🗺️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right 4 Columns: Interactive circular progress & roadmap gate lists -->
+                <div class="lg:col-span-4 flex flex-col gap-6 w-full">
+                    
+                    <!-- Circular orbit progress card -->
+                    <div class="console-card rounded-3xl p-6 flex flex-col items-center text-center">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50 self-start mb-6">CONSOLA STATUS</span>
+                        
+                        <div class="relative w-40 h-40 mb-6">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="90" fill="transparent" stroke="rgba(255,255,255,0.03)" stroke-width="12"/>
+                                <circle id="ring-progress" class="progress-ring-circle" cx="100" cy="100" r="90" fill="transparent"
+                                        stroke="url(#progressGrad)" stroke-width="12" stroke-linecap="round"/>
+                                <defs>
+                                    <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#339D9D"/>
+                                        <stop offset="100%" stop-color="#4ADE80"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center rounded-full m-5 bg-[#091326]/60 border border-white/5 shadow-inner">
+                                <span id="circle-pct" class="text-3xl font-black text-white">10%</span>
+                                <span class="text-[9px] text-[#8ba2c2]/45 font-black uppercase tracking-widest mt-0.5">Selesai</span>
+                            </div>
+                        </div>
+
+                        <div class="w-full p-4 rounded-2xl bg-white/5 border border-white/5">
+                            <h4 id="orbit-course-title" class="font-black text-sm text-white">Roblox Adventure</h4>
+                            <p id="orbit-level-label" class="text-[11px] text-[#8ba2c2]/70 font-semibold mb-3">Level 1</p>
+                            <span id="active-session-label" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-500/10 border border-teal-500/25 text-[10px] font-black text-[#5fd4c8]">
+                                Sesi 1 dari 12
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Roadmap timelines -->
+                    <div class="console-card rounded-3xl p-6 flex flex-col">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-[#8ba2c2]/50 mb-4">Rute Sesi Terdekat</span>
+                        <div id="roadmap-list" class="flex flex-col gap-3">
+                            <!-- Skeleton loader -->
+                            <div class="h-14 bg-white/5 rounded-2xl animate-pulse"></div>
+                            <div class="h-14 bg-white/5 rounded-2xl animate-pulse"></div>
+                            <div class="h-14 bg-white/5 rounded-2xl animate-pulse"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- STAR DETAIL MODAL -->
+    <div id="star-modal" class="retro-modal">
+        <div class="absolute inset-0 bg-transparent" onclick="closeStarModal()"></div>
+        <div id="star-modal-box" class="retro-box rounded-[2.5rem] p-8 max-w-[440px] w-full relative z-10 flex flex-col items-center max-h-[85vh]">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-k-yellow to-orange-400 flex items-center justify-center text-white border border-white/20 text-3xl mb-4 shadow-lg shrink-0">⭐</div>
+            <h3 class="font-display font-black text-xl text-white tracking-tight mb-1.5">Koin Bintangmu</h3>
+            <p class="text-xs font-semibold text-[#8aadd8]/60 text-center mb-6">Rincian bintang kapten yang berhasil diverifikasi guru.</p>
+            
+            <div id="star-modal-content" class="w-full flex-1 overflow-y-auto pr-2 mb-6 space-y-2">
+                <!-- Injected dynamically -->
+            </div>
+
+            <button onclick="closeStarModal()" class="btn-console-yellow w-full py-4 text-xs font-black shadow-md flex items-center justify-center">
+                SELESAI TINJAU
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN ACCESS MODAL ERROR/WARNING -->
+    <div id="status-modal" class="retro-modal">
+        <div class="retro-box rounded-[2.5rem] p-8 max-w-[420px] w-full text-center relative overflow-hidden">
+            <div id="status-icon" class="text-5xl mb-4">🚀</div>
+            <h3 id="status-title" class="font-display font-black text-xl mb-3 text-k-yellow uppercase tracking-wide">Pemberitahuan Misi</h3>
+            <p id="status-message" class="text-sm font-bold leading-relaxed mb-8" style="color: #ddeeff">Transmission log info.</p>
+            <button onclick="document.getElementById('status-modal').classList.remove('active')" class="btn-console-yellow w-full py-4 text-xs font-black shadow-md">
+                SIAP, KOMANDAN! 🛰️
+            </button>
+        </div>
+    </div>
+
+    <script>
+    // ── Configuration ───────────────────────────────────────────────────────
+    const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
+    let MAX_LESSONS = 12;
+    const PLANET_PATH = [
+        { name:'Planet Aurora', emoji:'🪐' }, { name:'Planet Ignis', emoji:'🔥' },
+        { name:'Planet Aqua', emoji:'🌊' },   { name:'Planet Terra', emoji:'🌍' },
+        { name:'Planet Nimbus', emoji:'☁️' },  { name:'Planet Voltis', emoji:'⚡' },
+        { name:'Planet Nova', emoji:'🌟' },    { name:'Planet Zenith', emoji:'🚀' }
+    ];
+    const COURSES = {
+        roblox: {
+            sheet:'B2C_RobloxStudio_INS', topicSheet:'B2C_RobloxStudio_Modul', label:'Roblox Studio', emoji:'🎮',
+            desc:['Mengenal Roblox Studio & Obby','Plugin F3X, 3D Text, GapFill','Terrain Tools & Landscape','Lighting Tools & Atmosfer','Teams & Sistem Checkpoint','Desain Rintangan & Publishing','Pintu Berengsel & Weld','Pintu Otomatis & Kincir Angin']
+        },
+        scratch: {
+            sheet:'B2C_Scratch_INS', topicSheet:'B2C_Scratch_Modul', label:'Scratch', emoji:'🐱',
+            desc:['Mengenal Scratch & Antarmuka','Sprite, Kostum & Gerakan','Variabel & Kondisi','Loop & Animasi','Suara & Efek','Proyek Game Sederhana','Interaksi & Event','Publikasi & Berbagi Proyek']
+        }
+    };
+    const THEME_KEY = 'kalanantiTheme';
+    
+    // Auth parameters
+    const studentName = localStorage.getItem('studentName') || 'Kapten';
+    const className = localStorage.getItem('className') || 'Orbit';
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    let currentSyncVersion = 0;
+    let isPolling = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadStudentData();
+        startSyncPolling();
+        
+        // Update DOM profiles
+        const sNameEl = document.getElementById('nav-user-name');
+        const sNameHero = document.getElementById('hero-user-name');
+        const sNameSide = document.getElementById('sidebar-user-name');
+        if (sNameEl) sNameEl.textContent = studentName;
+        if (sNameHero) sNameHero.textContent = studentName;
+        if (sNameSide) sNameSide.textContent = studentName;
+        
+        const classEl = document.getElementById('class-display');
+        if (classEl) classEl.textContent = isAdmin ? 'ADMIN' : className;
+    });
+
+    function logout() {
+        localStorage.removeItem('studentName');
+        localStorage.removeItem('className');
+        localStorage.removeItem('isAdmin');
+        window.location.href = 'index.html';
+    }
+
+    let selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+
+    // ── Theme management ─────────────────────────────────────────────────────
+    function updateThemeToggle(t) {
+        const toggleIcon = document.getElementById('theme-toggle-icon-dropdown');
+        const toggleText = document.getElementById('theme-toggle-text-dropdown');
+        const iconSide = document.getElementById('theme-icon-sidebar');
+        const textSide = document.getElementById('theme-text-sidebar');
+
+        if (toggleIcon) toggleIcon.textContent = t === 'dark' ? '🌙' : '☀️';
+        if (toggleText) toggleText.textContent = t === 'dark' ? 'Mode Gelap' : 'Mode Terang';
+        if (iconSide) iconSide.textContent = t === 'dark' ? '🌙' : '☀️';
+        if (textSide) textSide.textContent = t === 'dark' ? 'Mode Gelap' : 'Mode Terang';
+    }
+    function applyTheme(t, persist=true) {
+        const v = t === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', v);
+        updateThemeToggle(v);
+        if (persist) {
+            try { localStorage.setItem(THEME_KEY, v); } catch(e){}
+        }
+    }
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') || 'dark', false);
+
+    // ── Calendar date ────────────────────────────────────────────────────────
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const now = new Date();
+    document.getElementById('day-name').textContent = days[now.getDay()];
+    document.getElementById('date-display').textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+    // ── Course Selector tabs ──────────────────────────────────────────────────
+    function updateCourseUI() {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            if (b.id === `btn-${selectedCourse}`) {
+                b.classList.add('active');
+            } else if (b.id === 'btn-roblox' || b.id === 'btn-scratch') {
+                b.classList.remove('active');
+            }
+        });
+    }
+    function selectCourse(c) {
+        selectedCourse = c;
+        localStorage.setItem('selectedCourse', c);
+        updateCourseUI();
+        initDashboard();
+    }
+    updateCourseUI();
+
+    // ── Student Progress Loading ──────────────────────────────────────────────
+    async function loadStudentData(isSilent = false) {
+        const loader = document.getElementById('mission-loader');
+        if (loader && !isSilent) loader.classList.remove('loaded');
+
+        if (isAdmin) {
+            initDashboard();
+            if (loader && !isSilent) {
+                setTimeout(() => loader.classList.add('loaded'), 600);
+            }
+            return;
+        }
+        
+        try {
+            const url = `${STUDENT_API_URL}?action=getStudentProgress&code=${encodeURIComponent(className)}&name=${encodeURIComponent(studentName)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            console.log('[Dashboard] Progress API response:', data);
+            
+            if (data && data.success === true) {
+                const progName = (data.programName || '').toLowerCase();
+                if (progName.includes('scratch')) {
+                    selectedCourse = 'scratch';
+                } else if (progName.includes('roblox')) {
+                    selectedCourse = 'roblox';
+                }
+                localStorage.setItem('selectedCourse', selectedCourse);
+                updateCourseUI();
+                
+                // Hide inactive courses selectors to prevent student switching into unowned curriculum
+                const btnRoblox = document.getElementById('btn-roblox');
+                const btnScratch = document.getElementById('btn-scratch');
+                if (selectedCourse === 'scratch' && btnRoblox) {
+                    btnRoblox.style.display = 'none';
+                } else if (selectedCourse === 'roblox' && btnScratch) {
+                    btnScratch.style.display = 'none';
+                }
+                
+                if (data.teacherName) {
+                    localStorage.setItem('teacherName', data.teacherName);
+                }
+                if (data.classStartTime) localStorage.setItem('classStartTime', data.classStartTime);
+                else localStorage.removeItem('classStartTime');
+                if (data.classEndTime) localStorage.setItem('classEndTime', data.classEndTime);
+                else localStorage.removeItem('classEndTime');
+                
+                const parsedLevel = parseInt(data.studentLevel, 10);
+                localStorage.setItem('studentLevel', (!isNaN(parsedLevel) && parsedLevel > 0) ? parsedLevel : 1);
+                
+                if (data.currentSession) {
+                    localStorage.setItem('currentSession', data.currentSession);
+                    localStorage.setItem('activeLesson', data.currentSession);
+                }
+                if (data.sessionProgress) {
+                    localStorage.setItem('sessionProgress', JSON.stringify(data.sessionProgress));
+                }
+                if (typeof data.totalStars !== 'undefined' && data.totalStars !== null) {
+                    localStorage.setItem('totalStars', data.totalStars);
+                }
+                if (typeof data.attendanceSession !== 'undefined') {
+                    localStorage.setItem('attendanceSession', data.attendanceSession);
+                }
+                
+                initDashboard();
+                if (isSilent) showSyncToast();
+                else fetchSyncVersion();
+            } else {
+                console.warn('[Dashboard] Gagal getStudentProgress:', data?.message);
+                if (!isAdmin) {
+                    localStorage.setItem('currentSession', '1');
+                    localStorage.setItem('attendanceSession', '1');
+                    localStorage.setItem('activeLesson', '1');
+                    localStorage.setItem('sessionProgress', '[]');
+                    localStorage.setItem('totalStars', '0');
+                }
+                initDashboard();
+                if (!isSilent) fetchSyncVersion();
+            }
+        } catch (err) {
+            console.error('[Dashboard] Error fetching student data:', err);
+            if (!isAdmin) {
+                localStorage.setItem('currentSession', '1');
+                localStorage.setItem('attendanceSession', '1');
+                localStorage.setItem('activeLesson', '1');
+                localStorage.setItem('sessionProgress', '[]');
+                localStorage.setItem('totalStars', '0');
+            }
+            if (!isSilent) initDashboard();
+        } finally {
+            if (!isSilent) {
+                setTimeout(() => {
+                    if (loader) loader.classList.add('loaded');
+                }, 600);
+            }
+        }
+    }
+
+    async function fetchSyncVersion() {
+        try {
+            const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(className)}`);
+            const json = await res.json();
+            if (json.success) currentSyncVersion = json.syncVersion;
+        } catch (e) {}
+    }
+
+    function startSyncPolling() {
+        if (isPolling) return;
+        isPolling = true;
+        setInterval(async () => {
+            try {
+                const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(className)}`);
+                const json = await res.json();
+                if (json.success && json.syncVersion > currentSyncVersion) {
+                    currentSyncVersion = json.syncVersion;
+                    loadStudentData(true);
+                }
+            } catch (e) {}
+        }, 60000);
+    }
+
+    function showSyncToast() {
+        let toast = document.getElementById('sync-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'sync-toast';
+            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl bg-k-blue text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center gap-3 transition-all duration-500 opacity-0 translate-y-10 border border-k-blue/20';
+            toast.innerHTML = `<span class="animate-spin text-sm">🔄</span><span>Data Misi Terupdate Otomatis</span>`;
+            document.body.appendChild(toast);
+        }
+        setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
+        setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 4000);
+    }
+
+    async function initDashboard() {
+        const course = COURSES[selectedCourse] || COURSES.roblox;
+        const studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
+        const currentSession = parseInt(localStorage.getItem('currentSession') || '1', 10);
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const sess = clamp(currentSession, 1, MAX_LESSONS);
+
+        const coachName = localStorage.getItem('teacherName') || 'Kak Kalananti';
+        const coachEl = document.getElementById('teacher-name');
+        if (coachEl) coachEl.textContent = coachName;
+        
+        const classStartTime = localStorage.getItem('classStartTime') || '';
+        const classEndTime = localStorage.getItem('classEndTime') || '';
+        const classTimeEl = document.getElementById('class-time-display');
+        if (classTimeEl) {
+            classTimeEl.textContent = classStartTime && classEndTime
+                ? `${classStartTime} – ${classEndTime}`
+                : 'Jadwal belum tersedia';
+        }
+
+        const starVal = localStorage.getItem('totalStars');
+        const starEl = document.getElementById('star-count');
+        if (starEl) starEl.textContent = (starVal !== null && starVal !== undefined) ? starVal : '–';
+        
+        const levelPlanet = PLANET_PATH[(studentLevel - 1) % PLANET_PATH.length] || PLANET_PATH[0];
+        const pct = Math.round((sess - 1) / MAX_LESSONS * 100) || 8;
+
+        // Progress components
+        document.getElementById('progress-title').textContent = `${course.emoji} ${course.label} – ${levelPlanet.name}`;
+        document.getElementById('progress-sessions').textContent = `Orbit ${sess} / ${MAX_LESSONS}`;
+        document.getElementById('progress-pct').textContent = pct + '%';
+        document.getElementById('progress-bar').style.width = pct + '%';
+
+        // Radial progress ring
+        const cir = 565;
+        const offset = cir - (cir * pct / 100);
+        document.getElementById('ring-progress').style.strokeDashoffset = offset;
+        document.getElementById('circle-pct').innerHTML = `${pct}<span style="font-size:0.9rem; font-weight:700;">%</span>`;
+        document.getElementById('orbit-course-title').textContent = `${course.label} Adventure`;
+        document.getElementById('orbit-level-label').textContent = `Level ${studentLevel}`;
+
+        // Hero console card values
+        document.getElementById('active-session-badge').textContent =
+            sess <= MAX_LESSONS ? `Sesi ${sess} Aktif` : 'Semua Sesi Selesai! 🏆';
+        document.getElementById('active-mission').textContent = `${levelPlanet.emoji} ${levelPlanet.name}`;
+        document.getElementById('active-session-label').textContent = `Sesi ${sess} dari ${MAX_LESSONS}`;
+
+        // Generate upcoming roadmap timeline
+        const listEl = document.getElementById('roadmap-list');
+        try {
+            const [lessonRes, topicRes] = await Promise.all([
+                fetch(`${STUDENT_API_URL}?sheet=${course.sheet}`),
+                fetch(`${STUDENT_API_URL}?sheet=${course.topicSheet}`)
+            ]);
+            const raw = await lessonRes.json();
+            const topicRaw = await topicRes.json();
+            
+            const getSession = (r, idx) => {
+                let s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                if (isNaN(s)) s = idx + 1;
+                return s;
+            };
+
+            const rowsForLevel = rows => {
+                let inheritedLevel = null;
+                return (Array.isArray(rows) ? rows : []).filter(row => {
+                    const rawLevel = row['Level'] || row['level'] || row.col_1;
+                    const parsedLevel = parseInt(String(rawLevel || '').match(/\d+/)?.[0], 10);
+                    if (!isNaN(parsedLevel)) inheritedLevel = parsedLevel;
+                    return inheritedLevel === studentLevel;
+                });
+            };
+            const lessons = rowsForLevel(raw).map((r, idx) => {
+                r._sessNum = getSession(r, idx);
+                return r;
+            }).filter(r => r._sessNum >= 1 && r._sessNum <= MAX_LESSONS).sort((a, b) => a._sessNum - b._sessNum).slice(0, MAX_LESSONS);
+
+            const sessionTopics = {};
+            rowsForLevel(topicRaw).forEach((row, idx) => {
+                const sessionNum = getSession(row, idx);
+                const title = String(row['Session-topic'] || row['Session Topic'] || row['Title Session'] || '').trim();
+                if (sessionNum >= 1 && sessionNum <= MAX_LESSONS && title) sessionTopics[sessionNum] = title;
+            });
+            
+            const upcoming = lessons.filter(l => l._sessNum >= sess).slice(0, 4);
+
+            listEl.innerHTML = '';
+            if (!upcoming.length) {
+                listEl.innerHTML += `<p class="text-center font-bold text-xs py-6" style="color:var(--text-muted)">Semua sesi telah selesai! 🎉</p>`;
+                return;
+            }
+            upcoming.forEach((l, i) => {
+                const n = l._sessNum;
+                const sessionTitle = sessionTopics[n] || course.desc[n - 1] || `Sesi ${n}`;
+                const isActive = n === sess;
+                const isLocked = n > sess;
+                
+                const lockStyle = isLocked ? `opacity: 0.55; cursor: not-allowed; filter: grayscale(0.85);` : `cursor: pointer;`;
+                const onClick = isLocked && !isAdmin 
+                    ? `onclick="showStatusPopup('warning', 'MISI TERKUNCI! 🛸', 'Selesaikan tugas di sesi sebelumnya dan dapatkan bintang guru terlebih dahulu untuk membuka sesi ini ya kapten!')"` 
+                    : `onclick="goToLesson(${n})"`;
+                
+                listEl.innerHTML += `
+                <div class="roadmap-card rounded-2xl p-4 flex items-center justify-between gap-4 border ${isActive ? 'border-k-yellow' : 'border-card-border'}" style="${lockStyle}" ${onClick}>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm shrink-0">
+                            ${isLocked ? '🔒' : levelPlanet.emoji}
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-wider" style="color:${isActive ? '#F9C013' : 'var(--text-muted)'}">${isActive ? '▶ AKTIF · ' : ''}Sesi ${n}</p>
+                            <p class="font-black text-xs text-white">${sessionTitle}</p>
+                        </div>
+                    </div>
+                    ${isActive ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F9C013" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>' : ''}
+                </div>`;
+            });
+        } catch(e) {
+            console.error(e);
+            listEl.innerHTML = `<p class="text-center font-bold text-xs py-6" style="color:var(--text-muted)">Gagal memuat rute jalan 😵</p>`;
+        }
+    }
+
+    function goToLesson(n) {
+        const currentSession = parseInt(localStorage.getItem('currentSession') || '1', 10);
+        if (n > currentSession && !isAdmin) {
+            alert('❌ Misi terkunci! Selesaikan tugas dan quiz di sesi sebelumnya.');
+            return;
+        }
+        localStorage.setItem('activeLesson', n);
+        window.location.href = 'materials.html';
+    }
+
+    // Toggle dropdown profile
+    function toggleProfileMenu() {
+        const dropdown = document.getElementById('profile-dropdown');
+        if (dropdown.classList.contains('opacity-0')) {
+            dropdown.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            dropdown.classList.add('opacity-100', 'scale-100');
+        } else {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        }
+    }
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('profile-menu-container');
+        const dropdown = document.getElementById('profile-dropdown');
+        if (container && dropdown && !container.contains(e.target)) {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        }
+    });
+
+    // Star modal details parser logic
+    function escapeStarDetail(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatStarDetail(rawStars, fallbackStars) {
+        const lines = String(rawStars || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        if (lines.length === 0) return `${fallbackStars} Bintang`;
+
+        return `<div class="mt-1.5 space-y-1.5">${lines.map(line => {
+            const match = line.match(/^(\d+)\s*(?:Star|Bintang)\s*-\s*(.+)$/i);
+            if (!match) return `<div class="text-[11px] text-[#8ba2c2]/70">${escapeStarDetail(line)}</div>`;
+
+            const value = parseInt(match[1], 10) || 0;
+            const category = match[2].trim();
+            const normalized = category.toLowerCase();
+            let icon = '⭐';
+            let label = category;
+            let colorClass = 'text-blue-300';
+
+            if (normalized.includes('must')) {
+                icon = '🎯'; label = 'Must Do';
+            } else if (normalized.includes('should')) {
+                icon = '✨'; label = 'Should Do'; colorClass = 'text-indigo-300';
+            } else if (normalized.includes('aspire')) {
+                icon = '🌟'; label = 'Aspire To'; colorClass = 'text-purple-300';
+            } else if (normalized.includes('quiz')) {
+                icon = '📝'; label = 'Quiz'; colorClass = 'text-green-300';
+            } else if (normalized.includes('bonus')) {
+                icon = '🎁'; label = 'Bonus'; colorClass = 'text-k-yellow';
+            }
+
+            return `<div class="flex items-center justify-between gap-4 text-[11px] font-bold">
+                <span class="text-white/60">${icon} ${escapeStarDetail(label)}</span>
+                <span class="${colorClass} font-black">${value} ⭐</span>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
+    function openStarModal() {
+        const modal = document.getElementById('star-modal');
+        const contentBox = document.getElementById('star-modal-content');
+        
+        let progressData = [];
+        try {
+            progressData = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+        } catch(e) {}
+
+        if (!progressData || progressData.length === 0) {
+            contentBox.innerHTML = '<p class="text-center font-bold text-xs text-gray-400 py-6">Belum ada rincian koin bintang. Semangat belajarnya ya Captain! 🚀</p>';
+        } else {
+            let html = '';
+            let hasItems = false;
+            progressData.forEach(s => {
+                const isCompleted = (s.isComplete === true) || String(s.progress).includes('100') || String(s.progress) === '1';
+                if (s.stars > 0 || isCompleted) {
+                    hasItems = true;
+                    let detailTxt;
+                    let starCountHtml;
+                    
+                    if (s.stars > 0) {
+                        detailTxt = formatStarDetail(s.rawStars, s.stars);
+                        starCountHtml = `<div class="font-black text-lg text-k-yellow shrink-0 ml-3">+${s.stars}</div>`;
+                    } else {
+                        detailTxt = '<span class="text-[10px] font-semibold text-[#8ba2c2]/50 italic">Dalam pemeriksaan Guru ⏳</span>';
+                        starCountHtml = `<div class="font-bold text-xs shrink-0 ml-3 text-[#8ba2c2]/50">0</div>`;
+                    }
+                    
+                    html += `
+                    <div class="p-4 rounded-2xl flex items-center justify-between bg-white/5 border border-white/5 shadow-sm hover:scale-[1.01] transition-transform">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-k-yellow to-orange-400 flex items-center justify-center text-white font-black text-xs shrink-0 ${s.stars === 0 ? 'opacity-50 grayscale' : ''}">S${s.session}</div>
+                            <div>
+                                <p class="text-[9px] font-black uppercase text-k-yellow tracking-widest ${s.stars === 0 ? 'opacity-50' : ''}">Sesi ${s.session}</p>
+                                <div class="text-xs font-bold text-white">${detailTxt}</div>
+                            </div>
+                        </div>
+                        ${starCountHtml}
+                    </div>`;
+                }
+            });
+            
+            if (!hasItems) {
+                html = '<p class="text-center font-bold text-xs text-gray-400 py-6">Yuk selesaikan misimu untuk mengumpulkan bintang! ⭐</p>';
+            }
+            contentBox.innerHTML = html;
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeStarModal() {
+        document.getElementById('star-modal').classList.remove('active');
+    }
+
+    function showStatusPopup(type, title, message) {
+        const modal = document.getElementById('status-modal');
+        const icon = document.getElementById('status-icon');
+        const titleEl = document.getElementById('status-title');
+        const msgEl = document.getElementById('status-message');
+        
+        icon.innerText = type === 'success' ? '✅' : (type === 'error' ? '❌' : '🛸');
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        
+        modal.classList.add('active');
+    }
+
+    function closeStarModal() {
+        document.getElementById('star-modal').classList.remove('active');
+    }
+    </script>
+</body>
+</html>

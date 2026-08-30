@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="assets/css/mobile-ready.css">
+    <title>Curriculum Explorer - Kalananti SCL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'light');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.94);
+            --card-b: rgba(180,215,255,0.85);
+            --nav: rgba(255,255,255,0.92);
+            --nav-b: rgba(180,215,255,0.90);
+            --text: #1a4576;
+            --muted: #4d7daf;
+            --chip: #ffffff;
+            --chip-b: #cde0f8;
+            --chip-t: #265E9B;
+            --stars: 0.12;
+        }
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.82);
+            --card-b: rgba(140,190,255,0.22);
+            --nav: rgba(6,14,30,0.90);
+            --nav-b: rgba(120,170,255,0.22);
+            --text: #ddeeff;
+            --muted: #8aadd8;
+            --chip: rgba(255,255,255,0.09);
+            --chip-b: rgba(140,190,255,0.28);
+            --chip-t: #cce0ff;
+            --stars: 0.45;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                radial-gradient(circle at 50% 105%, rgba(51,157,157,0.14), transparent 34%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ── Map Styles (from sessions.html) ── */
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 1400px;
+            margin: 0 auto;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .map-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .map-path {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 2, 20;
+            animation: pathFlow 30s linear infinite;
+        }
+
+        @keyframes pathFlow {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -1000; }
+        }
+
+        .node {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .node:hover { transform: scale(1.1); z-index: 20; }
+
+        .node-orbit {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 3px solid var(--card-b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 0 30px rgba(100,180,255,0.2);
+        }
+
+        .node.active .node-orbit {
+            border-color: #F9C013;
+            box-shadow: 0 0 40px rgba(249,192,19,0.4);
+            animation: nodePulse 2s infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(249,192,19,0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(249,192,19,0.5); }
+        }
+
+        .node-container {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 140px;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .node-number {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 34px;
+            height: 34px;
+            background: #F9C013;
+            color: #1A4576;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .node-label {
+            margin-top: 12px;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            width: 140px;
+            background: var(--nav);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--nav-b);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            white-space: normal;
+            line-height: 1.3;
+        }
+
+        .material-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 1.5rem;
+            margin: 1.5rem auto;
+            display: block;
+            border: 1px solid var(--card-b);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .kc-box { background: linear-gradient(135deg, rgba(38,94,155,0.1), rgba(38,94,155,0.2)); border: 1.5px solid rgba(147,188,255,0.3); border-radius: 1.5rem; padding: 1.5rem; margin: 1.5rem 0; }
+        .fyk-box { background: linear-gradient(135deg, rgba(249,192,19,0.1), rgba(249,192,19,0.2)); border: 1.5px solid rgba(249,192,19,0.3); border-radius: 1.5rem; padding: 1.5rem; margin: 1.5rem 0; }
+        .kc-box-title { font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #7cb3f1; margin-bottom: 0.75rem; }
+        .fyk-box-title { font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #f9c013; margin-bottom: 0.75rem; }
+
+        html[data-theme="light"] .kc-box { background: #f0f7ff; border-color: #c7dcf9; }
+        html[data-theme="light"] .fyk-box { background: #fffdf5; border-color: #f9e29a; }
+        html[data-theme="light"] .kc-box-title { color: #265E9B; }
+        html[data-theme="light"] .fyk-box-title { color: #d9a40a; }
+
+        /* ── Modal & UI Elements ── */
+        .planet-card {
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .btn-secondary.active {
+            background: #265E9B;
+            border-color: #265E9B;
+            color: white;
+            box-shadow: 0 0 20px rgba(38,94,155,0.4);
+        }
+
+        .task-card {
+            background: rgba(147,188,255,0.08);
+            border: 1.5px solid rgba(147,188,255,0.15);
+            border-radius: 1.25rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .answer-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .highlight-correct {
+            color: #10b981;
+            font-weight: 900;
+        }
+        
+        html[data-theme="light"] .highlight-correct {
+            color: #059669;
+        }
+
+        .skeleton { animation: skelPulse 1.5s ease-in-out infinite; background: linear-gradient(90deg, rgba(140,180,255,0.09) 25%, rgba(140,180,255,0.18) 50%, rgba(140,180,255,0.09) 75%); background-size: 200% 100%; border-radius: 1rem; }
+        @keyframes skelPulse { 0%,100% { background-position: 200% 0; } 50% { background-position: 0% 0; } }
+
+        .map-section-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            font-weight: 950;
+            font-size: 5rem;
+            opacity: 0.05;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            pointer-events: none;
+            color: var(--text);
+            z-index: 0;
+        }
+
+        .map-container {
+            position: relative;
+            width: 1000px;
+            margin: 0 auto;
+            transform-origin: top center;
+        }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- ── NAVIGATION ── -->
+    <nav class="topnav w-full px-5 md:px-8 py-4 flex justify-between items-center shadow-sm relative z-50" style="background: var(--nav); border-bottom: 1px solid var(--nav-b); backdrop-filter: blur(18px);">
+        <div class="flex items-center gap-6">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png"
+                 alt="Logo Kalananti" onclick="window.location.href='dashboard.html'"
+                 class="h-9 md:h-11 cursor-pointer hover:scale-105 transition-transform">
+            <div class="h-8 w-px bg-white/20 hidden md:block"></div>
+            <div class="hidden md:block">
+                <h2 class="font-display font-black text-lg mission-text uppercase">Curriculum Explorer</h2>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+             <button onclick="window.location.href='dashboard.html'" class="px-5 py-2.5 rounded-full font-black text-sm flex items-center gap-2 transition-all border-2 border-white/10 hover:bg-white/5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Dashboard
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto w-full px-5 md:px-10 py-10">
+        
+        <!-- Course Selection Tabs + Shared Activity -->
+        <div class="flex flex-wrap justify-center items-center gap-3 mb-12">
+            <!-- Program tabs -->
+            <button onclick="selectCourse('roblox')" id="tab-roblox" class="btn-secondary px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2">
+                <span>🎮</span> Roblox
+            </button>
+            <button onclick="selectCourse('scratch')" id="tab-scratch" class="btn-secondary px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2">
+                <span>🐱</span> Scratch
+            </button>
+            <button onclick="selectCourse('python')" id="tab-python" class="btn-secondary px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2">
+                <span>🐍</span> Python
+            </button>
+
+            <!-- Divider -->
+            <div class="w-px h-8 rounded-full mx-2" style="background: var(--card-b);"></div>
+
+            <!-- Shared Activity (prominent tab) -->
+            <button
+                id="tab-shared"
+                onclick="document.getElementById('shared-activity-modal').classList.remove('hidden'); document.getElementById('shared-activity-modal').classList.add('flex');"
+                class="px-8 py-3 rounded-2xl font-black uppercase tracking-wider flex items-center gap-2 transition-all border-2 border-k-yellow/40 text-k-yellow hover:bg-k-yellow hover:text-white hover:border-k-yellow shadow-sm hover:shadow-[0_0_20px_rgba(249,192,19,0.35)] relative group"
+            >
+                <span class="text-lg">🤝</span>
+                <span>Shared Activity</span>
+                <span class="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-k-yellow border-2 border-white animate-pulse"></span>
+            </button>
+        </div>
+
+        <!-- Curriculum Map Section -->
+        <div class="relative min-h-[500px]">
+            <div id="map-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-4 z-20 bg-black/10 backdrop-blur-sm rounded-[3rem] hidden">
+                <div class="w-16 h-16 border-4 border-k-yellow border-t-transparent rounded-full animate-spin"></div>
+                <p class="font-black mission-text uppercase tracking-widest text-white">Menyiapkan Peta Kurikulum...</p>
+            </div>
+
+            <div id="map-area" class="slide-content-enter w-full pb-10">
+                <!-- Grid of levels and sessions will be injected here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Session Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <div class="planet-card w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative">
+            <!-- Close Button -->
+            <button onclick="closeModal()" class="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center z-10 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="p-10 pb-6 border-b border-white/10 shrink-0">
+                <div class="inline-flex items-center gap-2 bg-k-blue/20 text-k-blue px-4 py-1.5 rounded-xl font-black text-xs uppercase tracking-widest mb-4 border border-k-blue/30" id="modal-label">
+                    SESI 1
+                </div>
+                <h2 id="modal-title" class="font-display font-black text-4xl leading-tight mission-text">Judul Sesi</h2>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-10 pt-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    
+                    <!-- Content Section -->
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="font-black text-xl mb-4 flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-lg bg-k-yellow/20 flex items-center justify-center text-k-yellow text-sm">🎯</span>
+                                Tujuan Pembelajaran
+                            </h3>
+                            <div id="modal-goal" class="text-lg font-medium leading-relaxed opacity-80"></div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-black text-xl mb-6 flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-lg bg-k-green/20 flex items-center justify-center text-k-green text-sm">✅</span>
+                                Misi Hari Ini
+                            </h3>
+                            <div id="modal-tasks" class="space-y-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Section -->
+                    <div>
+                         <div class="bg-white/5 rounded-[2rem] p-8 border border-white/10 h-full">
+                            <h3 class="font-black text-xl mb-6 flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-sm">🔑</span>
+                                Kunci Jawaban Quiz
+                            </h3>
+                            <div id="modal-quiz" class="space-y-6"></div>
+                         </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-8 border-t border-white/10 shrink-0 flex justify-end">
+                <button onclick="closeModal()" class="px-8 py-3 rounded-2xl bg-white/5 border border-white/10 font-black uppercase text-sm hover:bg-white/10 transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WEB_APP_BASE = 'https://script.google.com/macros/s/AKfycbwvNSa3hUMNqhNOINDeG3cPUdlQM-dGfl-dDX5WejhESjHRALipqhwJ_-3HXOJehtWbWw/exec';
+        
+        const PROGRAMS = {
+            roblox: { sheet: 'B2C_RobloxStudio_Modul', label: 'Roblox Studio', emoji: '🎮' },
+            scratch: { sheet: 'B2C_Scratch_Modul', label: 'Scratch', emoji: '🐱' },
+            python: { sheet: 'B2C_Python_Modul', label: 'Python', emoji: '🐍' }
+        };
+
+        let currentProgram = 'roblox';
+        let curriculumData = [];
+
+        function selectCourse(progKey) {
+            currentProgram = progKey;
+            
+            // Update UI Tabs
+            Object.keys(PROGRAMS).forEach(key => {
+                const tab = document.getElementById('tab-' + key);
+                if (key === progKey) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            loadCurriculum();
+        }
+
+        async function loadCurriculum() {
+            const loading = document.getElementById('map-loading');
+            const mapArea = document.getElementById('map-area');
+            
+            loading.classList.remove('hidden');
+            mapArea.innerHTML = '';
+
+            try {
+                const response = await fetch(`${WEB_APP_BASE}?sheet=${PROGRAMS[currentProgram].sheet}`);
+                const data = await response.json();
+                
+                if (data.success === false) {
+                    throw new Error(data.error || 'Gagal memuat data');
+                }
+
+                // Filter valid lesson rows (col_1 is session number)
+                curriculumData = data.filter(row => row.col_1 && !isNaN(parseInt(row.col_1)));
+
+                // FIX: Carry-forward level (col_0) for merged cells in Google Sheets
+                // In a spreadsheet, only the first row of a level group has the level value;
+                // subsequent rows leave col_0 blank. We fill those blanks here.
+                let lastLevel = '';
+                curriculumData = curriculumData.map(row => {
+                    const rawLevel = String(row.col_0 || '').trim();
+                    if (rawLevel && !isNaN(parseInt(rawLevel))) {
+                        lastLevel = rawLevel;
+                    } else if (lastLevel) {
+                        row = { ...row, col_0: lastLevel };
+                    }
+                    return row;
+                });
+
+                renderMap();
+            } catch (err) {
+                console.error(err);
+                mapArea.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full gap-4 text-center">
+                        <span class="text-6xl">🚧</span>
+                        <h3 class="text-2xl font-black mission-text">Maaf, Data Belum Tersedia</h3>
+                        <p class="opacity-60 max-w-md">Kurikulum untuk program ini sedang disiapkan oleh tim akademik.</p>
+                        <button onclick="selectCourse('roblox')" class="mt-4 px-6 py-2 bg-k-blue rounded-xl font-bold">Kembali ke Roblox</button>
+                    </div>
+                `;
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        function renderMap() {
+            const container = document.getElementById('map-area');
+            
+            let levelCount = 1;
+            const hasLevels = curriculumData.some(l => parseInt(l.col_0) > 0);
+            
+            if (hasLevels) {
+                levelCount = Math.max(...curriculumData.map(l => parseInt(l.col_0) || 1));
+            } else {
+                const actualMaxSession = curriculumData.length > 0 
+                    ? Math.max(...curriculumData.map(l => parseInt(l.col_1) || 0)) 
+                    : 12;
+                levelCount = Math.max(1, Math.ceil(actualMaxSession / 12));
+            }
+            
+            container.className = 'flex flex-col gap-12 w-full max-w-5xl mx-auto mt-6';
+            container.style.height = 'auto';
+            container.innerHTML = '';
+
+            for (let l = 1; l <= levelCount; l++) {
+                const levelSection = document.createElement('div');
+                levelSection.className = 'w-full';
+                
+                // Level Header
+                const levelHeader = document.createElement('div');
+                levelHeader.className = 'mb-8 flex items-center gap-4';
+                levelHeader.innerHTML = `
+                    <div class="h-px flex-1 bg-k-blue-d/10"></div>
+                    <h2 class="font-black text-xl md:text-2xl uppercase tracking-widest text-k-blue-d bg-white/70 px-8 py-3 rounded-full border border-white/50 backdrop-blur-md shadow-sm">LEVEL ${l}</h2>
+                    <div class="h-px flex-1 bg-k-blue-d/10"></div>
+                `;
+                levelSection.appendChild(levelHeader);
+
+                // Grid for 12 sessions
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5';
+
+                for (let i = 1; i <= 12; i++) {
+                    const sessionNumber = hasLevels ? i : ((l - 1) * 12) + i;
+                    
+                    let lesson;
+                    if (hasLevels) {
+                        lesson = curriculumData.find(d => parseInt(d.col_0) === l && parseInt(d.col_1) === sessionNumber);
+                    } else {
+                        lesson = curriculumData.find(d => parseInt(d.col_1) === sessionNumber);
+                    }
+                    
+                    const card = document.createElement('div');
+                    
+                    if (lesson) {
+                        card.className = 'planet-card rounded-[1.5rem] p-5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:-translate-y-2 hover:shadow-xl transition-all shadow-md border-2 border-white/40 hover:border-k-yellow group relative overflow-hidden bg-white/80';
+                        card.onclick = () => {
+                            const levelParam = hasLevels ? (lesson.col_0 || l) : 0;
+                            window.location.href = `curriculum-detail.html?program=${currentProgram}&level=${levelParam}&session=${sessionNumber}`;
+                        };
+                        card.innerHTML = `
+                            <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center text-3xl shadow-sm border border-k-blue/10 group-hover:scale-110 transition-transform">
+                                ${PROGRAMS[currentProgram].emoji}
+                            </div>
+                            <div class="text-center z-10">
+                                <p class="font-black text-sm uppercase text-k-blue-d group-hover:text-k-blue transition-colors">Sesi ${sessionNumber}</p>
+                            </div>
+                        `;
+                    } else {
+                        card.className = 'planet-card rounded-[1.5rem] p-5 flex flex-col items-center justify-center gap-3 opacity-60 shadow-sm border border-white/20 bg-white/40';
+                        card.innerHTML = `
+                            <div class="w-14 h-14 rounded-full bg-black/5 flex items-center justify-center text-2xl grayscale">
+                                🔒
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-sm uppercase text-k-blue-d/60">Sesi ${sessionNumber}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    grid.appendChild(card);
+                }
+                
+                levelSection.appendChild(grid);
+                container.appendChild(levelSection);
+            }
+        }
+
+        function showDetail(lesson) {
+            const modal = document.getElementById('detail-modal');
+            const label = document.getElementById('modal-label');
+            const title = document.getElementById('modal-title');
+            const goal = document.getElementById('modal-goal');
+            const tasksContainer = document.getElementById('modal-tasks');
+            const quizContainer = document.getElementById('modal-quiz');
+
+            label.innerText = `PROGRAM ${currentProgram.toUpperCase()}`;
+            title.innerText = `Sesi ${lesson.col_1}`;
+            
+            // For Scratch, col_2 often contains the mission objectives, so we combine or prioritize it
+            const detailGoal = lesson.col_2 || lesson.col_3 || 'Tujuan sesi ini adalah untuk mempelajari konsep baru dalam pemrograman.';
+            goal.innerHTML = formatContent(detailGoal, lesson);
+
+            // Tasks - Show Must Do and Should Do
+            const mustDoRaw = lesson.col_4 || '';
+            const shouldDoRaw = lesson.col_6 || '';
+            
+            const parseTasks = (raw) => {
+                return raw.split('\n').filter(t => t.trim()).map(t => t.replace(/^\d+\.\s*/, '').trim());
+            };
+
+            const mustDoTasks = parseTasks(mustDoRaw);
+            const shouldDoTasks = parseTasks(shouldDoRaw);
+
+            tasksContainer.innerHTML = '';
+            
+            if (mustDoTasks.length > 0) {
+                tasksContainer.innerHTML += `<p class="text-[10px] font-black text-k-yellow uppercase tracking-widest mt-4 mb-2">Must Do:</p>`;
+                mustDoTasks.forEach(t => {
+                    tasksContainer.innerHTML += `
+                        <div class="task-card flex items-start gap-3">
+                            <div class="w-5 h-5 mt-0.5 flex-shrink-0 flex items-center justify-center">
+                                <div class="w-2.5 h-2.5 rounded-full bg-k-yellow shadow-[0_0_8px_rgba(249,192,19,0.5)]"></div>
+                            </div>
+                            <p class="font-bold text-[15px] leading-relaxed">${t}</p>
+                        </div>`;
+                });
+            }
+
+            if (shouldDoTasks.length > 0) {
+                tasksContainer.innerHTML += `<p class="text-[10px] font-black text-k-green uppercase tracking-widest mt-4 mb-2">Should Do:</p>`;
+                shouldDoTasks.forEach(t => {
+                    tasksContainer.innerHTML += `
+                        <div class="task-card flex items-start gap-3">
+                            <div class="w-5 h-5 mt-0.5 flex-shrink-0 flex items-center justify-center">
+                                <div class="w-2.5 h-2.5 rounded-full bg-k-green shadow-[0_0_8px_rgba(51,157,157,0.5)]"></div>
+                            </div>
+                            <p class="font-bold text-[15px] leading-relaxed">${t}</p>
+                        </div>`;
+                });
+            }
+
+            // Quiz Answer Key
+            quizContainer.innerHTML = '';
+            const quizData = parseQuizData(lesson);
+            
+            if (quizData.length > 0) {
+                quizData.forEach((q, idx) => {
+                    const qHtml = `
+                        <div class="space-y-2">
+                            <p class="font-black text-sm uppercase tracking-wider mission-text">Soal ${idx + 1}:</p>
+                            <p class="font-bold text-lg leading-snug">${q.question}</p>
+                            <div class="answer-card space-y-1">
+                                ${q.options.map(opt => `
+                                    <p class="text-sm ${opt.key === q.correctKey ? 'highlight-correct' : 'opacity-60'}">
+                                        ${opt.key}. ${opt.text} ${opt.key === q.correctKey ? '✓' : ''}
+                                    </p>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    quizContainer.innerHTML += qHtml;
+                });
+            } else {
+                quizContainer.innerHTML = `<div class="p-6 text-center opacity-40 italic">Tidak ada quiz untuk sesi ini.</div>`;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('detail-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function parseQuizData(lesson) {
+            const rawQuestions = lesson.col_10 || '';
+            const rawOptions = lesson.col_11 || '';
+            const rawAnswers = lesson.col_12 || '';
+
+            if (!rawQuestions) return [];
+
+            const qLines = rawQuestions.split('\n').filter(l => l.trim());
+            const qParsed = qLines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+
+            const optLines = rawOptions.split('\n').filter(l => l.trim());
+            const optParsed = optLines.map(line => {
+                const clean = line.replace(/^\d+\.\s*/, '').trim();
+                const parts = clean.split(/\s*\|\s*/);
+                return parts.map(p => {
+                    const match = p.match(/^([A-C])\.\s*(.+)$/);
+                    return match ? { key: match[1], text: match[2].trim() } : null;
+                }).filter(Boolean);
+            });
+
+            const ansLines = rawAnswers.split(/\r?\n/).filter(l => l.trim());
+            const ansParsed = ansLines.map(line => {
+                const match = line.match(/^\d+\.\s*([A-C])\./);
+                return match ? match[1] : null;
+            });
+
+            return qParsed.map((q, i) => ({
+                question: q,
+                options: optParsed[i] || [],
+                correctKey: ansParsed[i] || 'A'
+            })).filter(q => q.question && q.options.length > 0);
+        }
+
+        // ── CONTENT PARSER ──
+        function formatContent(raw, lesson) {
+            if (!raw) return '';
+            let text = raw;
+
+            // 1. Process Bold **text**
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-k-blue">$1</strong>');
+
+            // 2. Standalone URL to Image
+            text = text.replace(/(?<!src=")(https?:\/\/[^\s<"]+)/gi, '<img src="$1" alt="Ilustrasi" onerror="this.style.display=\'none\'" class="rounded-2xl my-4">');
+
+            // 3. Custom Placeholders (kc* / fyk*)
+            text = injectPlaceholders(text, lesson);
+
+            // 4. Lines Processing
+            const lines = text.split('\n');
+            const formatted = lines.map(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return '';
+                if (trimmed.startsWith('<div') || trimmed.startsWith('<h') || trimmed.startsWith('<img')) return trimmed;
+
+                // Bullet points
+                if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+                    return `<div class="flex items-start gap-3 mb-2 ml-2 leading-relaxed opacity-90"><div class="w-1.5 h-1.5 rounded-full bg-k-blue-d mt-2 shrink-0"></div><span>${trimmed.substring(1).trim()}</span></div>`;
+                }
+
+                return `<p class="mb-4 leading-relaxed opacity-90">${trimmed}</p>`;
+            }).join('');
+
+            return `<div class="material-content">${formatted}</div>`;
+        }
+
+        function injectPlaceholders(text, lesson) {
+            let result = text;
+            const kcRaw = lesson.col_8 || '';
+            const fykRaw = lesson.col_9 || '';
+
+            const kcBlocks = {};
+            kcRaw.replace(/kc(\d+):\n?([\s\S]*?)(?=\nkc\d+:|$)/g, (_, n, content) => {
+                kcBlocks[`kc${n}`] = content.trim();
+            });
+
+            const fykBlocks = {};
+            fykRaw.replace(/fyk(\d+):\n?([\s\S]*?)(?=\nfyk\d+:|$)/g, (_, n, content) => {
+                fykBlocks[`fyk${n}`] = content.trim();
+            });
+
+            // Replace kc*
+            result = result.replace(/kc(\d+)\*/g, (_, n) => {
+                const content = kcBlocks[`kc${n}`] || '';
+                if (!content) return '';
+                return `<div class="kc-box"><div class="kc-box-title">KAMUS CODER</div><div class="font-bold text-sm leading-relaxed">${content.replace(/•\s*/g, '<br>• ')}</div></div>`;
+            });
+
+            // Replace fyk*
+            result = result.replace(/fyk(\d+)\*/g, (_, n) => {
+                const content = fykBlocks[`fyk${n}`] || '';
+                if (!content) return '';
+                return `<div class="fyk-box"><div class="fyk-box-title">TAHUKAH KAMU?</div><div class="font-bold text-sm leading-relaxed">${content.replace(/•\s*/g, '<br>• ')}</div></div>`;
+            });
+
+            return result;
+        }
+
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', () => {
+            selectCourse('roblox');
+        });
+    </script>
+    <!-- Shared Activity Modal -->
+    <div id="shared-activity-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden items-center justify-center p-4 md:p-10">
+        <div class="planet-card w-full h-full max-w-7xl rounded-[2rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative border-4 border-k-yellow">
+            <button onclick="document.getElementById('shared-activity-modal').classList.remove('flex'); document.getElementById('shared-activity-modal').classList.add('hidden');" class="absolute top-4 right-4 md:top-6 md:right-6 w-12 h-12 rounded-2xl bg-k-yellow text-k-blue-d hover:bg-yellow-300 hover:scale-105 flex items-center justify-center z-10 transition-all shadow-lg border-2 border-yellow-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <div class="w-full h-full bg-white relative">
+                <iframe src="https://docs.google.com/document/d/1kZWrsS_LPQdJbRaNezxAv0SdZ--_t8pfCtzMaHlXuUY/preview" class="w-full h-full border-0 absolute inset-0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

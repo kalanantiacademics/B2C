@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="assets/css/mobile-ready.css">
+    <title>Curriculum Detail - Teacher View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Space Grotesk', 'sans-serif'], display: ['Orbitron', 'sans-serif'] },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (() => {
+            const THEME_KEY = 'kalanantiTheme';
+            let initialTheme = 'light';
+            try {
+                const saved = localStorage.getItem(THEME_KEY);
+                if (saved === 'dark' || saved === 'light') initialTheme = saved;
+            } catch (err) { }
+            document.documentElement.setAttribute('data-theme', initialTheme);
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.94);
+            --card-b: rgba(180,215,255,0.85);
+            --nav: rgba(255,255,255,0.92);
+            --nav-b: rgba(180,215,255,0.90);
+            --text: #1a4576;
+            --muted: #4d7daf;
+            --chip: #ffffff;
+            --chip-b: #cde0f8;
+            --chip-t: #265E9B;
+            --stars: 0.12;
+        }
+
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.82);
+            --card-b: rgba(140,190,255,0.22);
+            --nav: rgba(6,14,30,0.90);
+            --nav-b: rgba(120,170,255,0.22);
+            --text: #ffffff;
+            --muted: #b0c9e8;
+            --chip: rgba(255,255,255,0.12);
+            --chip-b: rgba(140,190,255,0.28);
+            --chip-t: #cce0ff;
+            --stars: 0.45;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                radial-gradient(circle at 50% 105%, rgba(51,157,157,0.14), transparent 34%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: -20;
+            opacity: var(--stars);
+            background-image:
+                radial-gradient(circle at 14% 24%, rgba(255,255,255,0.9) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 78% 68%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 56% 38%, rgba(255,255,255,0.60) 0 1px, transparent 1.4px),
+                radial-gradient(circle at 30% 82%, rgba(255,255,255,0.50) 0 1px, transparent 1.3px);
+            background-size: 250px 250px, 320px 320px, 210px 210px, 280px 280px;
+        }
+
+        /* ── Classes ── */
+        .topnav {
+            background: var(--nav);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--nav-b);
+        }
+        .planet-card { 
+            background: var(--card); 
+            border: 1.5px solid var(--card-b); 
+            -webkit-backdrop-filter: blur(12px); 
+            backdrop-filter: blur(12px); 
+            box-shadow: 0 20px 40px -20px rgba(2,8,26,0.85);
+        }
+        .chip { background: var(--chip); border: 1.5px solid var(--chip-b); color: var(--chip-t); }
+
+        
+        
+        .slide-content-enter { animation: fadeInScale 0.4s ease-out forwards; }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .skeleton { animation: skelPulse 1.5s ease-in-out infinite; background: linear-gradient(90deg, #e8f0fe 25%, #d0e1ff 50%, #e8f0fe 75%); background-size: 200% 100%; border-radius: 1rem; }
+        @keyframes skelPulse { 0%, 100% { background-position: 200% 0; } 50% { background-position: 0% 0; } }
+        html[data-theme="dark"] .skeleton { background: linear-gradient(90deg, rgba(40,70,120,0.55) 25%, rgba(60,100,160,0.65) 50%, rgba(40,70,120,0.55) 75%); }
+
+        @keyframes simpleFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-15px) rotate(3deg); } }
+
+        /* ── Kamus Coder block ── */
+        .kc-block {
+            position: relative; margin: 2.5rem 0; border-radius: 2rem; overflow: hidden;
+            border: 2px solid rgba(249,192,19,0.38);
+            background: linear-gradient(135deg, #fffde7, #fff8e1 55%, #fef9e0);
+            box-shadow: 0 16px 48px -12px rgba(180,130,0,0.18), inset 0 1px 0 rgba(255,255,255,0.9);
+            transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+        }
+        html[data-theme="dark"] .kc-block {
+            border-color: rgba(100,160,255,0.30);
+            background: linear-gradient(135deg, #1a3a6a, #0f2040 60%, #1e2f5a);
+            box-shadow: 0 24px 64px -16px rgba(0,10,40,0.6), inset 0 1px 0 rgba(255,255,255,0.07);
+        }
+        .kc-header {
+            display: flex; align-items: center; gap: 14px; padding: 18px 28px;
+            background: linear-gradient(90deg, rgba(249,192,19,0.22), rgba(249,192,19,0.04));
+            border-bottom: 1px solid rgba(249,192,19,0.25);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        html[data-theme="dark"] .kc-header {
+            background: linear-gradient(90deg, rgba(38,94,155,0.45), rgba(38,94,155,0.10));
+            border-bottom-color: rgba(100,160,255,0.18);
+        }
+        .kc-icon {
+            width: 48px; height: 48px; border-radius: 16px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            background: linear-gradient(135deg, #F9C013, #e0a800);
+            box-shadow: 0 8px 20px rgba(249,192,19,0.40);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        html[data-theme="dark"] .kc-icon {
+            background: linear-gradient(135deg, #265E9B, #1A4576);
+            box-shadow: 0 8px 20px rgba(38,94,155,0.55);
+        }
+        .kc-label-sub { font-size: 0.60rem; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; margin: 0; color: rgba(120,80,0,0.55); }
+        html[data-theme="dark"] .kc-label-sub { color: rgba(180,210,255,0.60); }
+        .kc-label-title { font-size: 1rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; margin: 0; color: #7a4a00; }
+        html[data-theme="dark"] .kc-label-title { color: #cce0ff; }
+        .kc-content { padding: 22px 28px 26px; font-size: 0.97rem; font-weight: 600; line-height: 1.78; color: #4a3000; }
+        html[data-theme="dark"] .kc-content { color: #ddeeff; }
+        .kc-blob-a { position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(249,192,19,0.35),transparent 70%);pointer-events:none;transition:background 0.3s; }
+        html[data-theme="dark"] .kc-blob-a { background: radial-gradient(circle, rgba(38,94,155,0.55), transparent 70%); }
+        .kc-blob-b { position:absolute;bottom:-20px;left:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(249,192,19,0.15),transparent 70%);pointer-events:none;transition:background 0.3s; }
+
+        /* ── Tahukah Kamu block ── */
+        .fyk-block {
+            position: relative; margin: 2.5rem 0; border-radius: 2rem; overflow: hidden;
+            border: 2px solid rgba(6,182,212,0.30);
+            background: linear-gradient(135deg, #ecfeff, #e0f9ff 55%, #f0feff);
+            box-shadow: 0 16px 48px -12px rgba(6,182,212,0.18), inset 0 1px 0 rgba(255,255,255,0.9);
+            transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+        }
+        html[data-theme="dark"] .fyk-block {
+            border-color: rgba(56,189,248,0.28);
+            background: linear-gradient(135deg, #0a2540, #071929 55%, #0d243e);
+            box-shadow: 0 24px 64px -16px rgba(0,8,30,0.70), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .fyk-accent-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #06b6d4, #0ea5e9, rgba(6,182,212,0));
+        }
+        html[data-theme="dark"] .fyk-accent-bar {
+            background: linear-gradient(90deg, #38bdf8, #0ea5e9, rgba(56,189,248,0));
+        }
+        .fyk-header {
+            display: flex; align-items: center; gap: 14px; padding: 18px 28px;
+            border-bottom: 1px solid rgba(6,182,212,0.20);
+            transition: border-color 0.3s;
+        }
+        html[data-theme="dark"] .fyk-header { border-bottom-color: rgba(56,189,248,0.15); }
+        .fyk-icon {
+            width: 52px; height: 52px; border-radius: 18px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            box-shadow: 0 8px 24px rgba(6,182,212,0.40);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        html[data-theme="dark"] .fyk-icon {
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            box-shadow: 0 8px 24px rgba(14,165,233,0.55);
+        }
+        .fyk-label-sub { font-size: 0.60rem; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; margin: 0; color: rgba(8,100,130,0.55); }
+        html[data-theme="dark"] .fyk-label-sub { color: rgba(125,211,252,0.65); }
+        .fyk-label-title { font-size: 1rem; font-weight: 900; margin: 0; color: #0e7490; }
+        html[data-theme="dark"] .fyk-label-title { color: #7dd3fc; }
+        .fyk-dot { width:8px;height:8px;border-radius:50%;background:#06b6d4;box-shadow:0 0 8px #06b6d4;animation:pulse 2s ease-in-out infinite;flex-shrink:0; }
+        html[data-theme="dark"] .fyk-dot { background:#38bdf8;box-shadow:0 0 8px #38bdf8; }
+        .fyk-live-label { font-size:0.58rem;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;color:rgba(8,100,130,0.50); }
+        html[data-theme="dark"] .fyk-live-label { color:rgba(125,211,252,0.55); }
+        .fyk-stripe {
+            margin: 0 28px; height: 2px; border-radius: 2px; opacity: 0.4;
+            background: linear-gradient(90deg, rgba(6,182,212,0.5), rgba(0,0,0,0), rgba(6,182,212,0.5));
+        }
+        html[data-theme="dark"] .fyk-stripe {
+            background: linear-gradient(90deg, rgba(249,192,19,0.5), rgba(0,0,0,0), rgba(249,192,19,0.5));
+        }
+        .fyk-blob-a { position:absolute;top:-40px;left:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.18),transparent 70%);pointer-events:none;transition:background 0.3s; }
+        html[data-theme="dark"] .fyk-blob-a { background: radial-gradient(circle, rgba(56,189,248,0.20), transparent 70%); }
+        .fyk-blob-b { position:absolute;bottom:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(249,192,19,0.10),transparent 70%);pointer-events:none; }
+        .fyk-content { padding: 22px 28px 26px; font-size: 0.97rem; font-weight: 600; line-height: 1.80; color: #134e5e; }
+        html[data-theme="dark"] .fyk-content { color: #e0f4ff; }
+
+        .btn-3d {
+            position: relative; width: 100%; padding: 1.25rem; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.15em; color: #5A3F00;
+            background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%); border-radius: 1.5rem; transition: all 0.2s;
+            box-shadow: 0 6px 0 #B28400, 0 15px 30px -5px rgba(249, 192, 19, 0.4); border: none; cursor: pointer;
+        }
+        .btn-3d:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #B28400, 0 20px 40px -10px rgba(249, 192, 19, 0.5); }
+        .btn-3d:active { transform: translateY(4px); box-shadow: 0 2px 0 #B28400, 0 5px 10px -2px rgba(249, 192, 19, 0.3); }
+
+        /* Image Popup Modal */
+        #image-modal {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 100000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        #image-modal.active {
+            display: flex; opacity: 1;
+        }
+        #image-modal img {
+            max-width: 90vw; max-height: 90vh; border-radius: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.8); transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); object-fit: contain;
+        }
+        #image-modal.active img {
+            transform: scale(1);
+        }
+        #image-modal-close {
+            position: absolute; top: 2rem; right: 2rem; color: white; font-size: 1.5rem; cursor: pointer; opacity: 0.6; transition: all 0.2s; background: rgba(255,255,255,0.1); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2); z-index: 100001;
+        }
+        #image-modal-close:hover {
+            opacity: 1; transform: scale(1.1); background: rgba(255,255,255,0.2);
+        }
+
+        /* Mission Control Loader */
+        #mission-loader {
+            position: fixed; inset: 0;
+            background: #020617;
+            z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+        }
+        #mission-loader.loaded {
+            opacity: 0; visibility: hidden;
+            pointer-events: none;
+        }
+        .loader-rocket {
+            width: 140px; height: auto;
+            max-height: 140px;
+            object-fit: contain;
+            animation: loaderFloat 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(249,192,19,0.5));
+        }
+        @keyframes loaderFloat { 
+            0%, 100% { transform: translateY(0) rotate(-8deg); } 
+            50% { transform: translateY(-30px) rotate(8deg); } 
+        }
+        .loader-bar { width: 280px; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 40px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); }
+        .loader-progress { position: absolute; inset: 0; background: linear-gradient(90deg, #F9C013, #FFD700); width: 0%; animation: loaderFill 2s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+        @keyframes loaderFill { 0% { width: 0%; } 100% { width: 100%; } }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans relative">
+    <!-- Mission Control Loader -->
+    <div id="mission-loader">
+        <div class="relative">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" class="loader-rocket" alt="Rocket">
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-4 bg-[#F9C013]/20 blur-xl rounded-full animate-pulse"></div>
+        </div>
+        <div class="loader-bar">
+            <div class="loader-progress"></div>
+        </div>
+        <div class="mt-8 text-center">
+            <p class="font-display font-black text-sm uppercase tracking-[0.4em] text-[#F9C013] animate-pulse">Memuat Kurikulum...</p>
+            <p class="mt-2 text-muted text-[10px] font-bold uppercase tracking-widest opacity-60">Guru View - Read Only Mode</p>
+        </div>
+    </div>
+
+    <!-- Image Popup Modal -->
+    <div id="image-modal" onclick="closeImageModal()">
+        <div id="image-modal-close" onclick="closeImageModal(); event.stopPropagation();">✕</div>
+        <img id="image-modal-img" src="" alt="Popup Image" onclick="event.stopPropagation();">
+    </div>
+
+    <div id="global-deco" style="position: fixed; inset: 0; pointer-events: none; z-index: -10; overflow: hidden;">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png" style="position: absolute; left: 0; top: 12%; width: min(25vw, 180px); opacity: 0.6; transform-origin: left center;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png" style="position: absolute; left: 0; top: 72%; width: min(30vw, 240px); opacity: 0.6; transform-origin: left center; transform: translateX(-34%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png" style="position: absolute; right: 0; top: 28%; width: min(30vw, 240px); opacity: 0.6; transform-origin: right center; transform: translateX(34%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png" style="position: absolute; left: 10%; top: 20%; width: 110px; animation: simpleFloat 7s ease-in-out infinite;" alt="">
+    </div>
+
+    <!-- Header -->
+    <nav class="topnav w-full px-6 py-4 flex justify-between items-center shadow-lg z-50">
+        <div class="flex items-center gap-6">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" 
+                 alt="Logo" 
+                 onclick="window.location.href='curriculum.html'" 
+                 class="h-9 md:h-11 cursor-pointer hover:scale-105 transition-transform drop-shadow-sm">
+            <div class="h-8 w-[1.5px] bg-sky/30 hidden md:block"></div>
+            <div class="hidden md:flex flex-col">
+                <p class="text-[9px] font-black text-muted uppercase tracking-[0.2em] mb-0.5">Mode Guru (Read-Only)</p>
+                <h2 id="nav-title" class="font-black text-k-blue text-sm">Program <span class="text-muted/40 mx-2">/</span> Sesi</h2>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button onclick="window.location.href='curriculum.html'" class="chip flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider hover:bg-white/10 transition-colors">
+                <span>← Kembali</span>
+            </button>
+            <button onclick="toggleTheme()" class="chip w-10 h-10 rounded-full flex items-center justify-center text-lg hover:scale-105 transition-transform">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex overflow-hidden p-6 md:p-10 gap-8 h-full">
+        <!-- Main Area -->
+        <main class="flex-[2] flex flex-col gap-8 relative h-full">
+            <div id="content-card" class="planet-card flex-1 w-full h-full rounded-[3.5rem] shadow-2xl flex flex-col relative overflow-hidden">
+                <div class="absolute inset-0 opacity-[0.04] pointer-events-none">
+                    <svg width="100%" height="100%"><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#265E9B" stroke-width="1"/></pattern><rect width="100%" height="100%" fill="url(#grid)"/></svg>
+                </div>
+                <div id="content-loading" class="flex-1 p-12 flex flex-col gap-5 z-10">
+                    <div class="skeleton h-10 w-1/3 mb-4"></div>
+                    <div class="skeleton h-7 w-full"></div>
+                    <div class="skeleton h-7 w-4/5"></div>
+                    <div class="skeleton h-48 w-full mt-6"></div>
+                </div>
+                <div id="main-display" class="flex-1 p-10 md:p-16 flex flex-col items-center z-10 slide-content-enter overflow-y-auto hidden"></div>
+                <div id="slide-nav" class="px-12 py-8 border-t border-card-b/40 flex justify-between items-center z-10 backdrop-blur-md hidden">
+                    <button id="prev-btn" onclick="changeSlide(-1)" class="w-14 h-14 rounded-2xl border-2 border-card-b/50 text-k-blue flex items-center justify-center hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <div id="slide-dots" class="flex gap-3"></div>
+                    <button id="next-btn" onclick="changeSlide(1)" class="w-14 h-14 rounded-2xl bg-k-blue text-white flex items-center justify-center hover:bg-k-blue-d shadow-lg transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="flex-1 hidden lg:flex flex-col gap-8 max-w-[380px]">
+            <div class="planet-card rounded-[3rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
+                <div class="flex items-center gap-5 mb-8">
+                    <div id="phase-icon" class="w-14 h-14 bg-white/5 rounded-[1.25rem] flex items-center justify-center text-3xl shadow-inner border border-card-b/10">🚀</div>
+                    <div>
+                        <p id="sidebar-subtitle" class="text-[9px] font-black text-muted uppercase tracking-[0.2em] mb-1">Sekarang Lagi:</p>
+                        <h3 id="sidebar-title" class="font-black text-3xl tracking-tight leading-none grad-text uppercase">Misi Hari Ini</h3>
+                    </div>
+                </div>
+                <div id="task-list" class="space-y-4 overflow-y-auto pr-3 flex-1 scrollbar-thin"></div>
+                <div id="sidebar-footer" class="mt-8 flex flex-col gap-3"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const _selectedCourse = urlParams.get('program') || 'roblox';
+        const activeLevel = parseInt(urlParams.get('level') || '0');
+        const activeLesson = parseInt(urlParams.get('session') || '1');
+        
+        const _COURSE_SHEETS = {
+            roblox: 'B2C_RobloxStudio_INS',
+            scratch: 'B2C_Scratch_INS',
+            python: 'B2C_Python_Modul'
+        };
+        const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
+
+        let currentPhase = 'learning';
+        let currentSlideIndex = 0;
+        let kcBlocks = {};
+        let fykBlocks = {};
+        let sScriptBlocks = {};
+        let sInteractiveBlocks = {};
+        let lessonSlides = [];
+        let taskContent = {};
+        let lessonData = null;
+        let learningObjectives = '';
+
+        async function init() {
+            try {
+                const sheet = _COURSE_SHEETS[_selectedCourse] || 'B2C_RobloxStudio_INS';
+                const res = await fetch(`${STUDENT_API_URL}?sheet=${sheet}`);
+                const rawData = await res.json();
+
+                // FIX: Carry-forward col_0 (Level) for merged cells in Google Sheets
+                let lastCarryLevel = '';
+                const processedData = rawData.map(row => {
+                    const raw = String(row.col_0 || row.Level || row.level || '').trim();
+                    if (raw && !isNaN(parseInt(raw))) {
+                        lastCarryLevel = raw;
+                    } else if (lastCarryLevel) {
+                        row = { ...row, col_0: lastCarryLevel, Level: lastCarryLevel };
+                    }
+                    return row;
+                });
+
+                const hasLevelCol = processedData.some(r => parseInt(r.col_0) > 0 || parseInt(r.Level) > 0 || parseInt(r.level) > 0);
+                
+                lessonData = processedData.find(r => {
+                    const sMatch = String(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1 || '').match(/\d+/);
+                    const s = sMatch ? parseInt(sMatch[0], 10) : NaN;
+                    
+                    if (hasLevelCol && activeLevel > 0) {
+                        const lMatch = String(r.col_0 || r.Level || r.level || '').match(/\d+/);
+                        const l = lMatch ? parseInt(lMatch[0], 10) : NaN;
+                        return l === activeLevel && s === activeLesson;
+                    }
+                    return s === activeLesson;
+                });
+                
+                if (!lessonData) {
+                    throw new Error('Lesson material not found for session ' + activeLesson);
+                }
+
+                document.getElementById('nav-title').innerHTML = `${_selectedCourse.toUpperCase()} <span class="text-gray-300 mx-2">/</span> Sesi ${activeLesson}`;
+                
+                processLessonData(lessonData);
+                
+                document.getElementById('content-loading').classList.add('hidden');
+                document.getElementById('main-display').classList.remove('hidden');
+                
+                setPhase('learning');
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content-loading').innerHTML = `<p class="text-center py-20 font-black opacity-40">Gagal memuat materi. Pastikan sesi tersedia.</p>`;
+            } finally {
+                setTimeout(() => {
+                    const loader = document.getElementById('mission-loader');
+                    if (loader) loader.classList.add('loaded');
+                }, 800);
+            }
+        }
+
+        function parseBlocks(text, prefix, suffix = '') {
+            if (!text) return {};
+            const regex = new RegExp(`${prefix}(\\d+)${suffix}\\s*([\\s\\S]*?)(?=${prefix}\\d+${suffix}|$)`, 'g');
+            const blocks = {};
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                blocks[match[1]] = match[2].trim();
+            }
+            return blocks;
+        }
+
+        function processLessonData(lesson) {
+            const getCol = (keyNames, fallbackCol) => {
+                for (let k of keyNames) {
+                    if (lesson[k]) return lesson[k];
+                    const foundKey = Object.keys(lesson).find(x => x.toLowerCase().replace(/_/g, ' ') === k.toLowerCase().replace(/_/g, ' '));
+                    if (foundKey && lesson[foundKey]) return lesson[foundKey];
+                }
+                return lesson[fallbackCol] || '';
+            };
+
+            const kcData = getCol(['kamus coder'], 'col_9');
+            const interactiveData = getCol(['Interactive slide'], 'col_14') || '';
+            const scriptData = getCol(['Script HTML'], 'col_15') || '';
+
+            kcBlocks = parseBlocks(kcData, 'kc');
+            sInteractiveBlocks = parseBlocks(interactiveData, 's', ':');
+            sScriptBlocks = parseBlocks(scriptData, 's', '\\*');
+
+            let materialsContent = getCol(['Manual', 'materials'], 'col_4');
+            
+            if (!materialsContent || materialsContent.trim() === '') {
+                materialsContent = 'H# Materi Belum Tersedia\n\nMaaf Captain, instruksi misi untuk sesi ini sedang dipersiapkan di Markas. Harap tunggu aba-aba selanjutnya dari komandan!';
+            }
+            
+            if (Object.keys(sInteractiveBlocks).length === 0 && interactiveData.trim() && !interactiveData.match(/s\d+:/)) {
+                sInteractiveBlocks['raw_int'] = interactiveData;
+                materialsContent += '\n\n[s_raw_int:]';
+            }
+            
+            if (Object.keys(sScriptBlocks).length === 0 && scriptData.trim() && scriptData !== interactiveData && !scriptData.match(/s\d+\*/)) {
+                sScriptBlocks['raw_scr'] = scriptData;
+                materialsContent += '\n\n[s_raw_scr*]';
+            }
+
+            let customIdCounter = 1;
+            materialsContent = materialsContent.replace(/\^([\s\S]+?)\^/g, (match, code) => {
+                const id = 'custom_' + customIdCounter++;
+                sInteractiveBlocks[id] = code.trim();
+                return `\n\n[s${id}:]\n\n`;
+            });
+
+            materialsContent = materialsContent.replace(/\n?\s*\[?s(\d+)([\*:])\]?\s*\n?/g, '\n---\n[s$1$2]\n---\n');
+            
+            lessonSlides = materialsContent.split(/(?:\s*---\s*|\s*divide#\s*)/i);
+            lessonSlides = lessonSlides
+                .map(s => s.trim())
+                .filter(s => s.length > 0)
+                .map(s => ({ content: injectPlaceholders(formatMaterialContent(s)) }));
+            
+            learningObjectives = getCol(['Objectives', 'Objective', 'Tujuan'], 'col_3');
+
+            const parseTasks = (raw) => {
+                if (!raw) return [];
+                const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const tasks = [];
+                
+                let startIdx = 0;
+                if (lines.length > 1 && !/^([•\-]|(\d+[\.\)])|Opsi|Option)\s*/i.test(lines[0])) {
+                    startIdx = 1;
+                }
+
+                let inOpsiBlock = false;
+                for (let i = startIdx; i < lines.length; i++) {
+                    const line = lines[i];
+                    const isBullet = /^([•\-]|(\d+[\.\)]))\s*/.test(line);
+                    const isOpsi = /^(Opsi|Option)\s*([A-Z0-9]+)[:\s]/i.test(line);
+
+                    if (isOpsi) {
+                        tasks.push({ title: line });
+                        inOpsiBlock = true;
+                    } else if (isBullet) {
+                        tasks.push({ title: line.replace(/^([•\-]|(\d+[\.\)]))\s*/, '').trim() });
+                    } else if (tasks.length > 0) {
+                        tasks[tasks.length - 1].title += '\n' + line;
+                    } else {
+                        tasks.push({ title: line });
+                    }
+                }
+                return tasks;
+            };
+
+            taskContent = {
+                'learning': { title: 'Materi Sesi', icon: '🚀' },
+                'must-do': { title: 'Must Do', icon: '🚀', tasks: parseTasks(getCol(['Must Do', 'must_do', 'Tugas Must Do'], 'col_5')) },
+                'should-do': { title: 'Should Do', icon: '⭐', tasks: parseTasks(getCol(['Should Do', 'should_do', 'Tugas Should Do'], 'col_6')) },
+                'aspire-do': { title: 'Aspire Do', icon: '👑', tasks: parseTasks(getCol(['Aspire To Do', 'Aspire Do', 'aspire_to_do', 'Aspire'], 'col_7')) },
+                'quiz-answers': { title: 'Kunci Quiz', icon: '🔑' }
+            };
+        }
+
+        function formatMaterialContent(raw) {
+            if (!raw) return '';
+            let content = raw;
+            
+            let codeBlocks = {};
+            let codeIdCounter = 0;
+            content = content.replace(/```([\s\S]*?)```/g, (match, code) => {
+                const id = `__CODE_BLOCK_${codeIdCounter}__`;
+                codeBlocks[id] = code.replace(/^[a-z]+\n/i, '').trim();
+                codeIdCounter++;
+                return `\n${id}\n`;
+            });
+            
+            content = content.replace(/^H###\s*(.*)$/gm, '<h3 class="text-xl font-black text-k-blue/90 dark:text-blue-200 mt-6 mb-3 flex items-center gap-3"><span class="w-2 h-6 bg-k-yellow/40 rounded-full"></span>$1</h3>');
+            content = content.replace(/^H##\s*(.*)$/gm, '<h2 class="text-2xl font-black text-k-blue dark:text-white mt-8 mb-4 border-l-4 border-k-yellow pl-4 py-1 bg-k-yellow/10 rounded-r-xl shadow-sm">$1</h2>');
+            content = content.replace(/^H#\s*(.*)$/gm, '<h1 class="text-3xl font-black text-k-blue dark:text-white mt-10 mb-6 border-b-4 border-k-yellow pb-3 flex items-center justify-between"><span class="grad-text">$1</span><span class="text-xs font-black uppercase tracking-[0.2em] opacity-30">Mission Content</span></h1>');
+
+            let lines = content.split('\n');
+            let formattedLines = lines.map(line => {
+                let trimmed = line.trim();
+                if (!trimmed) return '<br>';
+                
+                if (trimmed.match(/^__CODE_BLOCK_\d+__$/)) return trimmed;
+
+                if (trimmed.startsWith('![')) {
+                    const match = trimmed.match(/!\[(.*?)\]\((.*?)\)/);
+                    if (match) return `<div class="my-8 flex justify-center"><img src="${match[2]}" alt="${match[1]}" class="material-img w-full max-w-lg max-h-[400px] object-contain rounded-3xl border-4 border-k-blue/10 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="openImageModal(this.src)"></div>`;
+                } else if (trimmed.match(/^https?:\/\/[^\s<"]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^"\s]+)?$/i)) {
+                    return `<div class="my-8 flex justify-center"><img src="${trimmed}" alt="Material image" class="material-img max-w-[80%] max-h-[400px] object-contain rounded-3xl border-4 border-k-blue/10 shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="openImageModal(this.src)"></div>`;
+                }
+
+                if (trimmed.match(/^(kc\d+|fyk\d+|\[s[a-zA-Z0-9_]+[\*:]\])$/)) return trimmed;
+                if (trimmed.startsWith('<h1') || trimmed.startsWith('<h2') || trimmed.startsWith('<h3')) return line;
+
+                return `<p class="text-lg leading-relaxed text-[var(--text)] opacity-90 mb-4">${line}</p>`;
+            });
+            
+            let finalHtml = formattedLines.join('');
+            for (const [id, code] of Object.entries(codeBlocks)) {
+                finalHtml = finalHtml.replace(id, `<div class="my-6 relative"><div class="absolute top-0 left-0 px-4 py-1.5 bg-k-blue text-white text-[10px] font-black uppercase tracking-widest rounded-tl-2xl rounded-br-2xl z-10 shadow-sm border border-k-blue">CODE</div><pre class="bg-[#0f172a] text-[#e2e8f0] p-6 pt-10 rounded-3xl overflow-x-auto border-2 border-[#1e293b] shadow-xl relative"><code style="font-family: 'Courier New', Courier, monospace; font-size: 0.95em; line-height: 1.6;" class="block whitespace-pre">${escapeHtml(code)}</code></pre></div>`);
+            }
+            return finalHtml;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function injectPlaceholders(text) {
+            let result = text;
+            function cleanBlockContent(raw) {
+                let cleaned = raw.trim().replace(/^[\s:]+/, '').trim();
+                const lines = cleaned.split('\n');
+                const hasMultipleBullets = lines.filter(l => l.trim().startsWith('•')).length > 1;
+                const processed = [];
+                let prevWasBullet = false;
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('•')) {
+                        const bulletText = trimmed.slice(1).trim();
+                        if (hasMultipleBullets) {
+                            if (prevWasBullet) processed.push('');
+                            processed.push('• ' + bulletText);
+                        } else {
+                            processed.push(bulletText);
+                        }
+                        prevWasBullet = true;
+                    } else {
+                        if (trimmed !== '') processed.push(line);
+                        prevWasBullet = false;
+                    }
+                }
+                return processed.join('\n');
+            }
+
+            result = result.replace(/kc(\d+)/g, (match, id) => {
+                const raw = kcBlocks[id];
+                if (!raw) return '';
+                const content = cleanBlockContent(raw);
+                return `
+                <div class="kc-block">
+                    <div class="kc-blob-a"></div>
+                    <div class="kc-blob-b"></div>
+                    <div class="kc-header">
+                        <div class="kc-icon">📚</div>
+                        <div>
+                            <p class="kc-label-sub">GLOSARIUM</p>
+                            <p class="kc-label-title">Kamus Coder 📖</p>
+                        </div>
+                    </div>
+                    <div class="kc-content">${formatMaterialContent(content)}</div>
+                </div>`;
+            });
+
+            result = result.replace(/fyk(\d+)/g, (match, id) => {
+                const raw = fykBlocks[id];
+                if (!raw) return '';
+                const content = cleanBlockContent(raw);
+                return `
+                <div class="fyk-block">
+                    <div class="fyk-blob-a"></div>
+                    <div class="fyk-blob-b"></div>
+                    <div class="fyk-accent-bar"></div>
+                    <div class="fyk-header">
+                        <div class="fyk-icon">💡</div>
+                        <div>
+                            <p class="fyk-label-sub">FUN FACT</p>
+                            <p class="fyk-label-title">Tahukah Kamu? 🤔</p>
+                        </div>
+                    </div>
+                    <div class="fyk-stripe"></div>
+                    <div class="fyk-content">${formatMaterialContent(content)}</div>
+                </div>`;
+            });
+            const renderContent = (content) => {
+                let trimmed = content.trim();
+                let lower = trimmed.toLowerCase();
+                
+                if (lower.startsWith('<iframe') && lower.endsWith('>')) {
+                    let iframeHtml = trimmed;
+                    if (!iframeHtml.includes('class=')) {
+                         iframeHtml = iframeHtml.replace('<iframe', '<iframe class="w-full min-h-[500px] border-0 rounded-2xl shadow-xl"');
+                    }
+                    return `<div class="s-interactive-wrapper my-8 w-full mx-auto flex justify-center">${iframeHtml}</div>`;
+                }
+
+                const sandboxAttrs = 'allow-scripts allow-forms allow-same-origin allow-modals allow-popups allow-downloads';
+                return `<div class="s-script-container my-6 w-full relative mx-auto">
+                    <iframe srcdoc="${escapeHtml(trimmed)}" 
+                            sandbox="${sandboxAttrs}"
+                            onload="this.style.height = Math.max(600, this.contentWindow.document.documentElement.scrollHeight + 40) + 'px';"
+                            class="w-full border-0 bg-transparent transition-all duration-300"></iframe>
+                </div>`;
+            };
+
+            result = result.replace(/\[s([a-zA-Z0-9_]+)\*\]/g, (match, id) => {
+                let content = sScriptBlocks[id] || sInteractiveBlocks[id];
+                return content ? renderContent(content) : match;
+            });
+
+            result = result.replace(/\[s([a-zA-Z0-9_]+):\]/g, (match, id) => {
+                let content = sInteractiveBlocks[id] || sScriptBlocks[id];
+                return content ? renderContent(content) : match;
+            });
+
+            return result;
+        }
+
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('image-modal-img');
+            img.src = src;
+            modal.style.display = 'flex';
+            void modal.offsetWidth;
+            modal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function setPhase(phase) {
+            currentPhase = phase;
+            currentSlideIndex = 0;
+            // Reset quiz answer reveal state when switching phases
+            answersRevealed = false;
+            render();
+        }
+
+        function changeSlide(dir) {
+            currentSlideIndex = Math.max(0, Math.min(lessonSlides.length - 1, currentSlideIndex + dir));
+            render();
+        }
+
+        function renderPhaseNav(activePhase) {
+            const phases = [
+                { key: 'learning',     label: 'Materi',    icon: '📖', color: 'from-k-blue to-k-blue-d' },
+                { key: 'must-do',      label: 'Must Do',   icon: '🚀', color: 'from-k-yellow to-yellow-600' },
+                { key: 'should-do',    label: 'Should Do', icon: '⭐', color: 'from-emerald-500 to-emerald-700' },
+                { key: 'aspire-do',    label: 'Aspire',    icon: '👑', color: 'from-orange-500 to-orange-700' },
+                { key: 'quiz-answers', label: 'Quiz',      icon: '🔑', color: 'from-purple-500 to-purple-700' },
+            ];
+            return phases.map(p => `
+                <button onclick="setPhase('${p.key}')" class="w-full py-3 px-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all
+                    ${ p.key === activePhase
+                        ? `bg-gradient-to-r ${p.color} text-white shadow-lg`
+                        : 'bg-white/5 border border-card-b hover:bg-white/10 text-[var(--muted)]'}"
+                >
+                    <span class="text-base">${p.icon}</span>
+                    <span>${p.label}</span>
+                    ${ p.key === activePhase ? '<span class="ml-auto text-white/60">●</span>' : '' }
+                </button>
+            `).join('');
+        }
+
+        function render() {
+            const display = document.getElementById('main-display');
+            const nav = document.getElementById('slide-nav');
+            const taskList = document.getElementById('task-list');
+            const footer = document.getElementById('sidebar-footer');
+            const sidebarTitle = document.getElementById('sidebar-title');
+            const pathIcon = document.getElementById('phase-icon');
+
+            display.classList.remove('slide-content-enter');
+            void display.offsetWidth;
+            display.classList.add('slide-content-enter');
+
+            const content = taskContent[currentPhase];
+            sidebarTitle.innerText = content.title;
+            pathIcon.innerText = content.icon;
+
+            // Always render the free-navigation phase buttons in the footer
+            footer.innerHTML = `<div class="flex flex-col gap-2 w-full">${renderPhaseNav(currentPhase)}</div>`;
+
+            if (currentPhase === 'quiz-answers') {
+                nav.classList.add('hidden');
+                renderQuizAnswers();
+                return;
+            }
+
+            if (currentPhase === 'learning') {
+                nav.classList.remove('hidden');
+                display.innerHTML = `<div class="w-full max-w-3xl text-left">${lessonSlides[currentSlideIndex].content}</div>`;
+                document.getElementById('slide-dots').innerHTML = lessonSlides.map((_, i) => `<div class="w-3 h-3 rounded-full transition-all ${i === currentSlideIndex ? 'bg-k-yellow w-8 shadow-[0_0_10px_rgba(246,179,25,0.4)]' : 'bg-card-b'}"></div>`).join('');
+                document.getElementById('prev-btn').disabled = currentSlideIndex === 0;
+                document.getElementById('next-btn').disabled = currentSlideIndex >= lessonSlides.length - 1;
+
+                const objectives = learningObjectives.split('\n').filter(l => l.trim());
+                taskList.innerHTML = `
+                    <p class="text-[9px] font-black uppercase tracking-widest text-muted mb-2">Tujuan Pembelajaran:</p>
+                    ${ objectives.length > 0
+                        ? objectives.map(obj => `
+                            <div class="flex items-start gap-4 bg-white/5 border border-card-b p-5 rounded-3xl">
+                                <span class="text-k-yellow font-black mt-0.5 shrink-0">✦</span>
+                                <p class="text-muted text-[11px] font-bold leading-relaxed">${obj.replace(/^[•\-]\s*/, '')}</p>
+                            </div>`).join('')
+                        : '<p class="text-[11px] text-muted italic text-center py-4">Tidak ada tujuan pembelajaran.</p>'
+                    }`;
+            } else {
+                nav.classList.add('hidden');
+                const phaseTasks = content.tasks;
+
+                display.innerHTML = `
+                    <div class="w-full max-w-4xl flex flex-col gap-8 pb-10">
+                        <div class="bg-white/5 border-l-4 border-k-yellow p-8 rounded-r-3xl">
+                            <h3 class="text-2xl md:text-3xl font-black text-k-blue uppercase tracking-tight">Tantangan ${content.title}</h3>
+                            <p class="text-muted font-bold mt-2">Ini adalah tugas yang akan dilihat oleh siswa.</p>
+                        </div>
+                        <div class="flex flex-col gap-6">
+                            ${phaseTasks.length > 0 ? phaseTasks.map((t, i) => renderTaskCard(t, i)).join('') : '<div class="planet-card p-10 text-center rounded-[2.5rem]"><p class="text-xl font-bold text-muted">Tidak ada tugas untuk fase ini.</p></div>'}
+                        </div>
+                    </div>`;
+
+                taskList.innerHTML = phaseTasks.map((t, i) => `
+                    <div class="p-4 rounded-2xl border-2 bg-white/5 border-card-b flex items-center gap-3">
+                        <div class="text-[11px] font-black uppercase text-k-blue opacity-50">${i+1}.</div>
+                        <p class="text-[11px] font-black truncate uppercase tracking-wide opacity-80">${t.title.split('http')[0].trim() || 'Misi ' + (i+1)}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderTaskCard(t, i) {
+            const urlRegex = /(https?:\/\/[^\s<"]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^"\s]+)?)/gi;
+            const images = t.title.match(urlRegex) || [];
+            const textOnly = t.title.replace(urlRegex, '').trim();
+
+            let imageHTML = '';
+            if (images.length > 0) {
+                imageHTML = `<div class="flex flex-row flex-wrap gap-5 mt-6">
+                    ${images.map(img => `<img src="${img}" onclick="openImageModal(this.src)" class="rounded-3xl border border-card-b bg-white/10 object-contain shadow-xl cursor-pointer hover:scale-105 transition-transform" style="max-height: 250px; ${images.length > 1 ? 'max-width: calc(50% - 1.25rem);' : 'max-width: 100%;'}">`).join('')}
+                </div>`;
+            }
+
+            let headerText = '';
+            let bodyText = '';
+            const colonIndex = textOnly.indexOf(':');
+            const newlineIndex = textOnly.indexOf('\n');
+            const splitIdx = (colonIndex > -1 && colonIndex < (newlineIndex > -1 ? newlineIndex : 999)) ? colonIndex : newlineIndex;
+
+            if (splitIdx > -1) {
+                headerText = textOnly.substring(0, splitIdx + 1).trim();
+                let rawBody = textOnly.substring(splitIdx + 1).trim();
+                
+                let tCodeBlocks = {};
+                let tCodeIdCounter = 0;
+                rawBody = rawBody.replace(/```([\s\S]*?)```/g, (match, code) => {
+                    const id = `__TCODE_BLOCK_${tCodeIdCounter}__`;
+                    tCodeBlocks[id] = code.replace(/^[a-z]+\n/i, '').trim();
+                    tCodeIdCounter++;
+                    return id;
+                });
+                
+                bodyText = rawBody.replace(/\n/g, '<br/>');
+                
+                for (const [id, code] of Object.entries(tCodeBlocks)) {
+                    bodyText = bodyText.replace(id, `<div class="my-4 relative"><div class="absolute top-0 left-0 px-3 py-1 bg-k-blue text-white text-[9px] font-black uppercase tracking-widest rounded-tl-xl rounded-br-xl z-10 shadow-sm">CODE</div><pre class="bg-[#0f172a] text-[#e2e8f0] p-4 pt-8 rounded-xl overflow-x-auto border-2 border-[#1e293b] shadow-lg relative text-left"><code style="font-family: 'Courier New', Courier, monospace; font-size: 0.9em; line-height: 1.5;" class="block whitespace-pre">${escapeHtml(code)}</code></pre></div>`);
+                }
+            } else {
+                headerText = textOnly;
+            }
+
+            return `
+                <div class="planet-card !p-8 md:!p-10 rounded-[2.5rem] flex flex-col md:flex-row gap-6 md:gap-8 transition-all">
+                    <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-k-blue flex items-center justify-center text-white font-black text-lg md:text-xl shrink-0 shadow-lg">${i+1}</div>
+                    <div class="flex-1">
+                        <p class="font-black text-xl md:text-2xl leading-snug text-[var(--text)] tracking-tight uppercase mb-2">${headerText || 'MISI ' + (i+1)}</p>
+                        ${bodyText ? `<p class="text-base md:text-lg text-[var(--muted)] font-medium leading-relaxed">${bodyText}</p>` : ''}
+                        ${imageHTML}
+                        <div class="mt-8">
+                            <button disabled class="w-full md:w-auto py-3 px-8 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white/5 border-2 border-dashed border-card-b text-muted cursor-not-allowed">
+                                MODE GURU (READ ONLY)
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        let answersRevealed = false;
+        window.toggleQuizAnswers = function() {
+            answersRevealed = !answersRevealed;
+            const btn = document.getElementById('toggle-answers-btn');
+            const options = document.querySelectorAll('.quiz-option');
+            
+            if (answersRevealed) {
+                btn.innerHTML = 'Sembunyikan Jawaban 🙈';
+                options.forEach(opt => {
+                    if (opt.getAttribute('data-is-correct') === 'true') {
+                        opt.classList.remove('bg-white/5', 'border-card-b', 'opacity-60');
+                        opt.classList.add('bg-k-green/10', 'border-k-green', 'text-k-green', 'font-black', 'shadow-sm', 'opacity-100');
+                        opt.querySelector('.correct-badge').classList.remove('hidden');
+                    }
+                });
+            } else {
+                btn.innerHTML = 'Tampilkan Jawaban 👁️';
+                options.forEach(opt => {
+                    if (opt.getAttribute('data-is-correct') === 'true') {
+                        opt.classList.add('bg-white/5', 'border-card-b', 'opacity-60');
+                        opt.classList.remove('bg-k-green/10', 'border-k-green', 'text-k-green', 'font-black', 'shadow-sm', 'opacity-100');
+                        opt.querySelector('.correct-badge').classList.add('hidden');
+                    }
+                });
+            }
+        };
+
+        function renderQuizAnswers() {
+            const quizContainer = document.createElement('div');
+            quizContainer.className = "w-full max-w-4xl flex flex-col gap-8 pb-10";
+            quizContainer.innerHTML = `
+                <div class="bg-white/5 border-l-4 border-purple-500 p-8 rounded-r-3xl mb-4">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <div>
+                            <h3 class="text-2xl md:text-3xl font-black text-purple-500 uppercase tracking-tight">Kunci Jawaban Quiz</h3>
+                            <p class="text-muted font-bold mt-2">Ini adalah soal quiz yang akan muncul untuk siswa beserta jawaban benarnya.</p>
+                        </div>
+                        <button onclick="toggleQuizAnswers()" id="toggle-answers-btn" class="btn-3d px-6 py-3 w-auto rounded-xl bg-gradient-to-b from-purple-500 to-purple-700 text-white font-black text-[10px] uppercase tracking-widest !shadow-none active:translate-y-1">Tampilkan Jawaban 👁️</button>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-6" id="quiz-list"></div>
+            `;
+
+            const quizList = quizContainer.querySelector('#quiz-list');
+            const quizData = parseQuizData(lessonData);
+            
+            if (quizData.length === 0) {
+                quizList.innerHTML = `<div class="planet-card p-10 text-center rounded-[2.5rem]"><p class="text-xl font-bold text-muted">Tidak ada quiz untuk sesi ini.</p></div>`;
+            } else {
+                quizData.forEach((q, idx) => {
+                    quizList.innerHTML += `
+                        <div class="planet-card p-8 rounded-[2rem]">
+                            <p class="font-black text-sm uppercase tracking-wider text-muted mb-2">Soal ${idx + 1}:</p>
+                            <p class="font-bold text-lg leading-relaxed text-[var(--text)] mb-6">${q.question}</p>
+                            <div class="grid grid-cols-1 gap-3">
+                                ${q.options.map(opt => `
+                                    <div class="quiz-option p-4 rounded-xl border-2 bg-white/5 border-card-b opacity-60 font-bold flex justify-between items-center transition-all" data-is-correct="${opt.key === q.correctKey}">
+                                        <span>${opt.key}. ${opt.text}</span>
+                                        <span class="correct-badge hidden px-3 py-1 bg-k-green text-white text-[10px] rounded-lg">BENAR ✓</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const display = document.getElementById('main-display');
+            display.innerHTML = '';
+            display.appendChild(quizContainer);
+
+            document.getElementById('task-list').innerHTML = `
+                <div class="p-5 rounded-2xl bg-purple-500/10 border-2 border-purple-500/30 flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <div class="text-purple-400 font-black text-lg">🔑</div>
+                        <p class="text-[11px] font-black uppercase tracking-wide text-purple-400">Kunci Jawaban Quiz</p>
+                    </div>
+                    <p class="text-[10px] text-muted font-bold leading-relaxed">Klik tombol "Tampilkan Jawaban" di atas untuk melihat jawaban yang benar.</p>
+                </div>
+            `;
+        }
+
+        function parseQuizData(lesson) {
+            const getCol = (keyNames, fallbackCol) => {
+                for (let k of keyNames) {
+                    if (lesson[k]) return lesson[k];
+                    const foundKey = Object.keys(lesson).find(x => x.toLowerCase().replace(/_/g, ' ') === k.toLowerCase().replace(/_/g, ' '));
+                    if (foundKey && lesson[foundKey]) return lesson[foundKey];
+                }
+                return lesson[fallbackCol] || '';
+            };
+
+            const rawQuestions = getCol(['Soal Quiz', 'quiz_questions'], 'col_10');
+            const rawOptions = getCol(['Opsi Quiz', 'quiz_options'], 'col_11');
+            const rawAnswers = getCol(['Jawaban Quiz', 'quiz_answers'], 'col_12');
+
+            if (!rawQuestions) return [];
+
+            const qLines = rawQuestions.split('\n').filter(l => l.trim());
+            const qParsed = qLines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+
+            const optLines = rawOptions.split('\n').filter(l => l.trim());
+            const optParsed = optLines.map(line => {
+                const clean = line.replace(/^\d+\.\s*/, '').trim();
+                const parts = clean.split(/\s*\|\s*/);
+                return parts.map(p => {
+                    const match = p.match(/^([A-C])\.\s*(.+)$/);
+                    return match ? { key: match[1], text: match[2].trim() } : null;
+                }).filter(Boolean);
+            });
+
+            const ansLines = rawAnswers.split(/\r?\n/).filter(l => l.trim());
+            const ansParsed = ansLines.map(line => {
+                const match = line.match(/^\d+\.\s*([A-C])\./);
+                return match ? match[1] : null;
+            });
+
+            return qParsed.map((q, i) => ({
+                question: q,
+                options: optParsed[i] || [],
+                correctKey: ansParsed[i] || 'A'
+            })).filter(q => q.question && q.options.length > 0);
+        }
+
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem(THEME_KEY, next);
+            document.getElementById('theme-icon').innerText = next === 'dark' ? '🌙' : '☀️';
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="../assets/kalananti-web-icon.jpg">
+    <link rel="apple-touch-icon" href="../assets/kalananti-web-icon.jpg">
+    <link rel="stylesheet" href="assets/css/device-guard.css">
+    <script src="assets/js/device-guard.js" defer></script>
+    <title>Dashboard Kalananti – Mission Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'k-blue': '#265E9B',
+                        'k-blue-d': '#1A4576',
+                        'k-yellow': '#F9C013',
+                        'k-yellow-d': '#D9A40A',
+                        'k-green': '#339D9D',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        if (!localStorage.getItem('studentName') && !localStorage.getItem('isAdmin')) {
+            window.location.replace('index.html');
+        }
+    </script>
+    <script>
+        (() => {
+            const saved = localStorage.getItem('kalanantiTheme');
+            document.documentElement.setAttribute('data-theme', (saved === 'light' || saved === 'dark') ? saved : 'light');
+        })();
+    </script>
+    <style>
+        :root {
+            --bg: #e8f2ff;
+            --bg2: #dbeeff;
+            --sky: #cfe5ff;
+            --nebula1: rgba(38,94,155,0.10);
+            --nebula2: rgba(249,192,19,0.10);
+            --card: rgba(255,255,255,0.94);
+            --card-b: rgba(180,215,255,0.85);
+            --nav: rgba(255,255,255,0.92);
+            --nav-b: rgba(180,215,255,0.90);
+            --text: #1a4576;
+            --muted: #4d7daf;
+            --chip: #ffffff;
+            --chip-b: #cde0f8;
+            --chip-t: #265E9B;
+            --stars: 0.12;
+        }
+        html[data-theme="dark"] {
+            --bg: #06101f;
+            --bg2: #0d1e3e;
+            --sky: #0a1830;
+            --nebula1: rgba(82,188,255,0.18);
+            --nebula2: rgba(249,192,19,0.15);
+            --card: rgba(14,30,60,0.82);
+            --card-b: rgba(140,190,255,0.22);
+            --nav: rgba(6,14,30,0.90);
+            --nav-b: rgba(120,170,255,0.22);
+            --text: #ddeeff;
+            --muted: #8aadd8;
+            --chip: rgba(255,255,255,0.09);
+            --chip-b: rgba(140,190,255,0.28);
+            --chip-t: #cce0ff;
+            --stars: 0.45;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, var(--nebula1), transparent 36%),
+                radial-gradient(circle at 88% 12%, var(--nebula2), transparent 32%),
+                radial-gradient(circle at 50% 105%, rgba(51,157,157,0.14), transparent 34%),
+                linear-gradient(160deg, var(--bg) 0%, var(--bg2) 50%, var(--sky) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: -20;
+            opacity: var(--stars);
+            background-image:
+                radial-gradient(circle at 14% 24%, rgba(255,255,255,0.9) 0 1px, transparent 1.6px),
+                radial-gradient(circle at 78% 68%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 56% 38%, rgba(255,255,255,0.60) 0 1px, transparent 1.4px),
+                radial-gradient(circle at 30% 82%, rgba(255,255,255,0.50) 0 1px, transparent 1.3px),
+                radial-gradient(circle at 90% 45%, rgba(255,255,255,0.55) 0 1px, transparent 1.4px),
+                radial-gradient(circle at 42% 14%, rgba(255,255,255,0.45) 0 1px, transparent 1.2px);
+            background-size: 250px 250px, 320px 320px, 210px 210px, 290px 290px, 180px 180px, 260px 260px;
+            animation: starDrift 200s linear infinite;
+        }
+        @keyframes starDrift { to { transform: translate3d(-120px, 70px, 0); } }
+
+        /* ── Background decorative assets ── */
+        .edge-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+        .edge-planet {
+            position: absolute; margin: 0;
+            pointer-events: none; display: block;
+            opacity: 0.60;
+        }
+        .edge-left  { left: 0; transform-origin: left center; }
+        .edge-right { right: 0; transform-origin: right center; }
+        .char-float {
+            position: absolute; margin: 0;
+            pointer-events: none; opacity: 0.55;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.2));
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0) rotate(-1deg); }
+            50%      { transform: translateY(-18px) rotate(2deg); }
+        }
+        @keyframes floatY2 {
+            0%,100% { transform: translateY(0) rotate(2deg); }
+            50%      { transform: translateY(-14px) rotate(-2deg); }
+        }
+
+        /* ── Nav ── */
+        nav.topnav {
+            background: var(--nav);
+            border-bottom: 1px solid var(--nav-b);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            position: sticky; top: 0; z-index: 50;
+        }
+        .chip {
+            background: var(--chip);
+            border: 1.5px solid var(--chip-b);
+            color: var(--chip-t);
+        }
+
+        /* ── Cards ── */
+        .planet-card {
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
+
+        /* ── Stat pill cards ── */
+        .stat-card {
+            background: var(--card);
+            border: 1.5px solid var(--card-b);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover { transform: translateY(-4px); }
+
+        /* ── 3D button ── */
+        .btn-3d {
+            box-shadow: 0 7px 0 #B28400, 0 16px 28px -8px rgba(249,192,19,0.45);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(7px);
+            box-shadow: 0 0 0 #B28400, 0 6px 12px -6px rgba(249,192,19,0.3);
+        }
+        .btn-secondary {
+            box-shadow: 0 5px 0 rgba(0,0,0,0.25);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .btn-secondary:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.15);
+        }
+
+        /* ── Progress ring ── */
+        .ring-track { fill: transparent; }
+        .ring-bar {
+            fill: transparent;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+
+        /* ── Mission hero ── */
+        .mission-hero {
+            background: linear-gradient(145deg, #0d2b5a 0%, #17447a 55%, #1f5899 100%);
+            border: 1.5px solid rgba(140,190,255,0.30);
+            box-shadow: 0 32px 64px -24px rgba(2,10,32,0.92);
+        }
+        html[data-theme="light"] .mission-hero {
+            background: linear-gradient(145deg, #c5dffb 0%, #b8d5f8 50%, #a8c9f5 100%);
+            border-color: rgba(38,94,155,0.22);
+        }
+
+        /* ── Course buttons ── */
+        .course-btn {
+            background: var(--chip);
+            border: 2px solid var(--chip-b);
+            color: var(--chip-t);
+            transition: all 0.18s ease;
+            border-radius: 9999px;
+        }
+        .course-btn.active {
+            background: linear-gradient(135deg, #1e5ea8, #12356a);
+            color: #fff;
+            border-color: rgba(140,190,255,0.65);
+            box-shadow: 0 6px 0 #0d2542, 0 14px 24px -12px rgba(0,0,0,0.85);
+            transform: translateY(-2px);
+        }
+        html[data-theme="light"] .course-btn { background: #fff; border-color: #cde0f8; color: #265E9B; }
+        html[data-theme="light"] .course-btn.active { background: linear-gradient(135deg, #265E9B, #1A4576); color: #fff; border-color: #265E9B; box-shadow: 0 6px 0 #1A4576; }
+
+        /* ── Roadmap ── */
+        .roadmap-item {
+            background: linear-gradient(120deg, rgba(16,38,74,0.92), rgba(11,25,49,0.82));
+            border: 1.5px solid rgba(140,185,255,0.22);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .roadmap-item:hover { border-color: rgba(249,192,19,0.45); transform: translateX(5px); }
+        html[data-theme="light"] .roadmap-item {
+            background: linear-gradient(120deg, rgba(255,255,255,0.96), rgba(236,246,255,0.95));
+            border-color: rgba(38,94,155,0.16);
+        }
+        html[data-theme="light"] .roadmap-item:hover { border-color: rgba(249,192,19,0.55); }
+
+        .planet-emoji-badge {
+            width: 48px; height: 48px;
+            border-radius: 1.1rem;
+            background: radial-gradient(circle at 30% 28%, rgba(255,255,255,0.38), rgba(104,148,255,0.6) 42%, rgba(28,56,110,0.95) 100%);
+            border: 1px solid rgba(200,220,255,0.38);
+            box-shadow: inset 0 1px 4px rgba(255,255,255,0.2), 0 8px 16px -10px rgba(0,0,0,0.9);
+            display: grid; place-items: center;
+            font-size: 1.25rem; flex-shrink: 0;
+        }
+
+        /* ── Skeleton ── */
+        .skeleton { animation: skelPulse 1.5s ease-in-out infinite; background: linear-gradient(90deg, rgba(140,180,255,0.09) 25%, rgba(140,180,255,0.18) 50%, rgba(140,180,255,0.09) 75%); background-size: 200% 100%; border-radius: 1rem; }
+        @keyframes skelPulse { 0%,100% { background-position: 200% 0; } 50% { background-position: 0% 0; } }
+        html[data-theme="light"] .skeleton { background: linear-gradient(90deg, #e4eeff 25%, #cddaf5 50%, #e4eeff 75%); background-size: 200% 100%; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 7px; }
+        ::-webkit-scrollbar-track { background: rgba(140,190,255,0.08); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #5888cc; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a6bb0; }
+
+        /* ── Animations ── */
+        @keyframes bobble { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.03); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes popIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes twinkle { 0%,100% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.2); } }
+        .animate-bobble { animation: bobble 4s ease-in-out infinite; }
+        .animate-bobble-slow { animation: bobble 6s ease-in-out infinite 1s; }
+        .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
+        @media(max-width:768px){.map-shell{padding:1.5rem;}.grid-cols-sessions{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}}
+        @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+        /* Status Modal Redesign */
+        .status-modal { position: fixed; inset: 0; background: rgba(2, 6, 12, 0.9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .status-modal.active { opacity: 1; pointer-events: auto; }
+        .status-box { background: linear-gradient(165deg, #1e3a6a 0%, #0c1428 100%); border-radius: 3.5rem; padding: 4rem 3rem; width: 92%; max-width: 460px; text-align: center; transform: translateY(40px) scale(0.9); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 40px 120px -20px rgba(0,0,0,0.85), inset 0 0 40px rgba(255,255,255,0.08); position: relative; overflow: hidden; }
+        .status-modal.active .status-box { transform: translateY(0) scale(1); }
+        .status-box::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.18), transparent 70%); pointer-events: none; }
+        .status-icon { width: 100px; height: 100px; border-radius: 2.5rem; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; margin: 0 auto 2rem; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 20px currentColor); animation: bounce 3s ease-in-out infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(5deg); } }
+        @keyframes simpleFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-15px) rotate(3deg); } }
+
+        /* Mission Control Loader */
+        #mission-loader {
+            position: fixed; inset: 0;
+            background: #020617;
+            z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+        }
+        #mission-loader.loaded {
+            opacity: 0; visibility: hidden;
+            pointer-events: none;
+        }
+        .loader-rocket {
+            width: 140px; height: auto;
+            max-height: 140px;
+            object-fit: contain;
+            animation: loaderFloat 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(249,192,19,0.5));
+        }
+        @keyframes loaderFloat {
+            0%, 100% { transform: translateY(0) rotate(-8deg); }
+            50% { transform: translateY(-30px) rotate(8deg); }
+        }
+        .loader-bar { width: 280px; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 40px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); }
+        .loader-progress { position: absolute; inset: 0; background: linear-gradient(90deg, #F9C013, #FFD700); width: 0%; animation: loaderFill 2s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+        @keyframes loaderFill { 0% { width: 0%; } 100% { width: 100%; } }
+        .status-success { color: #4ADE80; border: 3px solid rgba(74, 222, 128, 0.4); box-shadow: 0 0 30px rgba(74, 222, 128, 0.2); }
+        .status-error { color: #F87171; border: 3px solid rgba(248, 113, 113, 0.4); box-shadow: 0 0 30px rgba(248, 113, 113, 0.2); }
+        .status-warning { color: #F9C013; border: 3px solid rgba(249, 192, 19, 0.4); box-shadow: 0 0 30px rgba(249, 192, 19, 0.2); }
+        .status-btn { position: relative; width: 100%; padding-top: 1.25rem; padding-bottom: 1.25rem; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.15em; color: #5A3F00; background: linear-gradient(180deg, #F9C013 0%, #E5AB00 100%); border-radius: 1.5rem; transition: all 0.2s; box-shadow: 0 6px 0 #B28400, 0 15px 30px -5px rgba(249, 192, 19, 0.4); border: none; cursor: pointer; }
+        .status-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #B28400, 0 20px 40px -10px rgba(249, 192, 19, 0.5); }
+        .status-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #B28400, 0 5px 10px -2px rgba(249, 192, 19, 0.3); }
+
+        /* ── Text gradient ── */
+        .grad-text {
+            background: linear-gradient(90deg, #F9C013, #FF9D00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* ── Stars card gold variant ── */
+        .stars-card {
+            background: linear-gradient(135deg, rgba(52,42,14,0.88), rgba(108,78,14,0.72));
+            border: 1.5px solid rgba(249,192,19,0.40);
+        }
+        html[data-theme="light"] .stars-card {
+            background: linear-gradient(135deg, #fff8e0, #ffeda0);
+            border-color: rgba(217,164,10,0.45);
+        }
+
+        /* ── Mission text ── */
+        .mission-text { color: #ffffff; }
+        html[data-theme="light"] .mission-text { color: #1a4576; }
+        .mission-sub { color: #bfd7ff; }
+        html[data-theme="light"] .mission-sub { color: #2e5a90; }
+        .mission-badge-pill { color: #86efac; }
+        html[data-theme="light"] .mission-badge-pill { color: #0f766e; }
+
+        /* ── Circular progress inner ── */
+        .ring-inner {
+            background: rgba(8,22,46,0.92);
+            border: 1px solid rgba(140,185,255,0.20);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.25);
+        }
+        html[data-theme="light"] .ring-inner {
+            background: linear-gradient(145deg, #eef5ff, #e2effd);
+            border-color: rgba(38,94,155,0.18);
+        }
+
+        /* Star Modal Optimizations */
+        #star-modal { 
+            position: fixed; inset: 0; 
+            background: rgba(0, 0, 0, 0.7); 
+            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center; 
+            z-index: 9999; opacity: 0; pointer-events: none; 
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity;
+        }
+        #star-modal.active { opacity: 1; pointer-events: auto; }
+        #star-modal-box { 
+            background: linear-gradient(165deg, #0d1a35 0%, #050b1a 100%);
+            border: 1.5px solid rgba(249, 192, 19, 0.25); 
+            padding: 2.5rem; border-radius: 3rem; 
+            width: 92%; max-width: 440px; 
+            transform: scale(0.85) translateY(30px); 
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform;
+            box-shadow: 0 40px 120px -20px rgba(0,0,0,0.9), inset 0 0 20px rgba(255,255,255,0.03);
+            display: flex; flex-direction: column; align-items: center;
+            max-height: 85vh; position: relative;
+        }
+        #star-modal.active #star-modal-box { transform: scale(1) translateY(0); }
+    </style>
+</head>
+<body class="p-5">
+    <!-- Mission Control Loader -->
+    <div id="mission-loader">
+        <div class="relative">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png" class="loader-rocket" alt="Rocket">
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-4 bg-[#F9C013]/20 blur-xl rounded-full animate-pulse"></div>
+        </div>
+        <div class="loader-bar">
+            <div class="loader-progress"></div>
+        </div>
+        <div class="mt-8 text-center">
+            <p class="font-display font-black text-sm uppercase tracking-[0.4em] text-[#F9C013] animate-pulse">Menyiapkan Misi...</p>
+            <p class="mt-2 text-muted text-[10px] font-bold uppercase tracking-widest opacity-60">Initializing Mission Control System v2.0</p>
+        </div>
+    </div>
+
+    <!-- Star Details Modal -->
+    <div id="star-modal">
+        <div class="absolute inset-0" onclick="closeStarModal()"></div>
+        <div id="star-modal-box">
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mb-4 border bg-yellow-500/20 border-yellow-500/30 shadow-inner shrink-0 scale-animate">⭐</div>
+            <h3 class="font-display font-black text-2xl text-white tracking-tight mb-2">Detail Bintangmu</h3>
+            <p class="text-sm font-semibold text-[#8AADD8] mb-6 text-center">Berikut adalah daftar bintang yang berhasil kamu kumpulkan di tiap sesi!</p>
+            
+            <div id="star-modal-content" class="w-full flex-1 overflow-y-auto pr-2 mb-6 scrollbar-thin">
+                <!-- Data stars di-inject lewat JS -->
+            </div>
+            
+            <button onclick="closeStarModal()" class="status-btn w-full py-4 text-sm">Tutup Pop-up</button>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="status-modal" class="status-modal">
+        <div class="status-box">
+            <div id="status-icon" class="status-icon">🚀</div>
+            <h3 id="status-title" class="font-display font-black text-3xl mb-4 tracking-tight uppercase" style="background: linear-gradient(90deg, #F9C013, #FF9D00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Status Misi</h3>
+            <p id="status-message" class="text-lg leading-relaxed mb-10 font-bold" style="color:#ddeeff">Pesan status di sini...</p>
+            <button onclick="document.getElementById('status-modal').classList.remove('active')" class="status-btn px-10 py-5">SIAP, KAPTEN! 🛰️</button>
+        </div>
+    </div>
+
+    <!-- Fixed background assets -->
+    <div class="edge-layer">
+        <!-- Left planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/e77f536b-e591-4ba8-b5b8-f5b2a3d3b33b.png"
+             class="edge-planet edge-left" style="top:8%; width:min(26vw,190px);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/c08a7aed-567f-4e37-988c-1423a5b92643.png"
+             class="edge-planet edge-left" style="top:68%; width:min(32vw,250px); transform:translateX(-32%);" alt="">
+        <!-- Right planets -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/5f93f855-0466-47b3-ba85-bbaabbad7a2e.png"
+             class="edge-planet edge-right" style="top:26%; width:min(30vw,240px); transform:translateX(32%);" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/434fc5cb-e490-4e40-a921-d4519aa8a8a4.png"
+             class="edge-planet edge-right" style="bottom:6%; width:min(34vw,275px);" alt="">
+        <!-- Floating characters -->
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/61f06160-989d-402e-be1b-eb1891afa86b.png"
+             class="char-float" style="left:9%; top:21%; width:105px; animation:floatY 7s ease-in-out infinite;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/904cb9e9-ecd1-4731-a1ef-fa6a0bd50527.png"
+             class="char-float" style="right:13%; top:54%; width:120px; animation:floatY2 8s ease-in-out infinite 1.5s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/9b916b05-86ed-4509-aef6-e640606f3542.png"
+             class="char-float" style="left:17%; bottom:10%; width:110px; animation:floatY 6s ease-in-out infinite 0.8s;" alt="">
+        <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/555e14a0-4087-4d33-9c20-4d822bef5dac.png"
+             class="char-float" style="left:64%; top:38%; width:88px; opacity:0.38;" alt="">
+    </div>
+
+    <!-- Glow orbs (Optimized for performance) -->
+    <div class="fixed -top-32 -left-24 w-[38rem] h-[38rem] pointer-events-none -z-10" style="background:radial-gradient(circle, rgba(82,188,255,0.14) 0%, transparent 60%);"></div>
+    <div class="fixed -bottom-32 -right-24 w-[34rem] h-[34rem] pointer-events-none -z-10" style="background:radial-gradient(circle, rgba(249,192,19,0.14) 0%, transparent 60%);"></div>
+
+    <!-- Twinkle stars -->
+    <div class="fixed top-[26%] left-[36%] w-2.5 h-2.5 rounded-full bg-white/80 animate-twinkle pointer-events-none -z-10"></div>
+    <div class="fixed top-[60%] right-[30%] w-2 h-2 rounded-full bg-yellow-200 animate-twinkle pointer-events-none -z-10" style="animation-delay:1.3s"></div>
+    <div class="fixed top-[14%] right-[44%] w-1.5 h-1.5 rounded-full bg-blue-200 animate-twinkle pointer-events-none -z-10" style="animation-delay:0.7s"></div>
+
+    <!-- ── NAVIGATION ── -->
+    <nav class="topnav w-full px-5 md:px-8 py-4 flex justify-between items-center shadow-sm shadow-black/20 relative z-50">
+        <div class="flex items-center gap-4">
+            <img src="https://cdn-web-2.ruangguru.com/landing-pages/assets/828072b7-9198-4367-bce2-134b9fc8b486.png"
+                 alt="Logo Kalananti"
+                 onclick="window.location.href='dashboard.html'"
+                 class="h-9 md:h-11 w-auto object-contain cursor-pointer hover:scale-105 transition-transform drop-shadow-sm">
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='sessions.html'"
+                    class="chip hidden md:flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm hover:-translate-y-0.5 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                Semua Sesi
+            </button>
+            
+            <div class="relative" id="profile-menu-container">
+                <button onclick="toggleProfileMenu()" class="chip flex items-center gap-3 p-1.5 pr-4 sm:pr-5 rounded-full shadow-sm cursor-pointer hover:shadow-md transition-shadow hover:-translate-y-0.5" style="border-width: 1.5px;">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-k-yellow to-yellow-300 p-[2px] overflow-hidden shadow-inner shrink-0">
+                        <div class="w-full h-full bg-white rounded-full overflow-hidden">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="nav-user-name" class="font-bold text-sm hidden sm:block" style="color:var(--chip-t)">Memuat...</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="opacity-40 ml-1"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                    
+                    <!-- Dropdown -->
+                    <div id="profile-dropdown" class="absolute top-16 right-0 w-52 rounded-[1.25rem] shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-200 transform origin-top-right z-50 overflow-hidden" style="background: var(--card); border: 1.5px solid var(--card-b); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+                        <div class="p-2 flex flex-col gap-1">
+                            <div id="theme-toggle" onclick="toggleTheme(); event.stopPropagation();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-left group cursor-pointer">
+                                <span id="theme-icon" class="text-base group-hover:scale-110 transition-transform">🌙</span>
+                                <span id="theme-text" class="font-bold text-sm" style="color:var(--text)">Ganti Tema</span>
+                            </div>
+                            <div class="h-px w-full my-1 opacity-20" style="background:var(--text)"></div>
+                            <div onclick="logout(); event.stopPropagation();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/20 transition-colors text-left group cursor-pointer">
+                                <span class="text-base group-hover:scale-110 transition-transform">🚪</span>
+                                <span class="font-bold text-sm text-red-500">Keluar</span>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── MAIN ── -->
+    <main class="max-w-7xl mx-auto w-full px-5 md:px-10 py-8 relative z-10">
+
+        <!-- ── HERO HEADER ── -->
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-10">
+            <div>
+                <!-- Course selector -->
+                <div class="flex items-center gap-2.5 mb-5">
+                    <button id="btn-roblox" onclick="selectCourse('roblox')"
+                            class="course-btn flex items-center gap-2 px-4 py-2 text-sm font-black tracking-wider uppercase shadow-md">
+                        🎮 Roblox Studio
+                    </button>
+                    <button id="btn-scratch" onclick="selectCourse('scratch')"
+                            class="course-btn flex items-center gap-2 px-4 py-2 text-sm font-black tracking-wider uppercase shadow-md">
+                        🐱 Scratch
+                    </button>
+                </div>
+                <h1 class="font-display font-black text-5xl md:text-6xl leading-tight tracking-tight mission-text">
+                    Halo, <span id="hero-user-name" class="grad-text">Kapten!</span> <span class="inline-block animate-bobble origin-bottom">🚀</span>
+                </h1>
+                <p class="mt-3 text-lg md:text-xl font-semibold" style="color:var(--muted)">Siap lepas landas ke planet coding berikutnya?</p>
+            </div>
+
+            <!-- Date card -->
+            <div class="chip flex items-center gap-4 px-6 py-4 rounded-[1.8rem] shadow-sm hover:-translate-y-1 transition-transform cursor-default" style="backdrop-filter:blur(12px)">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:rgba(249,192,19,0.15); border:1px solid rgba(249,192,19,0.3)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F9C013" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 2v4"/><path d="M16 2v4"/><rect width="4" height="4" x="7" y="14" rx=".4"/><rect width="4" height="4" x="13" y="14" rx=".4"/></svg>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest" style="color:var(--muted);" id="day-name">Memuat...</p>
+                    <p class="mission-text text-xl font-black" id="date-display">--</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── GRID ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-7 mb-10">
+
+            <!-- ── LEFT COL (2/3) ── -->
+            <div class="lg:col-span-2 flex flex-col gap-7">
+
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+                    <!-- Kelas card -->
+                    <div class="stat-card p-6 flex flex-col justify-between group">
+                        <div class="flex justify-between items-start mb-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest" style="color:var(--muted)">Kelas Kamu</p>
+                            <span class="w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                                  style="background:rgba(38,94,155,0.15); border:1px solid rgba(38,94,155,0.3)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#265E9B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 id="class-display" class="font-black text-2xl mission-text">Memuat...</h3>
+                            <p class="text-sm font-bold mt-1 flex items-center gap-1.5" style="color:var(--muted)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span id="class-time-display">Memuat jadwal...</span>
+                            </p>
+                        </div>
+                        <div class="mt-5 pt-4" style="border-top:1px solid var(--card-b)">
+                            <p class="text-xs font-bold flex items-center gap-1.5" style="color:var(--muted)">
+                                Coach:
+                                <span id="teacher-name" class="font-black px-2 py-0.5 rounded-lg text-k-blue" style="background:rgba(38,94,155,0.12); border:1px solid rgba(38,94,155,0.2)">Memuat...</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Orbit progress -->
+                    <div class="stat-card p-6 flex flex-col justify-between group">
+                        <div class="flex justify-between items-start mb-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest" style="color:var(--muted)">Orbit Progress</p>
+                            <span class="w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                                  style="background:rgba(51,157,157,0.15); border:1px solid rgba(51,157,157,0.28)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#339D9D" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 id="progress-title" class="font-black text-lg mission-text leading-tight">Roblox – Planet 1</h3>
+                            <div class="w-full h-3.5 rounded-full mt-4 overflow-hidden shadow-inner" style="background:rgba(255,255,255,0.08); border:1px solid var(--card-b)">
+                                <div id="progress-bar" class="h-full rounded-full bg-gradient-to-r from-k-green to-teal-400 transition-all duration-1000" style="width:8%"></div>
+                            </div>
+                            <div class="flex justify-between mt-2.5">
+                                <p id="progress-sessions" class="text-xs font-black text-k-green">Orbit 1 / 8</p>
+                                <p id="progress-pct" class="text-xs font-black px-2 py-0.5 rounded-md" style="background:rgba(255,255,255,0.07); color:var(--muted)">8%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stars -->
+                    <div class="stars-card stat-card p-6 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-lg transition-all" onclick="openStarModal()">
+                        <div class="flex justify-between items-start mb-2 relative z-10">
+                            <p class="text-[10px] font-black uppercase tracking-widest" style="color:rgba(249,192,19,0.7)">Bintang</p>
+                            <span class="w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform"
+                                  style="background:rgba(249,192,19,0.18); border:1px solid rgba(249,192,19,0.3)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="#F9C013" stroke="#D9A40A" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            </span>
+                        </div>
+                        <div class="flex items-end gap-2 relative z-10">
+                            <h3 id="star-count" class="text-5xl font-black text-k-yellow drop-shadow-sm">–</h3>
+                            <p class="text-sm font-black uppercase pb-1.5" style="color:rgba(249,192,19,0.65)">stars</p>
+                        </div>
+                        <!-- bg glow star -->
+                        <div class="absolute -right-5 -bottom-5 opacity-[0.12] group-hover:scale-125 group-hover:rotate-12 transition-transform duration-500">
+                            <svg width="130" height="130" viewBox="0 0 24 24" fill="#F9C013"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── MISSION HERO CARD ── -->
+                <div class="mission-hero rounded-[3rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative overflow-hidden group">
+                    <!-- Stars bg pattern -->
+                    <div class="absolute inset-0 opacity-[0.12] pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                        <svg width="100%" height="100%"><pattern id="star-pat" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse"><circle cx="12" cy="24" r="1.8" fill="#fff"/><circle cx="64" cy="58" r="1.2" fill="#fff"/><circle cx="40" cy="8" r="0.9" fill="#fff"/><path d="M75 16 L80 21 M80 16 L75 21" stroke="#fff" stroke-width="0.8"/></pattern><rect width="100%" height="100%" fill="url(#star-pat)"/></svg>
+                    </div>
+                    <!-- Glow orb (Optimized) -->
+                    <div class="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-64 h-64 pointer-events-none" style="background:radial-gradient(circle, rgba(100,170,255,0.22) 0%, transparent 65%);"></div>
+
+                    <!-- Character -->
+                    <div class="w-full md:w-2/5 flex justify-center z-10 shrink-0">
+                        <div class="relative group-hover:-translate-y-3 transition-transform duration-500">
+                            <div class="w-52 h-52 lg:w-60 lg:h-60 rounded-full flex items-center justify-center p-2 animate-bobble"
+                                 style="background:linear-gradient(135deg,rgba(38,94,155,0.4),rgba(51,157,157,0.3)); border:5px solid rgba(255,255,255,0.18); box-shadow:0 0 40px rgba(100,180,255,0.2);">
+                                <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center" style="background:rgba(255,255,255,0.06);">
+                                    <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Rocket&backgroundColor=transparent"
+                                         alt="Robot Guide" class="w-44 h-44 lg:w-52 lg:h-52 drop-shadow-2xl">
+                                </div>
+                            </div>
+                            <!-- Code badge -->
+                            <div class="absolute -top-2 -right-2 md:-top-4 md:-right-4 p-4 lg:p-5 rounded-3xl z-20 animate-bobble-slow"
+                                 style="background:linear-gradient(135deg,#F9C013,#FF9D00); border:4px solid rgba(18,45,80,0.8); box-shadow:0 10px 22px rgba(249,192,19,0.42)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="flex-1 z-10 text-center md:text-left">
+                        <div class="mission-badge-pill inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black mb-5 uppercase tracking-widest shadow-sm"
+                             style="background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20);">
+                            <span class="w-2.5 h-2.5 bg-green-400 rounded-full" style="box-shadow:0 0 10px rgba(74,222,128,0.8); animation:twinkle 2s ease-in-out infinite;"></span>
+                            <span id="active-session-badge">Memuat...</span>
+                        </div>
+                        <h2 class="font-display font-black text-4xl lg:text-5xl mb-2 tracking-tight mission-text drop-shadow-md">Lanjutkan Misi!</h2>
+                        <p class="text-xl lg:text-2xl font-bold mb-8 flex flex-col sm:flex-row items-center md:items-start gap-2 justify-center md:justify-start mission-sub">
+                            Planet Tujuan:
+                            <span class="text-k-yellow drop-shadow-md relative inline-block" id="active-mission">
+                                Memuat...
+                                <svg class="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" fill="transparent" stroke="#F9C013" stroke-width="3" stroke-linecap="round"/></svg>
+                            </span>
+                        </p>
+                        <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                            <button onclick="window.location.href='materials.html'"
+                                    class="btn-3d bg-gradient-to-b from-k-yellow to-[#E5AB00] text-[#5A3F00] font-black py-4 px-10 rounded-2xl text-xl tracking-wide uppercase">
+                                🚀 MENUJU PLANET!
+                            </button>
+                            <button onclick="window.location.href='sessions.html'"
+                                    class="btn-secondary font-black py-4 px-8 rounded-2xl text-lg hover:-translate-y-1 transition-all mission-text"
+                                    style="background:rgba(255,255,255,0.13); border:2px solid rgba(255,255,255,0.22);">
+                                Peta Orbit 🗺️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /left col -->
+
+            <!-- ── RIGHT COL ── -->
+            <div class="flex flex-col gap-7">
+
+                <!-- Circular progress card -->
+                <div class="planet-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden group" style="box-shadow:0 20px 40px -20px rgba(2,8,26,0.85)">
+                    <h3 class="font-black text-xl mb-7 self-start mission-text">Status Orbit</h3>
+
+                    <!-- Ring SVG -->
+                    <div class="relative w-52 h-52 mb-7">
+                        <svg class="w-full h-full -rotate-90" viewBox="0 0 224 224">
+                            <circle class="ring-track" cx="112" cy="112" r="90" stroke="rgba(255,255,255,0.07)" stroke-width="18"/>
+                            <circle id="ring-progress" class="ring-bar" cx="112" cy="112" r="90"
+                                    stroke="url(#ring-grad)" stroke-width="18"
+                                    stroke-dasharray="565" stroke-dashoffset="508" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#339D9D"/>
+                                    <stop offset="100%" stop-color="#4ADE80"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="ring-inner absolute inset-0 flex flex-col items-center justify-center rounded-full m-7">
+                            <span id="circle-pct" class="text-5xl font-black mission-text">10<span class="text-2xl">%</span></span>
+                            <span class="text-[10px] font-black uppercase tracking-widest mt-1 px-2 py-1 rounded-md" style="color:var(--muted); background:rgba(255,255,255,0.07)">Selesai</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center w-full p-5 rounded-[1.8rem]" style="background:rgba(255,255,255,0.05); border:1px solid var(--card-b)">
+                        <p id="orbit-course-title" class="font-black text-lg mission-text tracking-tight">Roblox Adventure</p>
+                        <p id="orbit-level-label" class="text-sm font-bold mb-4" style="color:var(--muted)">Level 1</p>
+                        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm"
+                             style="background:rgba(51,157,157,0.15); border:1px solid rgba(51,157,157,0.30); color:#5fd4c8">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                            <span id="active-session-label">Memuat...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Route card -->
+                <div class="planet-card rounded-[2.5rem] p-8 flex-1" style="box-shadow:0 20px 40px -20px rgba(2,8,26,0.85)">
+                    <h3 class="font-black text-xl mb-6 mission-text">Rute Selanjutnya ✨</h3>
+                    <div id="roadmap-list" class="space-y-3 relative">
+                        <div class="h-14 skeleton rounded-2xl"></div>
+                        <div class="h-14 skeleton rounded-2xl"></div>
+                        <div class="h-14 skeleton rounded-2xl"></div>
+                        <div class="h-14 skeleton rounded-2xl"></div>
+                    </div>
+                </div>
+
+            </div><!-- /right col -->
+        </div><!-- /grid -->
+    </main>
+
+    <style>
+        html[data-theme="light"] .ring-inner { box-shadow: inset 0 4px 10px rgba(38,94,155,0.10); }
+        html[data-theme="light"] #ring-progress { stroke: url(#ring-grad); }
+    </style>
+
+    <script>
+    // ── Config ──────────────────────────────────────────────────────────────
+    // Consolidated API URL (code-student.gs)
+    const STUDENT_API_URL = 'https://script.google.com/macros/s/AKfycby7AP62UmvDpvCnEsIOqcj6FDAtFG_5_A_NzgcQ3IDnrdWM80ikZPdyrk9lJNWUCCwKfg/exec';
+    let MAX_LESSONS = 12;
+    const PLANET_PATH = [
+        { name:'Planet Aurora', emoji:'🪐' }, { name:'Planet Ignis', emoji:'🔥' },
+        { name:'Planet Aqua', emoji:'🌊' },   { name:'Planet Terra', emoji:'🌍' },
+        { name:'Planet Nimbus', emoji:'☁️' },  { name:'Planet Voltis', emoji:'⚡' },
+        { name:'Planet Nova', emoji:'🌟' },    { name:'Planet Zenith', emoji:'🚀' }
+    ];
+    const COURSES = {
+        roblox: {
+            sheet:'B2C_RobloxStudio_INS', topicSheet:'B2C_RobloxStudio_Modul', label:'Roblox Studio', emoji:'🎮',
+            desc:['Mengenal Roblox Studio & Obby','Plugin F3X, 3D Text, GapFill','Terrain Tools & Landscape','Lighting Tools & Atmosfer','Teams & Sistem Checkpoint','Desain Rintangan & Publishing','Pintu Berengsel & Weld','Pintu Otomatis & Kincir Angin']
+        },
+        scratch: {
+            sheet:'B2C_Scratch_INS', topicSheet:'B2C_Scratch_Modul', label:'Scratch', emoji:'🐱',
+            desc:['Mengenal Scratch & Antarmuka','Sprite, Kostum & Gerakan','Variabel & Kondisi','Loop & Animasi','Suara & Efek','Proyek Game Sederhana','Interaksi & Event','Publikasi & Berbagi Proyek']
+        }
+    };
+    const THEME_KEY = 'kalanantiTheme';
+    
+    // Auth & User details
+    const studentName = localStorage.getItem('studentName') || 'Kapten';
+    const className = localStorage.getItem('className') || 'Orbit';
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    let currentSyncVersion = 0;
+    let isPolling = false;
+    let syncCheckInFlight = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadStudentData();
+        startSyncPolling();
+        document.getElementById('nav-user-name').textContent = studentName;
+        document.getElementById('hero-user-name').textContent = studentName;
+        document.getElementById('class-display').textContent = isAdmin ? 'ADMIN' : className;
+    });
+    window.addEventListener('focus', () => checkForSyncUpdate());
+    window.addEventListener('online', () => {
+        showConnectionToast('Internet kembali tersambung. Menyinkronkan data...', false);
+        checkForSyncUpdate(true);
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkForSyncUpdate();
+    });
+
+    function logout() {
+        localStorage.removeItem('studentName');
+        localStorage.removeItem('className');
+        localStorage.removeItem('isAdmin');
+        window.location.href = 'index.html';
+    }
+
+    let selectedCourse = localStorage.getItem('selectedCourse') || 'roblox';
+
+    // ── Theme ────────────────────────────────────────────────────────────────
+    function updateThemeToggle(t) {
+        document.getElementById('theme-icon').textContent = t==='dark' ? '🌙' : '☀️';
+        document.getElementById('theme-text').textContent = t==='dark' ? 'Dark' : 'Light';
+    }
+    function applyTheme(t, persist=true) {
+        const v = t==='light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', v);
+        updateThemeToggle(v);
+        if (persist) try { localStorage.setItem(THEME_KEY, v); } catch(e){}
+    }
+    function toggleTheme() {
+        applyTheme(document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme')||'dark', false);
+
+    // ── Date ────────────────────────────────────────────────────────────────
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const now = new Date();
+    document.getElementById('day-name').textContent = days[now.getDay()];
+    document.getElementById('date-display').textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+    // ── Course selector ──────────────────────────────────────────────────────
+    function updateCourseUI() {
+        document.querySelectorAll('.course-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${selectedCourse}`)?.classList.add('active');
+    }
+    function selectCourse(c) {
+        selectedCourse = c;
+        localStorage.setItem('selectedCourse', c);
+        updateCourseUI();
+        initDashboard();
+    }
+    updateCourseUI();
+
+    // ── Dashboard init ───────────────────────────────────────────────────────
+    function resetLocalProgress() {
+        localStorage.setItem('currentSession', '1');
+        localStorage.setItem('attendanceSession', '1');
+        localStorage.setItem('activeLesson', '1');
+        localStorage.setItem('sessionProgress', '[]');
+        localStorage.setItem('totalStars', '0');
+    }
+
+    function isConfirmedIdentityMiss(message) {
+        const text = String(message || '').toLowerCase();
+        return text.includes('siswa tidak ditemukan') ||
+            text.includes('student not found') ||
+            text.includes('class info not found') ||
+            text.includes('kelas tidak ditemukan');
+    }
+
+    async function loadStudentData(isSilent = false) {
+        const loader = document.getElementById('mission-loader');
+        if (loader && !isSilent) loader.classList.remove('loaded');
+
+        if (isAdmin) {
+            initDashboard();
+            if (loader && !isSilent) {
+                setTimeout(() => loader.classList.add('loaded'), 800);
+            }
+            return;
+        }
+        
+        try {
+            // Gunakan STUDENT_API_URL (code-student.gs) — bukan WEB_APP_BASE (sheet reader)
+            const url = `${STUDENT_API_URL}?action=getStudentProgress&code=${encodeURIComponent(className)}&name=${encodeURIComponent(studentName)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            // Debug: log full response agar mudah troubleshoot
+            console.log('[Dashboard] Progress API response:', data);
+            
+            if (data && data.success === true) {
+                // Determine course based on programName
+                const progName = (data.programName || '').toLowerCase();
+                if (progName.includes('scratch')) {
+                    selectedCourse = 'scratch';
+                } else if (progName.includes('roblox')) {
+                    selectedCourse = 'roblox';
+                }
+                localStorage.setItem('selectedCourse', selectedCourse);
+                updateCourseUI();
+                
+                // Sembunyikan tombol course yang tidak relevan
+                const btnRoblox = document.getElementById('btn-roblox');
+                const btnScratch = document.getElementById('btn-scratch');
+                if (selectedCourse === 'scratch' && btnRoblox) {
+                    btnRoblox.style.display = 'none';
+                } else if (selectedCourse === 'roblox' && btnScratch) {
+                    btnScratch.style.display = 'none';
+                }
+                
+                if (data.teacherName) {
+                    localStorage.setItem('teacherName', data.teacherName);
+                }
+                if (data.classStartTime) localStorage.setItem('classStartTime', data.classStartTime);
+                else localStorage.removeItem('classStartTime');
+                if (data.classEndTime) localStorage.setItem('classEndTime', data.classEndTime);
+                else localStorage.removeItem('classEndTime');
+                const parsedStudentLevel = parseInt(data.studentLevel, 10);
+                localStorage.setItem('studentLevel', (!isNaN(parsedStudentLevel) && parsedStudentLevel > 0) ? parsedStudentLevel : 1);
+                
+                // Simpan currentSession
+                if (data.currentSession) {
+                    localStorage.setItem('currentSession', data.currentSession);
+                    localStorage.setItem('activeLesson', data.currentSession);
+                }
+                // Simpan sessionProgress detail untuk modal
+                if (data.sessionProgress) {
+                    localStorage.setItem('sessionProgress', JSON.stringify(data.sessionProgress));
+                }
+                // Simpan totalStars
+                if (typeof data.totalStars !== 'undefined' && data.totalStars !== null) {
+                    localStorage.setItem('totalStars', data.totalStars);
+                }
+                // Simpan attendanceSession
+                if (typeof data.attendanceSession !== 'undefined') {
+                    localStorage.setItem('attendanceSession', data.attendanceSession);
+                }
+                initDashboard();
+                if (isSilent) showSyncToast();
+                else fetchSyncVersion();
+            } else {
+                const errMsg = (data && data.message) ? data.message : JSON.stringify(data);
+                console.warn('[Dashboard] Gagal getStudentProgress:', errMsg);
+                // Reset hanya ketika server benar-benar memastikan identitas
+                // siswa/kelas tidak ditemukan. Error sementara tetap memakai cache.
+                if (!isAdmin && isConfirmedIdentityMiss(errMsg)) {
+                    resetLocalProgress();
+                } else {
+                    showConnectionToast('Data terbaru belum bisa diambil. Progress terakhir tetap aman.', true);
+                }
+                initDashboard();
+                if (!isSilent) fetchSyncVersion();
+            }
+        } catch (err) {
+            console.error('[Dashboard] Error fetching student data:', err);
+            // Koneksi gagal tidak boleh menghapus progress lokal. Gunakan cache
+            // terakhir sampai server dapat dijangkau kembali.
+            showConnectionToast('Mode offline: menggunakan progress terakhir yang tersimpan.', true);
+            if (!isSilent) initDashboard();
+        } finally {
+            if (!isSilent) {
+                setTimeout(() => {
+                    if (loader) loader.classList.add('loaded');
+                }, 800);
+            }
+        }
+    }
+
+    async function fetchSyncVersion() {
+        try {
+            const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(className)}`);
+            const json = await res.json();
+            if (json.success) currentSyncVersion = json.syncVersion;
+        } catch (e) {}
+    }
+
+    async function checkForSyncUpdate(forceRefresh = false) {
+        if (syncCheckInFlight || isAdmin || document.visibilityState === 'hidden') return;
+        syncCheckInFlight = true;
+        try {
+            const res = await fetch(`${STUDENT_API_URL}?action=checkSync&code=${encodeURIComponent(className)}`);
+            const json = await res.json();
+            if (json.success && (forceRefresh || json.syncVersion > currentSyncVersion)) {
+                currentSyncVersion = json.syncVersion;
+                await loadStudentData(true);
+            }
+        } catch (e) {
+            console.warn('[Dashboard] Sync check tertunda:', e);
+        } finally {
+            syncCheckInFlight = false;
+        }
+    }
+
+    function startSyncPolling() {
+        if (isPolling) return;
+        isPolling = true;
+        setInterval(() => checkForSyncUpdate(), 30000);
+    }
+
+    function showSyncToast() {
+        let toast = document.getElementById('sync-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'sync-toast';
+            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl bg-k-blue text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center gap-3 transition-all duration-500 opacity-0 translate-y-10';
+            toast.innerHTML = `<span class="animate-spin text-sm">🔄</span><span>Data Misi Terupdate Otomatis</span>`;
+            document.body.appendChild(toast);
+        }
+        setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
+        setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 4000);
+    }
+
+    function showConnectionToast(message, isWarning) {
+        let toast = document.getElementById('connection-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'connection-toast';
+            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-2xl text-white font-black text-xs uppercase tracking-widest shadow-2xl transition-all duration-500 opacity-0 translate-y-10';
+            document.body.appendChild(toast);
+        }
+        toast.classList.toggle('bg-amber-600', isWarning);
+        toast.classList.toggle('bg-k-green', !isWarning);
+        toast.textContent = message;
+        setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-10'), 100);
+        setTimeout(() => toast.classList.add('opacity-0', 'translate-y-10'), 5000);
+    }
+
+    async function initDashboard() {
+        const course = COURSES[selectedCourse] || COURSES.roblox;
+        const studentLevel = Math.max(1, parseInt(localStorage.getItem('studentLevel') || '1', 10) || 1);
+        // Session gate follows completed progress, not attendance alone.
+        const currentSession = parseInt(localStorage.getItem('currentSession')||'1', 10);
+        const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+        const sess = clamp(currentSession, 1, MAX_LESSONS);
+
+        const coachName = localStorage.getItem('teacherName') || 'Kak Kalananti';
+        const coachEl = document.getElementById('teacher-name');
+        if (coachEl) coachEl.textContent = coachName;
+        const classStartTime = localStorage.getItem('classStartTime') || '';
+        const classEndTime = localStorage.getItem('classEndTime') || '';
+        const classTimeEl = document.getElementById('class-time-display');
+        if (classTimeEl) {
+            classTimeEl.textContent = classStartTime && classEndTime
+                ? `${classStartTime} – ${classEndTime}`
+                : 'Jadwal belum tersedia';
+        }
+
+        // Update star count (from backend, or fallback to localStorage cached value)
+        const starVal = localStorage.getItem('totalStars');
+        const starEl = document.getElementById('star-count');
+        if (starEl) starEl.textContent = (starVal !== null && starVal !== undefined) ? starVal : '–';
+        // Planet adalah identitas level. Semua sesi dalam level yang sama memakai planet yang sama.
+        const levelPlanet = PLANET_PATH[(studentLevel-1) % PLANET_PATH.length] || PLANET_PATH[0];
+        // Progress UI follows the highest unlocked session.
+        const pct = Math.round((sess-1)/MAX_LESSONS*100) || 8;
+
+        // Progress bar
+        document.getElementById('progress-title').textContent = `${course.emoji} ${course.label} – ${levelPlanet.name}`;
+        document.getElementById('progress-sessions').textContent = `Orbit ${sess} / ${MAX_LESSONS}`;
+        document.getElementById('progress-pct').textContent = pct + '%';
+        document.getElementById('progress-bar').style.width = pct + '%';
+
+        // Circular ring
+        const cir = 565;
+        document.getElementById('ring-progress').style.strokeDashoffset = cir - (cir * pct / 100);
+        document.getElementById('circle-pct').innerHTML = `${pct}<span style="font-size:1.25rem">%</span>`;
+        document.getElementById('orbit-course-title').textContent = `${course.label} Adventure`;
+        document.getElementById('orbit-level-label').textContent = `Level ${studentLevel}`;
+
+        // Active mission
+        document.getElementById('active-session-badge').textContent =
+            sess <= MAX_LESSONS ? `Sesi ${sess} Aktif` : 'Semua Sesi Selesai! 🏆';
+        document.getElementById('active-mission').innerHTML = `
+            ${levelPlanet.emoji} ${levelPlanet.name}
+            <svg class="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 10" preserveAspectRatio="none">
+                <path d="M0 5 Q 50 10 100 5" fill="transparent" stroke="#F9C013" stroke-width="3" stroke-linecap="round"/>
+            </svg>`;
+        document.getElementById('active-session-label').textContent = `Sesi ${sess} dari ${MAX_LESSONS}`;
+
+        // Roadmap
+        const listEl = document.getElementById('roadmap-list');
+        try {
+            const [lessonRes, topicRes] = await Promise.all([
+                fetch(`${STUDENT_API_URL}?sheet=${course.sheet}`),
+                fetch(`${STUDENT_API_URL}?sheet=${course.topicSheet}`)
+            ]);
+            const raw = await lessonRes.json();
+            const topicRaw = await topicRes.json();
+            
+            const getSession = (r, idx) => {
+                let s = parseInt(r['Session'] || r['session'] || r['Sesi'] || r.col_2 || r.col_1, 10);
+                if (isNaN(s)) s = idx + 1;
+                return s;
+            };
+
+            const rowsForLevel = rows => {
+                let inheritedLevel = null;
+                return (Array.isArray(rows) ? rows : []).filter(row => {
+                    const rawLevel = row['Level'] || row['level'] || row.col_1;
+                    const parsedLevel = parseInt(String(rawLevel || '').match(/\d+/)?.[0], 10);
+                    if (!isNaN(parsedLevel)) inheritedLevel = parsedLevel;
+                    return inheritedLevel === studentLevel;
+                });
+            };
+            const lessons = rowsForLevel(raw).map((r, idx) => {
+                r._sessNum = getSession(r, idx);
+                return r;
+            }).filter(r => r._sessNum >= 1 && r._sessNum <= MAX_LESSONS).sort((a,b) => a._sessNum - b._sessNum).slice(0, MAX_LESSONS);
+
+            const sessionTopics = {};
+            rowsForLevel(topicRaw).forEach((row, idx) => {
+                const sessionNum = getSession(row, idx);
+                const title = String(row['Session-topic'] || row['Session Topic'] || row['Title Session'] || '').trim();
+                if (sessionNum >= 1 && sessionNum <= MAX_LESSONS && title) sessionTopics[sessionNum] = title;
+            });
+            
+            const upcoming = lessons.filter(l => l._sessNum >= sess).slice(0, 4);
+
+            listEl.innerHTML = '';
+            if (!upcoming.length) {
+                listEl.innerHTML += `<p class="text-center font-bold py-6" style="color:var(--muted)">Semua sesi telah selesai! 🎉</p>`;
+                return;
+            }
+            upcoming.forEach((l, i) => {
+                const n = l._sessNum;
+                const sessionTitle = sessionTopics[n] || course.desc[n-1] || `Sesi ${n}`;
+                const isActive = n === sess;
+                const isLocked = n > sess;
+                const lockStyle = isLocked ? `opacity: 0.6; cursor: not-allowed; filter: grayscale(1);` : `cursor: pointer;`;
+                const onClick = isLocked && !isAdmin ? `onclick="showStatusPopup('warning', 'MISI TERKUNCI! 🛸', 'Silahkan selesaikan tugas di sesi sebelumnya dan minta penilaian dari kakak pengajar untuk membuka materi selanjutnyaa')"` : `onclick="goToLesson(${n})"`;
+                
+                listEl.innerHTML += `
+                <div class="roadmap-item rounded-2xl p-4 flex items-center gap-4 ${isActive ? 'border-k-yellow' : ''}" style="${lockStyle}" ${onClick}>
+                    <div class="planet-emoji-badge shrink-0">${isLocked ? '🔒' : levelPlanet.emoji}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[11px] font-black uppercase tracking-widest" style="color:${isActive ? '#F9C013' : 'var(--muted)'}">${isActive ? '▶ AKTIF · ' : ''}Sesi ${n}</p>
+                        <p class="font-black text-sm mission-text">${sessionTitle}</p>
+                    </div>
+                    ${isActive ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F9C013" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>' : ''}
+                </div>`;
+            });
+        } catch(e) {
+            console.error(e);
+            listEl.innerHTML = `<p class="text-center font-bold py-6" style="color:var(--muted)">Gagal memuat rute 😵</p>`;
+        }
+    }
+
+    function goToLesson(n) {
+        const currentSession = parseInt(localStorage.getItem('currentSession') || '1', 10);
+        if (n > currentSession && !isAdmin) {
+            alert('❌ Misi ini masih terkunci! Selesaikan sesi sebelumnya dengan 100% (termasuk quiz) untuk membuka sesi ini.');
+            return;
+        }
+        localStorage.setItem('activeLesson', n);
+        window.location.href = 'materials.html';
+    }
+
+    // Profile Dropdown
+    function toggleProfileMenu() {
+        const dropdown = document.getElementById('profile-dropdown');
+        if (dropdown.classList.contains('opacity-0')) {
+            dropdown.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            dropdown.classList.add('opacity-100', 'scale-100');
+        } else {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        }
+    }
+    
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('profile-menu-container');
+        const dropdown = document.getElementById('profile-dropdown');
+        if (container && dropdown && !container.contains(e.target)) {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        }
+    });
+
+    // Star Modal Functions
+    function escapeStarDetail(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatStarDetail(rawStars, fallbackStars) {
+        const lines = String(rawStars || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        if (lines.length === 0) return `${fallbackStars} Bintang`;
+
+        return `<div class="mt-1 space-y-1.5">${lines.map(line => {
+            const match = line.match(/^(\d+)\s*(?:Star|Bintang)\s*-\s*(.+)$/i);
+            if (!match) return `<div class="text-xs text-white/70">${escapeStarDetail(line)}</div>`;
+
+            const value = parseInt(match[1], 10) || 0;
+            const category = match[2].trim();
+            const normalized = category.toLowerCase();
+            let icon = '⭐';
+            let label = category;
+            let colorClass = 'text-blue-300';
+
+            if (normalized.includes('must')) {
+                icon = '🎯'; label = 'Must Do';
+            } else if (normalized.includes('should')) {
+                icon = '✨'; label = 'Should Do'; colorClass = 'text-indigo-300';
+            } else if (normalized.includes('aspire')) {
+                icon = '🌟'; label = 'Aspire To'; colorClass = 'text-purple-300';
+            } else if (normalized.includes('quiz')) {
+                icon = '📝'; label = 'Quiz'; colorClass = 'text-emerald-300';
+            } else if (normalized.includes('bonus')) {
+                icon = '🎁'; label = 'Bonus'; colorClass = 'text-k-yellow';
+            }
+
+            return `<div class="flex items-center justify-between gap-4 text-xs font-bold">
+                <span class="text-white/75">${icon} ${escapeStarDetail(label)}</span>
+                <span class="${colorClass} font-black">${value} ⭐</span>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
+    function openStarModal() {
+        const modal = document.getElementById('star-modal');
+        const modalBox = document.getElementById('star-modal-box');
+        const contentBox = document.getElementById('star-modal-content');
+        
+        let progressData = [];
+        try {
+            progressData = JSON.parse(localStorage.getItem('sessionProgress') || '[]');
+        } catch(e) {}
+
+        if (!progressData || progressData.length === 0) {
+            contentBox.innerHTML = '<p class="text-center font-bold text-gray-400 py-6">Belum ada data bintang. Semangat belajarnya! 🚀</p>';
+        } else {
+            let html = '';
+            let hasItems = false;
+            progressData.forEach(s => {
+                const isCompleted = (s.isComplete === true) || String(s.progress).includes('100') || String(s.progress) === '1';
+                if (s.stars > 0 || isCompleted) {
+                    hasItems = true;
+                    let detailTxt;
+                    let starCountHtml;
+                    
+                    if (s.stars > 0) {
+                        detailTxt = formatStarDetail(s.rawStars, s.stars);
+                        starCountHtml = `<div class="font-black text-xl text-k-yellow shrink-0 ml-3">+${s.stars}</div>`;
+                    } else {
+                        // Kondisi jika misi sudah 100% tapi guru belum kasih bintang
+                        detailTxt = '<span class="text-xs italic" style="color:var(--muted)">Belum diperiksa Guru ⏳</span>';
+                        starCountHtml = `<div class="font-bold text-sm shrink-0 ml-3" style="color:var(--muted)">0</div>`;
+                    }
+                    
+                    html += `
+                    <div class="p-4 rounded-2xl mb-3 flex items-center justify-between shadow-sm hover:-translate-y-0.5 transition-transform" style="background:rgba(249,192,19,0.12); border:1px solid rgba(249,192,19,0.3);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-[0.8rem] bg-gradient-to-br transition-all from-k-yellow to-[#D9A40A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0 border border-yellow-300/40 ${s.stars===0?'opacity-70 grayscale':''}">S${s.session}</div>
+                            <div>
+                                <p class="text-[10px] font-black uppercase text-k-yellow tracking-widest mb-0.5 ${s.stars===0?'opacity-70':''}">Sesi ${s.session}</p>
+                                <p class="text-sm font-bold text-white leading-snug">${detailTxt}</p>
+                            </div>
+                        </div>
+                        ${starCountHtml}
+                    </div>`;
+                }
+            });
+            
+            if (!hasItems) {
+                html = '<p class="text-center font-bold text-gray-400 py-6">Ayo kumpulkan bintang dari tiap misimu! ⭐</p>';
+            }
+            contentBox.innerHTML = html;
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeStarModal() {
+        document.getElementById('star-modal').classList.remove('active');
+    }
+
+    loadStudentData();
+    </script>
+</body>
+</html>

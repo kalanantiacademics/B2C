@@ -1,10 +1,12 @@
-# Ignore everything by default
+# Ignore everything by default.
 *
 
-# Allow .gitignore
+# Keep this ignore file tracked.
 !.gitignore
+!404.html
+!knowledge-scl.md
 
-# Allow ONLY level1, level2, level3, level4 folders
+# Allow curriculum folders
 !level1/
 !level1/**
 !level2/
@@ -14,10 +16,31 @@
 !level4/
 !level4/**
 
-# Exclude generator scripts & temp files inside level folders
-level*/*.py
-level*/*.txt
-level*/*.merged
+# Legacy dashboards under student-centered are intentionally ignored.
+!student-centered/
+!student-centered/panduan-scl-cabang.html
+
+*.pyc
+*.py[cod]
 .DS_Store
 __pycache__/
-*.pyc
+
+!student-centered/book-editor-slides/
+!student-centered/book-editor-slides/**
+student-centered/book-editor-slides/venv/
+student-centered/book-editor-slides/__pycache__/
+student-centered/book-editor-slides/server.log
+
+# Track trial-new folder
+!trial-new/
+!trial-new/**
+
+# Track outer dashboard folders
+!student-dashboards/
+!student-dashboards/**
+!teacher-dashboard/
+!teacher-dashboard/**
+
+# Keep the active placement test implementation and its local visual assets.
+!placement-test/
+!placement-test/**

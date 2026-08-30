@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "scl-m0-golden-fixture/v1",
+  "sanitized": true,
+  "courses": [
+    {
+      "key": "roblox",
+      "label": "ROBLOX STUDIO",
+      "level": "1",
+      "earlyTopic": "Membangun Dunia Pertama",
+      "lateTopic": "Menguji dan Mempresentasikan Pengalaman Interaktif"
+    },
+    {
+      "key": "scratch",
+      "label": "SCRATCH",
+      "level": "2",
+      "earlyTopic": "Membuat Cerita Bergerak",
+      "lateTopic": "Menyempurnakan Gim dengan Umpan Balik"
+    }
+  ],
+  "content": {
+    "objectives": [
+      "Menjelaskan konsep utama dengan kata-kata sendiri.",
+      "Membuat proyek kecil dan memeriksa hasilnya."
+    ],
+    "paragraph": "Ikuti petunjuk secara berurutan. Catat perubahan yang dibuat agar proses dapat dijelaskan kembali.",
+    "tutor": "Gunakan nama yang jelas untuk setiap objek agar proyek mudah diperiksa.",
+    "knowledge": "Iterasi adalah proses mencoba, memeriksa, lalu memperbaiki berdasarkan bukti.",
+    "must": "Selesaikan fitur utama dan uji sedikitnya dua skenario.",
+    "should": "Tambahkan satu peningkatan yang membantu pengguna.",
+    "aspire": "Rancang tantangan lanjutan dan jelaskan keputusan desainnya.",
+    "quiz": "Mengapa proyek perlu diuji sebelum dipresentasikan?"
+  }
+}

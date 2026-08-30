@@ -1,0 +1,40 @@
+{
+  "name": "kalananti-scl-module-generator",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Google Apps Script foundation for the Kalananti SCL Module Generator.",
+  "type": "module",
+  "scripts": {
+    "lint": "node scripts/static-check.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "format:check": "node scripts/format-check.mjs",
+    "check": "npm run lint && npm test && npm run format:check",
+    "preview:build": "node scripts/build-local-preview.mjs",
+    "preview:m1": "node scripts/build-local-preview.mjs",
+    "assets:generate": "node scripts/generate-page-assets.mjs",
+    "fonts:generate": "node scripts/generate-font-assets.mjs",
+    "qc:m0:golden": "python3 scripts/qc_m0_golden.py",
+    "qc:m1:shell": "python3 scripts/qc_m1_shell.py",
+    "qc:m1:direct-edit": "python3 scripts/qc_m1_direct_edit.py",
+    "qc:m1:image-reflow": "python3 scripts/qc_m1_image_reflow.py",
+    "qc:m2:adapter": "python3 scripts/qc_m2_adapter.py",
+    "qc:m3:compare": "python3 scripts/qc_m3_compare.py",
+    "qc:front-matter:review": "python3 scripts/qc_front_matter_review.py",
+    "qc:phase1:browser": "python3 scripts/qc_phase1_browser.py",
+    "qc:phase2:browser": "python3 scripts/qc_phase2_browser.py",
+    "qc:phase3:browser": "python3 scripts/qc_phase3_browser.py",
+    "qc:phase4:browser": "python3 scripts/qc_phase4_browser.py",
+    "qc:phase5:browser": "python3 scripts/qc_phase5_browser.py",
+    "qc:phase6:pdf": "python3 scripts/qc_phase6_pdf.py",
+    "qc:v2:browser": "python3 scripts/qc_v2_foundation_browser.py",
+    "qc:v2:recovery": "python3 scripts/qc_p7_recovery_browser.py",
+    "qc:m7:full": "python3 scripts/qc_m7_full.py",
+    "clasp": "clasp"
+  },
+  "devDependencies": {
+    "@google/clasp": "3.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

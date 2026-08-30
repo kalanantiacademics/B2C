@@ -1,0 +1,2422 @@
+<script>
+  (function () {
+    'use strict';
+
+    var SESSION_STORAGE_KEY = 'kalananti.scl.editorSession.v1';
+    var LEASE_STORAGE_KEY = 'kalananti.scl.editorLease.v1';
+    var TAB_INSTANCE_STORAGE_KEY = 'kalananti.scl.tabInstance.v1';
+    var ROUTE_STORAGE_KEY = 'kalananti.scl.workspaceRoute.v1';
+    var DRAFT_STORAGE_PREFIX = 'kalananti.scl.recoveryDraft.v1.';
+    var AUTOSAVE_DELAY_MS = 5000;
+    var HEARTBEAT_RETRY_BASE_MS = 2000;
+    var HEARTBEAT_SAFETY_MARGIN_SECONDS = 5;
+    var IMAGE_PREFLIGHT_BATCH_SIZE = 20;
+    var RPC_TIMEOUT_MS = 45000;
+    var state = {
+      configurationReady: false,
+      session: null,
+      catalog: null,
+      activeCourse: null,
+      activeProject: null,
+      activeSession: null,
+      lease: null,
+      currentRevision: '',
+      dirty: false,
+      saveTimer: null,
+      heartbeatTimer: null,
+      heartbeatRetryTimer: null,
+      heartbeatInFlight: null,
+      heartbeatRetryCount: 0,
+      saveInFlight: null,
+      saveQueued: false,
+      pendingSaveRequest: null,
+      publisherResult: null,
+      activityPage: null,
+      publishedPage: null,
+      driveCapability: null,
+      sessionPreviewTimer: null,
+      previewZoom: 0.43,
+      routeTransitionInFlight: false,
+      ignoreNextHashChange: false,
+      initialRouteApplied: false
+    };
+    var elements = {};
+    var notificationTimers_ = {};
+    var notificationSequence_ = 0;
+
+    document.addEventListener('DOMContentLoaded', initialize);
+
+    function initialize() {
+      elements = {
+        appView: document.getElementById('appView'),
+        activityView: document.getElementById('activityView'),
+        activityList: document.getElementById('activityList'),
+        refreshActivityButton: document.getElementById('refreshActivityButton'),
+        cardHeading: document.querySelector('.card-heading'),
+        configurationStatus: document.getElementById('configurationStatus'),
+        courseGrid: document.getElementById('courseGrid'),
+        closeSessionButton: document.getElementById('closeSessionButton'),
+        conflictBanner: document.getElementById('conflictBanner'),
+        conflictMessage: document.getElementById('conflictMessage'),
+        composeModuleButton: document.getElementById('composeModuleButton'),
+        closePublisherButton: document.getElementById('closePublisherButton'),
+        copyChangesButton: document.getElementById('copyChangesButton'),
+        editorIdentity: document.getElementById('editorIdentity'),
+        editorLabel: document.getElementById('editorLabel'),
+        formMessage: document.getElementById('formMessage'),
+        levelGrid: document.getElementById('levelGrid'),
+        levelPanel: document.getElementById('levelPanel'),
+        leaseStatus: document.getElementById('leaseStatus'),
+        loadingOverlay: document.getElementById('loadingOverlay'),
+        loadingOverlayMessage: document.getElementById('loadingOverlayMessage'),
+        loginButton: document.getElementById('loginButton'),
+        loginForm: document.getElementById('loginForm'),
+        loginView: document.getElementById('loginView'),
+        logoutButton: document.getElementById('logoutButton'),
+        newModuleButton: document.getElementById('newModuleButton'),
+        passcode: document.getElementById('passcode'),
+        phaseMessage: document.getElementById('phaseMessage'),
+        notificationCenter: document.getElementById('notificationCenter'),
+        projectPanel: document.getElementById('projectPanel'),
+        projectSummary: document.getElementById('projectSummary'),
+        publishedView: document.getElementById('publishedView'),
+        publishedList: document.getElementById('publishedList'),
+        refreshPublishedButton: document.getElementById('refreshPublishedButton'),
+        driveCapabilityBadge: document.getElementById('driveCapabilityBadge'),
+        reacquireEditButton: document.getElementById('reacquireEditButton'),
+        publisherPanel: document.getElementById('publisherPanel'),
+        publisherFilename: document.getElementById('publisherFilename'),
+        publisherDiagnostics: document.getElementById('publisherDiagnostics'),
+        publisherPrintHelp: document.getElementById('publisherPrintHelp'),
+        publisherSummary: document.getElementById('publisherSummary'),
+        printModuleButton: document.getElementById('printModuleButton'),
+        printAcknowledgement: document.getElementById('printAcknowledgement'),
+        printAcknowledgementLabel: document.getElementById('printAcknowledgementLabel'),
+        selectedCourseTitle: document.getElementById('selectedCourseTitle'),
+        recoveryBanner: document.getElementById('recoveryBanner'),
+        recoveryMessage: document.getElementById('recoveryMessage'),
+        reloadLatestButton: document.getElementById('reloadLatestButton'),
+        saveStatus: document.getElementById('saveStatus'),
+        sessionEditorLockMeta: document.getElementById('sessionEditorLockMeta'),
+        sessionEditorPanel: document.getElementById('sessionEditorPanel'),
+        sessionA4Preview: document.getElementById('sessionA4Preview'),
+        sessionPreviewDiagnostics: document.getElementById('sessionPreviewDiagnostics'),
+        previewZoomOut: document.getElementById('previewZoomOut'),
+        previewZoomIn: document.getElementById('previewZoomIn'),
+        previewZoomReset: document.getElementById('previewZoomReset'),
+        previewZoomValue: document.getElementById('previewZoomValue'),
+        sessionEditorTitle: document.getElementById('sessionEditorTitle'),
+        sessionGrid: document.getElementById('sessionGrid'),
+        sessionTopicInput: document.getElementById('sessionTopicInput'),
+        storageBanner: document.getElementById('storageBanner'),
+        togglePasscode: document.getElementById('togglePasscode'),
+        useDraftButton: document.getElementById('useDraftButton'),
+        discardDraftButton: document.getElementById('discardDraftButton'),
+        historyList: document.getElementById('historyList'),
+        workspaceMessage: document.getElementById('workspaceMessage'),
+        ssotIframeView: document.getElementById('ssotIframeView'),
+        ssotIframe: document.getElementById('ssotIframe'),
+        refreshSsotIframeBtn: document.getElementById('refreshSsotIframeBtn'),
+        settingsView: document.getElementById('settingsView'),
+        sidebarLogoImage: document.getElementById('sidebarLogoImage'),
+        userProfilePill: document.getElementById('userProfilePill'),
+        topProfileAvatar: document.getElementById('topProfileAvatar'),
+        topProfileName: document.getElementById('topProfileName'),
+        topProfileRole: document.getElementById('topProfileRole')
+      };
+
+      elements.loginForm.addEventListener('submit', handleLogin);
+      elements.logoutButton.addEventListener('click', handleLogout);
+      elements.newModuleButton.addEventListener('click', handleNewModule_);
+      elements.togglePasscode.addEventListener('click', togglePasscodeVisibility);
+      elements.passcode.addEventListener('input', updateLoginButtonState_);
+      elements.editorLabel.addEventListener('input', updateLoginButtonState_);
+      elements.closeSessionButton.addEventListener('click', handleCloseSession_);
+      elements.reacquireEditButton.addEventListener('click', reactivateEditAccess_);
+      elements.sessionTopicInput.addEventListener('input', handleEditorInput);
+      elements.sessionTopicInput.addEventListener('blur', requestAutosave);
+      SclVisualEditor.initialize({ onChange: handleEditorInput });
+      elements.previewZoomOut.addEventListener('click', function () { setSessionPreviewZoom_(state.previewZoom - 0.08); });
+      elements.previewZoomIn.addEventListener('click', function () { setSessionPreviewZoom_(state.previewZoom + 0.08); });
+      elements.previewZoomReset.addEventListener('click', function () { setSessionPreviewZoom_(0.43); });
+      setSessionPreviewZoom_(state.previewZoom);
+      elements.useDraftButton.addEventListener('click', useRecoveryDraft);
+      elements.discardDraftButton.addEventListener('click', discardRecoveryDraft);
+      elements.copyChangesButton.addEventListener('click', copyLocalChanges);
+      elements.reloadLatestButton.addEventListener('click', reloadLatestSource);
+      elements.composeModuleButton.addEventListener('click', function () {
+        composeActiveProject().catch(function () {
+          // composeActiveProject already renders the actionable failure state.
+        });
+      });
+      elements.printModuleButton.addEventListener('click', printActiveProject);
+      elements.printAcknowledgement.addEventListener('change', updatePrintButtonState);
+      elements.closePublisherButton.addEventListener('click', function () { elements.publisherPanel.hidden = true; });
+      elements.refreshActivityButton.addEventListener('click', loadActivity_);
+      elements.refreshPublishedButton.addEventListener('click', loadPublishedModules_);
+      elements.sidebarLogoImage.addEventListener('error', function () {
+        elements.sidebarLogoImage.classList.add('logo-load-failed');
+      });
+      if (elements.sidebarLogoImage.complete && !elements.sidebarLogoImage.naturalWidth) {
+        elements.sidebarLogoImage.classList.add('logo-load-failed');
+      }
+
+      var navButtons = document.querySelectorAll('[data-nav]');
+      Array.prototype.forEach.call(navButtons, function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          var target = btn.getAttribute('data-nav');
+          switchNavView(target);
+        });
+      });
+
+      if (elements.refreshSsotIframeBtn) {
+        elements.refreshSsotIframeBtn.addEventListener('click', function () {
+          if (elements.ssotIframe && elements.ssotIframe.tagName === 'IFRAME') {
+            var currentSrc = elements.ssotIframe.src;
+            elements.refreshSsotIframeBtn.disabled = true;
+            elements.refreshSsotIframeBtn.textContent = 'Memuat ulang…';
+            notifyLoading_('ssot-refresh', 'Memuat ulang Spreadsheet', 'Iframe SSOT sedang disambungkan kembali.');
+            elements.ssotIframe.src = 'about:blank';
+            setTimeout(function () {
+              var completed = false;
+              var refreshTimeout = setTimeout(function () {
+                if (completed) { return; }
+                completed = true;
+                elements.refreshSsotIframeBtn.disabled = false;
+                elements.refreshSsotIframeBtn.textContent = 'Refresh SSOT';
+                notifyWarning_('ssot-refresh', 'Spreadsheet belum merespons', 'Coba refresh kembali atau buka melalui link Google Sheets.');
+              }, 30000);
+              elements.ssotIframe.addEventListener('load', function () {
+                if (completed) { return; }
+                completed = true;
+                clearTimeout(refreshTimeout);
+                elements.refreshSsotIframeBtn.disabled = false;
+                elements.refreshSsotIframeBtn.textContent = 'Refresh SSOT';
+                notifySuccess_('ssot-refresh', 'Spreadsheet dimuat ulang', 'Tampilan SSOT sudah diperbarui.');
+              }, { once: true });
+              elements.ssotIframe.src = currentSrc;
+            }, 50);
+          }
+        });
+      }
+
+      loadPublicBootstrap();
+      window.addEventListener('hashchange', handleHashNavigation_);
+      window.addEventListener('beforeunload', handleBeforeUnload_);
+      window.addEventListener('pagehide', persistLifecycleDraft_);
+      window.addEventListener('online', retryHeartbeatOnReconnect_);
+      window.addEventListener('focus', retryHeartbeatOnReconnect_);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) { retryHeartbeatOnReconnect_(); }
+      });
+    }
+
+    function handleBeforeUnload_(event) {
+      persistLifecycleDraft_();
+      if (!state.dirty && !state.saveInFlight) { return; }
+      event.preventDefault();
+      event.returnValue = '';
+    }
+
+    function persistLifecycleDraft_() {
+      if (state.activeSession && (state.dirty || state.saveInFlight)) {
+        persistRecoveryDraft();
+      }
+    }
+
+    function updateHash_(params) {
+      if (!params) {
+        if (window.location.hash) {
+          state.ignoreNextHashChange = true;
+          window.location.hash = '';
+        }
+        return;
+      }
+      var searchParams = new URLSearchParams();
+      if (params.view && params.view !== 'dashboard') searchParams.set('view', params.view);
+      if (params.course) searchParams.set('course', params.course);
+      if (params.level) searchParams.set('level', params.level);
+      if (params.session) searchParams.set('session', params.session);
+
+      var newHash = searchParams.toString();
+      if (newHash) {
+        sessionStorage.setItem(ROUTE_STORAGE_KEY, newHash);
+      } else {
+        sessionStorage.removeItem(ROUTE_STORAGE_KEY);
+      }
+      if (window.location.hash.substring(1) !== newHash) {
+        state.ignoreNextHashChange = true;
+        window.location.hash = newHash;
+      }
+    }
+
+    function handleHashNavigation_() {
+      if (state.ignoreNextHashChange) {
+        state.ignoreNextHashChange = false;
+        return;
+      }
+      var hash = window.location.hash.substring(1);
+      if (!hash && !state.initialRouteApplied) {
+        hash = sessionStorage.getItem(ROUTE_STORAGE_KEY) || '';
+      }
+      state.initialRouteApplied = true;
+      if (hash && !window.location.hash) {
+        state.ignoreNextHashChange = true;
+        window.location.hash = hash;
+      }
+      if (state.activeSession && !routeMatchesActiveSession_(hash)) {
+        if (state.routeTransitionInFlight) { return; }
+        state.routeTransitionInFlight = true;
+        if (state.dirty || state.saveInFlight) {
+          persistRecoveryDraft();
+          notifyWarning_(
+            'dirty-navigation',
+            'Perubahan sedang diamankan',
+            'Draft lokal sudah disimpan sebelum meninggalkan editor.'
+          );
+        }
+        closeActiveSession(true).finally(function () {
+          state.routeTransitionInFlight = false;
+          applyHashRoute_(hash);
+        });
+        return;
+      }
+      applyHashRoute_(hash);
+    }
+
+    function routeMatchesActiveSession_(hash) {
+      if (!state.activeSession || !state.activeProject || !hash) { return false; }
+      var params = new URLSearchParams(hash);
+      return !params.get('view') &&
+        params.get('course') === String(state.activeProject.course.key) &&
+        params.get('level') === String(state.activeProject.level) &&
+        params.get('session') === String(state.activeSession.session);
+    }
+
+    function applyHashRoute_(hash) {
+      if (hash) {
+        sessionStorage.setItem(ROUTE_STORAGE_KEY, hash);
+      } else {
+        sessionStorage.removeItem(ROUTE_STORAGE_KEY);
+      }
+      if (!hash) {
+        switchNavView('dashboard', true);
+        return;
+      }
+      var searchParams = new URLSearchParams(hash);
+      var view = searchParams.get('view');
+      var courseKey = searchParams.get('course');
+      var level = searchParams.get('level');
+      var sessionNum = searchParams.get('session');
+
+      if (view) {
+        switchNavView(view, true);
+        return;
+      }
+      if (courseKey) {
+        var course = state.catalog && state.catalog.courses.find(function(c) { return c.key === courseKey; });
+        if (course) {
+          if (level) {
+            if (sessionNum) {
+              switchNavView('catalog', true);
+              loadLevel(course, level).then(function (project) {
+                if (project) {
+                  var sessionObj = project.sessions.find(function(s) { return String(s.session) === String(sessionNum); });
+                  if (sessionObj) {
+                    openSession(sessionObj);
+                  }
+                }
+              });
+            } else {
+              switchNavView('catalog', true);
+              loadLevel(course, level);
+            }
+          } else {
+            switchNavView('catalog', true);
+            renderLevels(course);
+          }
+          return;
+        }
+      }
+      switchNavView('dashboard', true);
+    }
+
+    function switchNavView(target, fromRoute) {
+      if (!state.session) { return; }
+      if (!fromRoute && ['ssot', 'activity', 'published', 'settings', 'dashboard'].indexOf(target) !== -1) {
+         updateHash_({ view: target });
+      }
+      var allNavBtns = document.querySelectorAll('.app-sidebar .sidebar-btn[data-nav]');
+      Array.prototype.forEach.call(allNavBtns, function (btn) {
+        if (btn.getAttribute('data-nav') === target) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      var dashboardSections = {
+        header: document.getElementById('dashboardHeaderRow'),
+        metrics: document.getElementById('dashboardMetricsGrid'),
+        catalog: document.getElementById('catalogContainer'),
+        noSession: document.getElementById('noSessionOpenCard'),
+        aiBanner: document.getElementById('aiSummaryBanner'),
+        sidebar: document.getElementById('rightSidebarPanel')
+      };
+
+      if (target === 'ssot') {
+        if (elements.appView) elements.appView.hidden = true;
+        if (elements.settingsView) elements.settingsView.hidden = true;
+        if (elements.activityView) elements.activityView.hidden = true;
+        if (elements.publishedView) elements.publishedView.hidden = true;
+        if (elements.ssotIframeView) elements.ssotIframeView.hidden = false;
+      } else if (target === 'activity') {
+        if (elements.appView) elements.appView.hidden = true;
+        if (elements.ssotIframeView) elements.ssotIframeView.hidden = true;
+        if (elements.settingsView) elements.settingsView.hidden = true;
+        if (elements.publishedView) elements.publishedView.hidden = true;
+        if (elements.activityView) elements.activityView.hidden = false;
+        loadActivity_();
+      } else if (target === 'published') {
+        if (elements.appView) elements.appView.hidden = true;
+        if (elements.ssotIframeView) elements.ssotIframeView.hidden = true;
+        if (elements.settingsView) elements.settingsView.hidden = true;
+        if (elements.activityView) elements.activityView.hidden = true;
+        if (elements.publishedView) elements.publishedView.hidden = false;
+        loadPublishedModules_();
+        loadDriveCapability_();
+      } else if (target === 'settings') {
+        if (elements.appView) elements.appView.hidden = true;
+        if (elements.ssotIframeView) elements.ssotIframeView.hidden = true;
+        if (elements.activityView) elements.activityView.hidden = true;
+        if (elements.publishedView) elements.publishedView.hidden = true;
+        if (elements.settingsView) {
+          elements.settingsView.hidden = false;
+          var nameEl = document.getElementById('settingsEditorName');
+          if (nameEl && state.session && state.session.editor) {
+            nameEl.textContent = state.session.editor.label;
+          }
+        }
+      } else {
+        if (elements.ssotIframeView) elements.ssotIframeView.hidden = true;
+        if (elements.settingsView) elements.settingsView.hidden = true;
+        if (elements.activityView) elements.activityView.hidden = true;
+        if (elements.publishedView) elements.publishedView.hidden = true;
+        if (elements.appView) elements.appView.hidden = false;
+
+        if (target === 'dashboard') {
+          if (dashboardSections.header) dashboardSections.header.hidden = false;
+          if (dashboardSections.metrics) dashboardSections.metrics.hidden = false;
+          if (dashboardSections.catalog) dashboardSections.catalog.hidden = false;
+          if (dashboardSections.noSession) dashboardSections.noSession.hidden = true;
+          if (dashboardSections.aiBanner) dashboardSections.aiBanner.hidden = false;
+          if (dashboardSections.sidebar) dashboardSections.sidebar.hidden = false;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (target === 'catalog') {
+          if (dashboardSections.header) dashboardSections.header.hidden = false;
+          if (dashboardSections.metrics) dashboardSections.metrics.hidden = false;
+          if (dashboardSections.catalog) dashboardSections.catalog.hidden = false;
+          if (dashboardSections.noSession) dashboardSections.noSession.hidden = true;
+          if (dashboardSections.aiBanner) dashboardSections.aiBanner.hidden = false;
+          if (dashboardSections.sidebar) dashboardSections.sidebar.hidden = false;
+          var targetEl = elements.levelPanel && !elements.levelPanel.hidden ? elements.levelPanel : elements.courseGrid;
+          if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+        } else if (target === 'editor') {
+          if (state.activeSession && elements.sessionEditorPanel && !elements.sessionEditorPanel.hidden) {
+            if (dashboardSections.noSession) dashboardSections.noSession.hidden = true;
+            elements.sessionEditorPanel.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            if (dashboardSections.noSession) dashboardSections.noSession.hidden = false;
+            if (dashboardSections.noSession) dashboardSections.noSession.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    }
+
+    function loadPublicBootstrap() {
+      setLoading(true, 'Menyiapkan aplikasi…', true);
+      callGetAppBootstrap()
+        .then(unwrapEnvelope)
+        .then(function (bootstrap) {
+          state.configurationReady = bootstrap.configurationStatus === 'READY';
+          setConfigurationStatus(state.configurationReady);
+          if (!state.configurationReady) {
+            return null;
+          }
+          var token = sessionStorage.getItem(SESSION_STORAGE_KEY);
+          return token ? resumeSession(token) : null;
+        })
+        .catch(function (error) {
+          setConfigurationStatus(false, 'Konfigurasi tidak dapat diperiksa');
+          showFormMessage(error.message);
+        })
+        .finally(function () { setLoading(false); });
+    }
+
+    function handleLogin(event) {
+      event.preventDefault();
+      hideFormMessage();
+      if (!state.configurationReady) {
+        showFormMessage('Konfigurasi server belum siap. Hubungi maintainer.');
+        return;
+      }
+      if (!elements.passcode.value) {
+        showFormMessage('Masukkan team passcode untuk melanjutkan.');
+        return;
+      }
+      if (!elements.editorLabel.value.trim()) {
+        showFormMessage('Masukkan nama atau email kerja untuk melanjutkan.');
+        elements.editorLabel.focus();
+        return;
+      }
+      setLoading(true, 'Memverifikasi akses…', true);
+      callAuthenticateEditor(elements.passcode.value, elements.editorLabel.value)
+        .then(unwrapEnvelope)
+        .then(showWorkspace)
+        .catch(function (error) {
+          if (error.code === 'EDITOR_LABEL_REQUIRED') {
+            elements.editorLabel.focus();
+          }
+          showFormMessage(error.message);
+        })
+        .finally(function () { setLoading(false); });
+    }
+
+    function resumeSession(token) {
+      return callResumeEditorSession(token)
+        .then(unwrapEnvelope)
+        .then(showWorkspace)
+        .catch(function () {
+          sessionStorage.removeItem(SESSION_STORAGE_KEY);
+          clearStoredEditAccess_();
+          notifyWarning_('session-resume', 'Sesi sebelumnya tidak dapat dilanjutkan', 'Silakan masuk kembali; draft lokal tetap tersimpan di browser.');
+        });
+    }
+
+    function showWorkspace(bootstrap) {
+      state.session = bootstrap.session;
+      sessionStorage.setItem(SESSION_STORAGE_KEY, bootstrap.session.token);
+      elements.passcode.value = '';
+      elements.editorLabel.value = '';
+      updateLoginButtonState_();
+      elements.loginView.hidden = true;
+      elements.appView.hidden = false;
+      elements.editorIdentity.textContent = 'Masuk sebagai ' + bootstrap.session.editor.label;
+      elements.phaseMessage.textContent = bootstrap.phase.next;
+      renderAuthenticatedIdentity_(bootstrap.session.editor);
+      elements.userProfilePill.hidden = false;
+      elements.newModuleButton.hidden = false;
+      elements.logoutButton.hidden = false;
+
+      if (bootstrap.ssotUrl && elements.ssotIframe) {
+        elements.ssotIframe.src = bootstrap.ssotUrl;
+      }
+      var externalLink = document.getElementById('openSsotExternalLink');
+      if (bootstrap.ssotExternalUrl && externalLink) {
+        externalLink.href = bootstrap.ssotExternalUrl;
+      }
+
+      renderStorageHealth(bootstrap.storage);
+      renderCourses(bootstrap.courses);
+      setLoading(false);
+      notifyLoading_('catalog-load', 'Memuat katalog course', 'Server sedang membaca daftar level yang tersedia.');
+      return callListCoursesAndLevels(bootstrap.session.token)
+        .then(unwrapEnvelope)
+        .then(function (catalog) {
+          state.catalog = catalog;
+          renderCourses(catalog.courses);
+          notifySuccess_('catalog-load', 'Katalog siap', 'Course dan level terbaru sudah dimuat.');
+          handleHashNavigation_();
+          return bootstrap;
+        })
+        .catch(function (error) {
+          closeNotification_('catalog-load');
+          showWorkspaceMessage(error.message);
+          handleHashNavigation_();
+          return bootstrap;
+        });
+    }
+
+    function renderAuthenticatedIdentity_(editor) {
+      var label = String(editor && editor.label || 'Editor');
+      var parts = label.split(/\s+|@/).filter(Boolean);
+      var initials = parts.slice(0, 2).map(function (part) { return part.charAt(0).toUpperCase(); }).join('') || 'ED';
+      elements.topProfileAvatar.textContent = initials;
+      elements.topProfileName.textContent = label;
+      elements.topProfileRole.textContent = editor && editor.selfDeclared
+        ? 'Identitas input mandiri'
+        : 'Identitas Google terverifikasi';
+    }
+
+    function renderStorageHealth(storage) {
+      elements.storageBanner.classList.toggle('error', !storage.ok);
+      elements.storageBanner.textContent = storage.ok
+        ? 'Penyimpanan aplikasi siap dan schema ' + storage.schemaVersion + ' terverifikasi.'
+        : 'Penyimpanan berada dalam safe mode. Maintainer perlu memeriksa diagnostic: ' +
+          (storage.diagnosticCodes.join(', ') || 'STORAGE_UNAVAILABLE');
+    }
+
+    function renderCourses(courses) {
+      elements.courseGrid.replaceChildren();
+      courses.forEach(function (course, index) {
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'course-card';
+        var badge = document.createElement('span');
+        badge.textContent = String(index + 1).padStart(2, '0');
+        var title = document.createElement('h2');
+        title.textContent = course.label;
+        var copy = document.createElement('p');
+        var levels = course.levels || [];
+        var totalReady = levels.reduce(function (count, level) { return count + level.readyCount; }, 0);
+        copy.textContent = levels.length
+          ? levels.length + ' level tersedia · ' + totalReady + ' session siap'
+          : 'Memuat daftar level dalam mode hanya baca…';
+        card.append(badge, title, copy);
+        card.disabled = levels.length === 0;
+        card.addEventListener('click', function () {
+          prepareNavigation().then(function () {
+             updateHash_({ course: course.key });
+             renderLevels(course);
+          });
+        });
+        elements.courseGrid.appendChild(card);
+      });
+    }
+
+    function renderLevels(course) {
+      state.activeCourse = course;
+      hideWorkspaceMessage();
+      elements.selectedCourseTitle.textContent = course.label;
+      elements.levelGrid.replaceChildren();
+      course.levels.forEach(function (level) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'level-card';
+        var title = document.createElement('strong');
+        title.textContent = 'Level ' + level.level;
+        var status = document.createElement('span');
+        status.textContent = level.readyCount + ' dari 12 session siap';
+        var detail = document.createElement('small');
+        detail.textContent = level.needsFixCount + ' perlu diperbaiki · ' +
+          level.incompleteCount + ' belum lengkap · ' + level.missingCount + ' belum ada';
+        button.append(title, status, detail);
+        button.addEventListener('click', function () {
+          prepareNavigation().then(function () {
+             updateHash_({ course: course.key, level: level.level });
+             loadLevel(course, level.level);
+          });
+        });
+        elements.levelGrid.appendChild(button);
+      });
+      elements.levelPanel.hidden = false;
+      elements.projectPanel.hidden = true;
+      elements.sessionEditorPanel.hidden = true;
+      elements.levelPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function loadLevel(course, level) {
+      hideWorkspaceMessage();
+      setLoading(true, 'Memuat ' + course.label + ' Level ' + level + '…');
+      return callLoadLevelProject(state.session.token, course.key, level)
+        .then(unwrapEnvelope)
+        .then(function (project) {
+          renderLevelProject(project);
+          notifySuccess_('level-load', 'Level siap', project.readyCount + ' dari 12 session siap dibuka.');
+          return project;
+        })
+        .catch(function (error) { showWorkspaceMessage(error.message); throw error; })
+        .finally(function () { setLoading(false); });
+    }
+
+    function renderLevelProject(project) {
+      state.activeProject = project;
+      elements.publisherPanel.hidden = true;
+      elements.projectSummary.textContent = project.course.label + ' · Level ' + project.level +
+        ' · ' + project.readyCount + ' dari 12 siap';
+      elements.sessionGrid.replaceChildren();
+      project.sessions.forEach(function (session) {
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'session-card status-' + session.status.toLowerCase().replace(/\s+/g, '-');
+        var heading = document.createElement('div');
+        var number = document.createElement('strong');
+        number.textContent = 'Session ' + session.session;
+        var status = document.createElement('span');
+        status.textContent = session.status;
+        heading.append(number, status);
+        var topic = document.createElement('p');
+        topic.textContent = session.topic || 'Konten session belum tersedia';
+        var warning = document.createElement('small');
+        warning.textContent = session.lock
+          ? 'Diedit oleh ' + session.lock.editorLabel + ' · aktivitas terakhir ' + formatTimestamp(session.lock.lastActivity)
+          : (session.warnings.length ? session.warnings.length + ' diagnostic' : 'Tidak ada diagnostic');
+        card.append(heading, topic, warning);
+        card.disabled = session.status === 'On Progress' || session.status === 'Needs Fix';
+        card.addEventListener('click', function () {
+           updateHash_({ course: project.course.key, level: project.level, session: session.session });
+           openSession(session);
+        });
+        elements.sessionGrid.appendChild(card);
+      });
+      elements.projectPanel.hidden = false;
+      elements.projectPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function composeActiveProject() {
+      if (!state.activeProject || !state.session) { return Promise.resolve(null); }
+      var courseKey = state.activeProject.course.key;
+      var level = state.activeProject.level;
+      elements.composeModuleButton.disabled = true;
+      elements.composeModuleButton.textContent = 'Menyiapkan…';
+      elements.printModuleButton.disabled = true;
+      notifyLoading_('compose-module', 'Menyiapkan modul A4', 'Menyimpan draft, memuat source terbaru, lalu memeriksa seluruh gambar.');
+      return flushActiveDraftForPublishing_(0)
+        .then(function () { return callLoadLevelProject(state.session.token, courseKey, level); })
+        .then(unwrapEnvelope)
+        .then(function (project) {
+          state.activeProject = project;
+          return prepareFullLevelPublisher_(project);
+        })
+        .then(function (prepared) {
+          callRecordComposeAttempt(state.session.token, courseKey, level, {
+            ready: Boolean(prepared && prepared.printReady),
+            pageCount: prepared && prepared.pageCount || 0,
+            blockingCount: prepared && prepared.blocking ? 1 : 0,
+            warningCount: prepared && prepared.diagnostics ? prepared.diagnostics.filter(function (item) {
+              return !item.blocking;
+            }).length : 0
+          }).catch(function () {
+            notifyWarning_('compose-audit', 'Compose selesai', 'Activity Log belum dapat diperbarui; hasil compose tetap tersedia.');
+          });
+          if (prepared && prepared.printReady) {
+            notifySuccess_('compose-module', 'Modul siap dicetak', 'Preflight selesai dan tombol Print / Save as PDF sudah aktif.');
+          } else {
+            notifyWarning_('compose-module', 'Compose selesai dengan catatan', 'Lihat diagnostic pada panel preview sebelum mencetak.');
+          }
+          return prepared;
+        })
+        .catch(function (error) {
+          var hasActionableDiagnostic = state.publisherResult && state.publisherResult.blocking;
+          if (!hasActionableDiagnostic) { state.publisherResult = null; }
+          elements.printModuleButton.textContent = hasActionableDiagnostic ? 'Print diblokir — lihat alasan' : 'Print diblokir';
+          elements.printModuleButton.disabled = true;
+          closeNotification_('compose-module');
+          showConflict((error && error.message) || 'Full-level publishing gagal disiapkan.', false);
+          throw error;
+        })
+        .finally(function () {
+          elements.composeModuleButton.disabled = false;
+          elements.composeModuleButton.textContent = 'Compose A4 Module';
+        });
+    }
+
+    function flushActiveDraftForPublishing_(attempt) {
+      if (!state.dirty && !state.saveInFlight) { return Promise.resolve(); }
+      return flushAutosave().then(function () {
+        if (!state.dirty && !state.saveInFlight) { return; }
+        if (attempt >= 2) {
+          var error = new Error('Draft aktif terus berubah; hentikan pengetikan lalu coba compose kembali.');
+          error.code = 'ACTIVE_DRAFT_UNSTABLE';
+          throw error;
+        }
+        return flushActiveDraftForPublishing_(attempt + 1);
+      });
+    }
+
+    function prepareFullLevelPublisher_(project) {
+      elements.publisherPanel.hidden = false;
+      elements.publisherPrintHelp.hidden = true;
+      elements.publisherSummary.textContent = project.course.label + ' · Level ' + project.level;
+      var result = SclPublisher.render(project);
+      state.publisherResult = result;
+      elements.printModuleButton.disabled = true;
+      elements.printModuleButton.textContent = 'Memeriksa gambar…';
+      elements.printAcknowledgement.checked = false;
+      elements.printAcknowledgementLabel.hidden = true;
+      elements.publisherSummary.textContent += ' · ' + result.pageCount + ' halaman';
+      elements.publisherPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var urls = Array.prototype.map.call(
+        document.querySelectorAll('#publisherCanvas .a4-image-block img'),
+        function (image) { return image.src; }
+      );
+      return preflightImagesInBatches_(state.session.token, urls)
+        .then(function (serverResult) {
+          return SclPublisher.preparePrint(result, serverResult.images);
+        })
+        .then(function (prepared) {
+          state.publisherResult = prepared;
+          elements.printModuleButton.textContent = prepared.printReady ? 'Print / Save as PDF' : 'Print diblokir — lihat alasan';
+          elements.printAcknowledgementLabel.hidden = !prepared.requiresAcknowledgement;
+          elements.publisherFilename.textContent = recommendedPdfFilename_(project);
+          elements.publisherPrintHelp.hidden = !prepared.printReady;
+          updatePrintButtonState();
+          return prepared;
+        })
+        .catch(function (error) {
+          state.publisherResult = SclPublisher.blockPrint(
+            result,
+            'IMAGE_PREFLIGHT_REQUEST_FAILED',
+            'Pemeriksaan gambar gagal (' + String(error && error.code || 'SERVER_ERROR') + '). Compose ulang; jika tetap gagal, laporkan kode ini.',
+            { canvas: document.getElementById('publisherCanvas'), diagnostics: elements.publisherDiagnostics }
+          );
+          elements.printModuleButton.textContent = 'Print diblokir — lihat alasan';
+          elements.printModuleButton.disabled = true;
+          elements.publisherPrintHelp.hidden = true;
+          throw error;
+        });
+    }
+
+    function preflightImagesInBatches_(token, urls) {
+      var sourceUrls = Array.isArray(urls) ? urls : [];
+      var combined = [];
+      function next(offset) {
+        if (offset >= sourceUrls.length) { return Promise.resolve({ images: combined }); }
+        var batch = sourceUrls.slice(offset, offset + IMAGE_PREFLIGHT_BATCH_SIZE);
+        elements.printModuleButton.textContent = 'Memeriksa gambar ' +
+          Math.min(offset + batch.length, sourceUrls.length) + '/' + sourceUrls.length + '…';
+        return callPreflightImages(token, batch)
+          .then(unwrapEnvelope)
+          .then(function (serverResult) {
+            (serverResult.images || []).forEach(function (metadata, index) {
+              combined.push(Object.assign({}, metadata, { index: offset + index }));
+            });
+            return next(offset + batch.length);
+          });
+      }
+      return next(0);
+    }
+
+    function recommendedPdfFilename_(project) {
+      var course = String(project.course.coverLabel || project.course.label || project.course.key || 'Course');
+      var level = String(project.level || 'Level');
+      var safe = function (value) {
+        return value.trim().replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'Module';
+      };
+      return 'Kalananti-SCL-' + safe(course) + '-Level-' + safe(level) + '.pdf';
+    }
+
+    function updatePrintButtonState() {
+      var result = state.publisherResult;
+      elements.printModuleButton.disabled = !result || !result.printReady ||
+        (result.requiresAcknowledgement && !elements.printAcknowledgement.checked);
+    }
+
+    function printActiveProject() {
+      if (!state.publisherResult) { return; }
+      var preparation = state.dirty ? flushAutosave() : Promise.resolve();
+      elements.printModuleButton.disabled = true;
+      preparation.then(function () {
+        if (!SclPublisher.printModule(state.publisherResult, elements.printAcknowledgement.checked)) {
+          throw new Error('Print preflight belum siap.');
+        }
+        notifySuccess_('print-module', 'Dialog print dibuka', 'Gunakan A4 portrait, scale 100%, margin none, dan background graphics aktif.');
+      }).catch(function (error) {
+        showConflict(error.message || 'Autosave gagal sebelum print.', false);
+        updatePrintButtonState();
+      });
+    }
+
+    function prepareNavigation() {
+      return closeActiveSession(true).catch(function () {
+        // Local draft remains available when a final flush or release fails.
+      });
+    }
+
+    function getTabInstanceId_() {
+      var instanceId = sessionStorage.getItem(TAB_INSTANCE_STORAGE_KEY);
+      if (!instanceId) {
+        instanceId = createRequestId_();
+        sessionStorage.setItem(TAB_INSTANCE_STORAGE_KEY, instanceId);
+      }
+      return instanceId;
+    }
+
+    function readStoredEditAccess_(session) {
+      var raw = sessionStorage.getItem(LEASE_STORAGE_KEY);
+      if (!raw || !state.activeProject || !session) { return null; }
+      try {
+        var stored = JSON.parse(raw);
+        if (!stored || typeof stored.leaseToken !== 'string' ||
+            typeof stored.editSessionId !== 'string' ||
+            stored.tabInstanceId !== getTabInstanceId_() ||
+            stored.courseKey !== String(state.activeProject.course.key) ||
+            stored.level !== String(state.activeProject.level) ||
+            stored.session !== String(session.session) ||
+            stored.rowKey !== String(session.rowKey)) {
+          return null;
+        }
+        return stored;
+      } catch (error) {
+        sessionStorage.removeItem(LEASE_STORAGE_KEY);
+        return null;
+      }
+    }
+
+    function persistEditAccess_(lease, session, editSessionId) {
+      var stored = {
+        schemaVersion: 'scl-edit-session/v1',
+        tabInstanceId: getTabInstanceId_(),
+        editSessionId: editSessionId || createRequestId_(),
+        leaseToken: lease.leaseToken,
+        courseKey: String(state.activeProject.course.key),
+        level: String(state.activeProject.level),
+        session: String(session.session),
+        rowKey: String(session.rowKey),
+        sourceRevision: String(lease.sourceRevision || state.currentRevision || '')
+      };
+      sessionStorage.setItem(LEASE_STORAGE_KEY, JSON.stringify(stored));
+      return stored;
+    }
+
+    function clearStoredEditAccess_() {
+      sessionStorage.removeItem(LEASE_STORAGE_KEY);
+    }
+
+    function openSession(session) {
+      hideWorkspaceMessage();
+      hideConflictBanner();
+      if (state.activeSession && state.activeSession.rowKey !== session.rowKey) {
+        return prepareNavigation().then(function () { openSession(session); });
+      }
+      state.activeSession = session;
+      state.currentRevision = session.sourceRevision || '';
+      renderSessionEditor(session);
+      setEditorReadOnly(true);
+      setLeaseStatus('Menyiapkan akses edit…', 'warning');
+      setReacquireButtonVisible_(false);
+
+      if (leaseMatchesSession_(session)) {
+        setEditorReadOnly(false);
+        showRecoveryDraftIfPresent();
+        return loadActiveHistory();
+      }
+
+      function attemptAcquireNewLease_(sessionToAcquire) {
+        setLoading(true, 'Membuka Session ' + sessionToAcquire.session + ' dan mengambil hak edit…');
+        return callAcquireSessionLease(
+          state.session.token,
+          state.activeProject.course.key,
+          state.activeProject.level,
+          sessionToAcquire.session
+        ).then(unwrapEnvelope)
+          .then(function (lease) {
+            state.currentRevision = lease.sourceRevision;
+            activateEditAccess_(lease, sessionToAcquire, createRequestId_());
+            showRecoveryDraftIfPresent();
+            notifySuccess_('session-open', 'Session siap diedit', 'Perubahan akan disimpan otomatis setelah 5 detik tanpa pengetikan.');
+            return loadActiveHistory();
+          })
+          .catch(function (error) {
+            setEditorReadOnly(true);
+            setReacquireButtonVisible_(true);
+            if (error.code === 'SESSION_LOCKED') {
+              setLeaseStatus('Sedang diedit orang lain', 'warning');
+              elements.sessionEditorLockMeta.textContent = ((error.details && error.details.editorLabel) || 'Editor lain') +
+                ' · aktivitas terakhir ' + formatTimestamp(error.details && error.details.lastActivity);
+              notifyWarning_('session-open', 'Belum bisa mengedit', 'Coba aktifkan edit lagi nanti atau buka session lain.');
+            } else {
+              setLeaseStatus('Hanya baca', 'warning');
+              elements.sessionEditorLockMeta.textContent = 'Akses edit belum dapat diaktifkan.';
+              showConflict('Akses edit belum dapat diaktifkan. Coba lagi sebentar.', false);
+            }
+          })
+          .finally(function () { setLoading(false); });
+      }
+
+      function resumeStoredAccess_(stored, attempt) {
+        setLoading(true, 'Memeriksa hak edit Session ' + session.session + '…');
+        return callResumeSessionLease(
+          state.session.token,
+          stored.leaseToken,
+          stored.editSessionId,
+          state.activeProject.course.key,
+          state.activeProject.level,
+          session.session
+        ).then(unwrapEnvelope)
+         .then(function(lease) {
+             state.currentRevision = lease.sourceRevision;
+             activateEditAccess_(lease, session, stored.editSessionId);
+             showRecoveryDraftIfPresent();
+             notifySuccess_('session-open', 'Sesi edit dilanjutkan', 'Hak edit Anda masih berlaku.');
+             return loadActiveHistory();
+         }).catch(function(error) {
+             if (error.retryable || error.code === 'SERVER_BUSY' ||
+                 error.code === 'CLIENT_TIMEOUT' || error.code === 'CONNECTION_FAILED') {
+               setLeaseStatus('Menghubungkan kembali…', 'warning');
+               elements.sessionEditorLockMeta.textContent = 'Hak edit tidak dibuang; koneksi akan dicoba kembali.';
+               setReacquireButtonVisible_(false);
+               notifyWarning_('session-resume', 'Koneksi tertunda', 'Draft aman dan hak edit akan diperiksa kembali.');
+               if ((attempt || 0) < 2) {
+                 return new Promise(function (resolve) {
+                   setTimeout(function () {
+                     resolve(resumeStoredAccess_(stored, (attempt || 0) + 1));
+                   }, HEARTBEAT_RETRY_BASE_MS * ((attempt || 0) + 1));
+                 });
+               }
+               return null;
+             }
+             clearStoredEditAccess_();
+             if (error.code === 'LEASE_INVALID' || error.code === 'LEASE_EXPIRED') {
+               return attemptAcquireNewLease_(session);
+             }
+             throw error;
+         }).finally(function() { setLoading(false); });
+      }
+
+      var storedAccess = readStoredEditAccess_(session);
+      if (storedAccess) {
+        return resumeStoredAccess_(storedAccess, 0);
+      }
+      if (session.status === 'Locked') {
+        setEditorReadOnly(true);
+        setLeaseStatus('Sedang diedit orang lain', 'warning');
+        setReacquireButtonVisible_(true);
+        elements.sessionEditorLockMeta.textContent = session.lock
+          ? session.lock.editorLabel + ' · aktivitas terakhir ' + formatTimestamp(session.lock.lastActivity)
+          : 'Session ini sedang diedit orang lain.';
+        notifyWarning_('session-open', 'Belum bisa mengedit', 'Coba aktifkan edit lagi nanti atau buka session lain.');
+        renderHistory([]);
+        return Promise.resolve();
+      }
+      return attemptAcquireNewLease_(session);
+    }
+
+    function renderSessionEditor(session) {
+      elements.sessionEditorTitle.textContent = 'Session ' + session.session + ': ' +
+        (session.topic || 'Tanpa topic');
+      elements.sessionTopicInput.value = session.fields && session.fields['Session-topic']
+        ? session.fields['Session-topic'].text
+        : (session.topic || '');
+      SclVisualEditor.load(session.fields || {}, session.tables || [], session.layouts || []);
+      scheduleSessionPreview_(0);
+      elements.sessionEditorLockMeta.textContent = '';
+      elements.sessionEditorPanel.hidden = false;
+      document.body.classList.add('editor-focus-mode');
+      setSaveStatus('Belum ada perubahan', '');
+      showRecoveryDraftIfPresent();
+      elements.sessionEditorPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function handleEditorInput() {
+      if (!state.activeSession || !state.lease || elements.sessionTopicInput.readOnly) {
+        return;
+      }
+      state.dirty = true;
+      state.pendingSaveRequest = null;
+      if (state.publisherResult) {
+        state.publisherResult = null;
+        elements.printModuleButton.disabled = true;
+        elements.printModuleButton.textContent = 'Compose ulang untuk print';
+        elements.publisherPrintHelp.hidden = true;
+      }
+      persistRecoveryDraft();
+      scheduleSessionPreview_();
+      setSaveStatus('Draft lokal tersimpan', 'warning');
+      if (state.saveTimer) {
+        clearTimeout(state.saveTimer);
+      }
+      state.saveTimer = setTimeout(requestAutosave, AUTOSAVE_DELAY_MS);
+    }
+
+    function persistRecoveryDraft() {
+      if (!state.activeSession) {
+        return;
+      }
+      localStorage.setItem(draftStorageKey_(), JSON.stringify({
+        topic: elements.sessionTopicInput.value,
+        fields: SclVisualEditor.serialize(),
+        tables: SclVisualEditor.serializeTables(),
+        layouts: SclVisualEditor.serializeLayouts(),
+        baseRevision: state.currentRevision,
+        pendingSaveRequest: state.pendingSaveRequest,
+        updatedAt: new Date().toISOString()
+      }));
+    }
+
+    function readRecoveryDraft() {
+      if (!state.activeSession) {
+        return null;
+      }
+      try {
+        var draft = JSON.parse(localStorage.getItem(draftStorageKey_()) || 'null');
+        if (draft && typeof draft.topic === 'string' && draft.fields) {
+          return draft;
+        }
+        if (draft && typeof draft.value === 'string') {
+          return { topic: draft.value, fields: null, baseRevision: draft.baseRevision, updatedAt: draft.updatedAt };
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function isDraftIdenticalToSession_(draft, session) {
+      if (!draft || !session) {
+        return false;
+      }
+      var currentTopic = elements.sessionTopicInput ? elements.sessionTopicInput.value : (session.topic || '');
+      if (String(draft.topic || '').trim() !== String(currentTopic || '').trim()) {
+        return false;
+      }
+      if (!draft.fields) {
+        return true;
+      }
+      var currentFields = SclVisualEditor.serialize();
+      var draftFields = draft.fields || {};
+      var fieldKeys = Object.keys(currentFields);
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var key = fieldKeys[i];
+        var cf = currentFields[key] || { text: '', runs: [] };
+        var df = draftFields[key] || { text: '', runs: [] };
+        if (String(cf.text || '') !== String(df.text || '')) {
+          return false;
+        }
+        if (JSON.stringify(cf.runs || []) !== JSON.stringify(df.runs || [])) {
+          return false;
+        }
+      }
+      var currentTables = JSON.stringify(SclVisualEditor.serializeTables() || []);
+      var draftTables = JSON.stringify(draft.tables || []);
+      if (currentTables !== draftTables) {
+        return false;
+      }
+      var currentLayouts = JSON.stringify(SclVisualEditor.serializeLayouts() || []);
+      var draftLayouts = JSON.stringify(draft.layouts || []);
+      if (currentLayouts !== draftLayouts) {
+        return false;
+      }
+      return true;
+    }
+
+    function showRecoveryDraftIfPresent() {
+      var draft = readRecoveryDraft();
+      if (draft && state.activeSession && isDraftIdenticalToSession_(draft, state.activeSession)) {
+        localStorage.removeItem(draftStorageKey_());
+        draft = null;
+      }
+      elements.recoveryBanner.hidden = !draft;
+      if (draft) {
+        elements.recoveryMessage.textContent = 'Disimpan lokal ' + formatTimestamp(draft.updatedAt) +
+          '. Gunakan hanya jika perubahan ini memang ingin dilanjutkan.';
+      }
+    }
+
+    function useRecoveryDraft() {
+      var draft = readRecoveryDraft();
+      if (!draft || elements.sessionTopicInput.readOnly) {
+        notifyWarning_('draft-recovery', 'Draft belum dapat digunakan', 'Klik “Aktifkan edit lagi” terlebih dahulu.');
+        return;
+      }
+      elements.sessionTopicInput.value = draft.topic;
+      if (draft.fields) {
+        SclVisualEditor.load(draft.fields, draft.tables || [], draft.layouts || []);
+      }
+      scheduleSessionPreview_(0);
+      state.dirty = true;
+      state.pendingSaveRequest = null;
+      hideConflictBanner();
+      persistRecoveryDraft();
+      if (state.saveTimer) { clearTimeout(state.saveTimer); }
+      state.saveTimer = setTimeout(requestAutosave, AUTOSAVE_DELAY_MS);
+      elements.recoveryBanner.hidden = true;
+      setSaveStatus('Draft dipulihkan · belum disimpan', 'warning');
+      notifyWarning_('draft-recovery', 'Draft dipulihkan', 'Perubahan sudah masuk editor dan akan disimpan otomatis setelah 5 detik.');
+    }
+
+    function scheduleSessionPreview_(delay) {
+      if (state.sessionPreviewTimer) {
+        clearTimeout(state.sessionPreviewTimer);
+      }
+      state.sessionPreviewTimer = setTimeout(renderSessionPreview_, typeof delay === 'number' ? delay : 100);
+    }
+
+    function renderSessionPreview_() {
+      state.sessionPreviewTimer = null;
+      if (!state.activeProject || !state.activeSession || !elements.sessionA4Preview) {
+        return;
+      }
+      // Keep the reader on the same preview page when pagination rebuilds its DOM.
+      var previewAnchor = captureSessionPreviewAnchor_();
+      var draftSession = Object.assign({}, state.activeSession, {
+        liveDraft: true,
+        topic: elements.sessionTopicInput.value,
+        fields: Object.assign({}, SclVisualEditor.serialize(), {
+          'Session-topic': plainRichTextModel_(elements.sessionTopicInput.value)
+        }),
+        tables: SclVisualEditor.serializeTables(),
+        layouts: SclVisualEditor.serializeLayouts()
+      });
+      SclPublisher.renderSessionPreview(state.activeProject, draftSession, {
+        canvas: elements.sessionA4Preview,
+        diagnostics: elements.sessionPreviewDiagnostics
+      });
+      restoreSessionPreviewAnchor_(previewAnchor);
+    }
+
+    function captureSessionPreviewAnchor_() {
+      var canvas = elements.sessionA4Preview;
+      if (!canvas || canvas.scrollTop <= 0) {
+        return { pageIndex: 0, pageOffset: 0, scrollTop: 0 };
+      }
+      var canvasRect = canvas.getBoundingClientRect();
+      var pages = Array.prototype.slice.call(canvas.querySelectorAll('.a4-page'));
+      var anchor = { pageIndex: 0, pageOffset: canvas.scrollTop, scrollTop: canvas.scrollTop };
+      pages.forEach(function (page, index) {
+        var pageTop = page.getBoundingClientRect().top - canvasRect.top + canvas.scrollTop;
+        if (pageTop <= canvas.scrollTop + 2) {
+          anchor.pageIndex = index;
+          anchor.pageOffset = canvas.scrollTop - pageTop;
+        }
+      });
+      return anchor;
+    }
+
+    function restoreSessionPreviewAnchor_(anchor) {
+      var canvas = elements.sessionA4Preview;
+      if (!canvas || !anchor) { return; }
+      var pages = canvas.querySelectorAll('.a4-page');
+      var page = pages[Math.min(anchor.pageIndex, Math.max(0, pages.length - 1))];
+      if (!page) {
+        canvas.scrollTop = anchor.scrollTop || 0;
+        return;
+      }
+      var canvasRect = canvas.getBoundingClientRect();
+      var pageTop = page.getBoundingClientRect().top - canvasRect.top + canvas.scrollTop;
+      canvas.scrollTop = Math.max(0, pageTop + anchor.pageOffset);
+    }
+
+    function discardRecoveryDraft() {
+      if (state.activeSession) {
+        localStorage.removeItem(draftStorageKey_());
+      }
+      elements.recoveryBanner.hidden = true;
+      notifySuccess_('draft-recovery', 'Draft lokal diabaikan', 'Editor tetap memakai source terakhir dari Spreadsheet.');
+    }
+
+    function flushAutosave() {
+      if (state.saveTimer) {
+        clearTimeout(state.saveTimer);
+        state.saveTimer = null;
+      }
+      if (!state.dirty || !state.activeSession || !state.lease) {
+        return Promise.resolve(null);
+      }
+      if (state.saveInFlight) {
+        state.saveQueued = true;
+        return state.saveInFlight;
+      }
+      if (SclVisualEditor.hasBlockingDiagnostics()) {
+        setSaveStatus('Table anchor harus ditempatkan ulang', 'error');
+        notifyError_('autosave', 'Perubahan belum dapat disimpan', 'Tempatkan ulang table anchor terlebih dahulu. Draft tetap aman secara lokal.');
+        return Promise.reject({ code: 'TABLE_ANCHOR_STALE', message: 'Re-anchor tabel sebelum menyimpan.' });
+      }
+
+      var valueAtSend = elements.sessionTopicInput.value;
+      var fieldsAtSend = SclVisualEditor.serialize();
+      var tablesAtSend = SclVisualEditor.serializeTables();
+      var layoutsAtSend = SclVisualEditor.serializeLayouts();
+      var changesAtSend = Object.assign({}, fieldsAtSend, {
+        'Session-topic': plainRichTextModel_(valueAtSend)
+      });
+      var serializedAtSend = JSON.stringify({ changes: changesAtSend, tables: tablesAtSend, layouts: layoutsAtSend });
+      var request = state.pendingSaveRequest || {
+        requestId: createRequestId_(),
+        courseKey: state.lease.courseKey,
+        level: state.lease.level,
+        session: state.lease.session,
+        baseRevision: state.currentRevision,
+        changes: changesAtSend,
+        tables: tablesAtSend,
+        layouts: layoutsAtSend
+      };
+      request.baseRevision = state.currentRevision;
+      state.pendingSaveRequest = request;
+      persistRecoveryDraft();
+      serializedAtSend = JSON.stringify({ changes: request.changes, tables: request.tables, layouts: request.layouts });
+      setSaveStatus('Menyimpan…', 'warning');
+      closeNotification_('lease-heartbeat');
+      closeNotification_('background-operation');
+      notifyLoading_('autosave', 'Menyimpan perubahan', 'Draft lokal sedang dikirim ke Spreadsheet. Jangan tutup tab ini.');
+      state.saveInFlight = callSaveSessionPatch(state.session.token, state.lease.token, request)
+        .then(unwrapEnvelope)
+        .then(function (result) {
+          state.currentRevision = result.newRevision;
+          state.activeSession.sourceRevision = result.newRevision;
+          state.activeSession.fields = Object.assign({}, state.activeSession.fields || {}, request.changes);
+          state.activeSession.tables = request.tables;
+          state.activeSession.layouts = request.layouts;
+          state.activeSession.topic = request.changes['Session-topic'].text.trim();
+          state.pendingSaveRequest = null;
+          closeNotification_('lease-heartbeat');
+          closeNotification_('background-operation');
+          closeNotification_('session-resume');
+          var currentSerialized = JSON.stringify({ changes: Object.assign({}, SclVisualEditor.serialize(), {
+            'Session-topic': plainRichTextModel_(elements.sessionTopicInput.value)
+          }), tables: SclVisualEditor.serializeTables(), layouts: SclVisualEditor.serializeLayouts() });
+          if (currentSerialized === serializedAtSend) {
+            state.dirty = false;
+            localStorage.removeItem(draftStorageKey_());
+            elements.recoveryBanner.hidden = true;
+            setSaveStatus('Tersimpan ' + formatTimestamp(result.savedAt), 'active');
+            notifySuccess_('autosave', 'Perubahan tersimpan', 'Spreadsheet dan revision history sudah diperbarui.');
+          } else {
+            state.dirty = true;
+            persistRecoveryDraft();
+            notifyWarning_('autosave', 'Perubahan baru menunggu', 'Save sebelumnya selesai; perubahan terbaru akan disimpan pada antrean berikutnya.');
+          }
+          return loadActiveHistory().then(function () { return result; });
+        })
+        .catch(function (error) {
+          persistRecoveryDraft();
+          setSaveStatus('Belum tersimpan', 'error');
+          closeNotification_('autosave');
+          if (error.code === 'REVISION_CONFLICT') {
+            showConflict(error.message + ' Pilih salin perubahan atau muat source terbaru.', true);
+          } else if (error.code === 'LEASE_EXPIRED' || error.code === 'LEASE_INVALID') {
+            var stored = readStoredEditAccess_(state.activeSession) || {
+              leaseToken: state.lease ? state.lease.token : '',
+              editSessionId: state.editSessionId || (state.lease ? state.lease.token : '')
+            };
+            if (stored && state.session && state.activeProject && state.activeSession) {
+              callResumeSessionLease(
+                state.session.token,
+                stored.leaseToken,
+                stored.editSessionId,
+                state.activeProject.course.key,
+                state.activeProject.level,
+                state.activeSession.session
+              ).then(unwrapEnvelope)
+               .then(function (resumedLease) {
+                 activateEditAccess_(resumedLease, state.activeSession, stored.editSessionId);
+                 requestAutosave();
+               })
+               .catch(function () {
+                 loseLease(error.message);
+               });
+            } else {
+              loseLease(error.message);
+            }
+          } else if (error.code === 'SESSION_EXPIRED') {
+            handleSessionExpiry(error.message);
+          } else if (error.code === 'SERVER_BUSY') {
+            hideConflictBanner();
+            setSaveStatus('Server sibuk · mencoba ulang', 'warning');
+            notifyWarning_('autosave', 'Server sedang sibuk', 'Draft aman secara lokal. Autosave mencoba lagi dalam 2 detik.');
+            setTimeout(function () {
+              if (state.dirty && state.lease && !state.saveInFlight) { requestAutosave(); }
+            }, 2000);
+          } else {
+            showConflict(error.message + ' Draft lokal tetap tersedia.', false);
+          }
+          throw error;
+        })
+        .finally(function () {
+          state.saveInFlight = null;
+          if (state.saveQueued) {
+            state.saveQueued = false;
+            if (state.dirty && state.lease) {
+              requestAutosave();
+            }
+          }
+        });
+      return state.saveInFlight;
+    }
+
+    function requestAutosave() {
+      flushAutosave().catch(function () {
+        // flushAutosave already preserves the draft and renders actionable UI.
+      });
+    }
+
+    function startHeartbeat(intervalSeconds) {
+      stopHeartbeat();
+      if (state.lease) {
+        state.lease.heartbeatIntervalSeconds = heartbeatDelaySeconds_(intervalSeconds);
+      }
+      scheduleHeartbeatTick_();
+    }
+
+    function sendHeartbeat_() {
+      if (!state.lease || !state.session || state.heartbeatInFlight) { return; }
+      var activeToken = state.lease.token;
+      var activeLease = Object.assign({}, state.lease);
+      state.heartbeatInFlight = callHeartbeatSessionLease(
+        state.session.token,
+        activeLease.token,
+        activeLease.courseKey,
+        activeLease.level,
+        activeLease.session
+      ).then(unwrapEnvelope)
+        .then(function (heartbeat) {
+          if (!state.lease || state.lease.token !== activeToken) { return; }
+          state.heartbeatRetryCount = 0;
+          if (state.heartbeatRetryTimer) {
+            clearTimeout(state.heartbeatRetryTimer);
+            state.heartbeatRetryTimer = null;
+          }
+          if (heartbeat && heartbeat.expiresAt) {
+            state.lease.expiresAt = heartbeat.expiresAt;
+          }
+          if (heartbeat && heartbeat.heartbeatIntervalSeconds) {
+            state.lease.heartbeatIntervalSeconds = heartbeatDelaySeconds_(heartbeat.heartbeatIntervalSeconds);
+          }
+          closeNotification_('lease-heartbeat');
+          closeNotification_('session-resume');
+          closeNotification_('background-operation');
+          setLeaseStatus('Bisa diedit', 'active');
+          elements.sessionEditorLockMeta.textContent = 'Akses edit aktif dan diperpanjang otomatis selama halaman terhubung.';
+          scheduleHeartbeatTick_();
+        })
+        .catch(function (error) {
+          if (!state.lease || state.lease.token !== activeToken) { return; }
+          if (error.code === 'SESSION_EXPIRED') {
+            handleSessionExpiry(error.message);
+          } else if (error.code === 'LEASE_EXPIRED' || error.code === 'LEASE_INVALID') {
+            var stored = readStoredEditAccess_(state.activeSession) || {
+              leaseToken: state.lease ? state.lease.token : '',
+              editSessionId: state.editSessionId || (state.lease ? state.lease.token : '')
+            };
+            if (stored && state.session && state.activeProject && state.activeSession) {
+              callResumeSessionLease(
+                state.session.token,
+                stored.leaseToken,
+                stored.editSessionId,
+                state.activeProject.course.key,
+                state.activeProject.level,
+                state.activeSession.session
+              ).then(unwrapEnvelope)
+               .then(function (resumedLease) {
+                 if (!state.activeSession) { return; }
+                 activateEditAccess_(resumedLease, state.activeSession, stored.editSessionId);
+                 closeNotification_('lease-heartbeat');
+                 closeNotification_('session-resume');
+                 closeNotification_('edit-access');
+                 setLeaseStatus('Bisa diedit', 'active');
+                 elements.sessionEditorLockMeta.textContent = 'Akses edit aktif dan diperpanjang otomatis selama halaman terhubung.';
+               })
+               .catch(function (resumeError) {
+                 if (resumeError.code === 'SESSION_LOCKED') {
+                   loseLease(resumeError.message);
+                 } else {
+                   scheduleHeartbeatRetry_();
+                 }
+               });
+            } else {
+              scheduleHeartbeatRetry_();
+            }
+          } else if (error.retryable || error.code === 'SERVER_BUSY' ||
+                     error.code === 'CLIENT_TIMEOUT' || error.code === 'CONNECTION_FAILED') {
+            state.heartbeatRetryCount += 1;
+            setLeaseStatus('Menghubungkan kembali…', 'warning');
+            elements.sessionEditorLockMeta.textContent = 'Hak edit tetap dipertahankan; koneksi sedang dicoba ulang.';
+            notifyWarning_('lease-heartbeat', 'Koneksi tertunda', 'Draft aman dan akses edit tidak dibuang karena satu kegagalan koneksi.');
+            scheduleHeartbeatRetry_();
+          } else {
+            scheduleHeartbeatRetry_();
+          }
+        })
+        .finally(function () {
+          if (state.heartbeatInFlight) { state.heartbeatInFlight = null; }
+        });
+    }
+
+    function scheduleHeartbeatTick_() {
+      if (!state.lease || state.heartbeatTimer || state.heartbeatRetryTimer) { return; }
+      var delay = Math.max(5, Number(state.lease.heartbeatIntervalSeconds) || 25) * 1000;
+      state.heartbeatTimer = setTimeout(function () {
+        state.heartbeatTimer = null;
+        sendHeartbeat_();
+      }, delay);
+    }
+
+    function scheduleHeartbeatRetry_() {
+      if (!state.lease || state.heartbeatRetryTimer) { return; }
+      var delay = Math.min(15000, HEARTBEAT_RETRY_BASE_MS * Math.max(1, state.heartbeatRetryCount));
+      var leaseExpiresAt = Date.parse(String(state.lease.expiresAt || ''));
+      if (Number.isFinite(leaseExpiresAt)) {
+        var remaining = leaseExpiresAt - Date.now();
+        if (remaining <= 0) {
+          delay = 1000;
+        } else {
+          delay = Math.min(delay, Math.max(1000, remaining - (HEARTBEAT_SAFETY_MARGIN_SECONDS * 1000)));
+        }
+      }
+      state.heartbeatRetryTimer = setTimeout(function () {
+        state.heartbeatRetryTimer = null;
+        sendHeartbeat_();
+      }, delay);
+    }
+
+    function retryHeartbeatOnReconnect_() {
+      if (state.lease) {
+        sendHeartbeat_();
+        return;
+      }
+      if (state.activeSession && readStoredEditAccess_(state.activeSession)) {
+        openSession(state.activeSession);
+      }
+    }
+
+    function stopHeartbeat() {
+      if (state.heartbeatTimer) {
+        clearTimeout(state.heartbeatTimer);
+        state.heartbeatTimer = null;
+      }
+      if (state.heartbeatRetryTimer) {
+        clearTimeout(state.heartbeatRetryTimer);
+        state.heartbeatRetryTimer = null;
+      }
+      state.heartbeatRetryCount = 0;
+    }
+
+    function loseLease() {
+      stopHeartbeat();
+      clearStoredEditAccess_();
+      state.lease = null;
+      if (state.dirty) {
+        persistRecoveryDraft();
+      }
+      setEditorReadOnly(true);
+      setLeaseStatus('Akses edit berakhir', 'error');
+      elements.sessionEditorLockMeta.textContent = 'Draft tetap aman di browser.';
+      setReacquireButtonVisible_(true);
+      showConflict('Akses edit berakhir. Klik “Aktifkan edit lagi” untuk melanjutkan. Draft tetap aman di browser.', true);
+      notifyWarning_('edit-access', 'Akses edit berakhir', 'Draft tetap aman. Klik “Aktifkan edit lagi” untuk melanjutkan.');
+    }
+
+    function activateEditAccess_(lease, session, editSessionId) {
+      var stored = persistEditAccess_(lease, session, editSessionId);
+      state.lease = {
+        token: lease.leaseToken,
+        editSessionId: stored.editSessionId,
+        courseKey: state.activeProject.course.key,
+        level: state.activeProject.level,
+        session: session.session,
+        rowKey: session.rowKey,
+        expiresAt: lease.expiresAt,
+        heartbeatIntervalSeconds: heartbeatDelaySeconds_(lease.heartbeatIntervalSeconds)
+      };
+      setEditorReadOnly(false);
+      setLeaseStatus('Bisa diedit', 'active');
+      elements.sessionEditorLockMeta.textContent = 'Akses edit aktif dan diperpanjang otomatis selama halaman terhubung.';
+      setReacquireButtonVisible_(false);
+      startHeartbeat(lease.heartbeatIntervalSeconds);
+    }
+
+    function heartbeatDelaySeconds_(intervalSeconds) {
+      var serverInterval = Number(intervalSeconds) || 30;
+      return Math.max(5, Math.min(serverInterval, 30) - HEARTBEAT_SAFETY_MARGIN_SECONDS);
+    }
+
+    function setReacquireButtonVisible_(visible) {
+      elements.reacquireEditButton.hidden = !visible;
+      if (!visible) {
+        elements.reacquireEditButton.disabled = false;
+        elements.reacquireEditButton.textContent = 'Aktifkan edit lagi';
+      }
+    }
+
+    function reactivateEditAccess_() {
+      if (!state.activeSession || !state.activeProject || !state.session || elements.reacquireEditButton.disabled) {
+        return;
+      }
+      if (state.dirty) {
+        persistRecoveryDraft();
+      }
+      var session = state.activeSession;
+      var previousRevision = state.currentRevision;
+      elements.reacquireEditButton.disabled = true;
+      elements.reacquireEditButton.textContent = 'Mengaktifkan…';
+      setLeaseStatus('Mengaktifkan edit…', 'warning');
+      notifyLoading_('edit-access', 'Mengaktifkan edit', 'Memeriksa versi terbaru dan ketersediaan session.');
+
+      callAcquireSessionLease(
+        state.session.token,
+        state.activeProject.course.key,
+        state.activeProject.level,
+        session.session
+      ).then(unwrapEnvelope).then(function (lease) {
+        activateEditAccess_(lease, session, createRequestId_());
+        if (lease.sourceRevision === previousRevision) {
+          state.currentRevision = lease.sourceRevision;
+          hideConflictBanner();
+          showRecoveryDraftIfPresent();
+          notifySuccess_('edit-access', 'Edit aktif kembali', 'Silakan lanjutkan. Draft yang belum tersimpan tetap tersedia.');
+          if (state.dirty) {
+            if (state.saveTimer) { clearTimeout(state.saveTimer); }
+            state.saveTimer = setTimeout(requestAutosave, AUTOSAVE_DELAY_MS);
+          }
+          return loadActiveHistory();
+        }
+
+        setEditorReadOnly(true);
+        setLeaseStatus('Menyinkronkan versi terbaru…', 'warning');
+        return refreshActiveSessionData().then(function () {
+          setLeaseStatus('Bisa diedit', 'active');
+          elements.sessionEditorLockMeta.textContent = 'Akses edit aktif dan diperpanjang otomatis selama halaman terhubung.';
+          showRecoveryDraftIfPresent();
+          notifyWarning_('edit-access', 'Versi terbaru sudah dimuat', 'Draft lama tetap aman. Klik “Gunakan draft” jika perubahan itu ingin dilanjutkan.');
+        });
+      }).catch(function (error) {
+        var acquiredAccess = state.lease;
+        stopHeartbeat();
+        state.lease = null;
+        if (acquiredAccess && state.session) {
+          callReleaseSessionLease(
+            state.session.token,
+            acquiredAccess.token,
+            acquiredAccess.courseKey,
+            acquiredAccess.level,
+            acquiredAccess.session
+          ).catch(function () {
+            // Server expiry remains the fallback if synchronization failed after acquisition.
+          });
+        }
+        setEditorReadOnly(true);
+        setReacquireButtonVisible_(true);
+        if (error.code === 'SESSION_LOCKED') {
+          setLeaseStatus('Sedang diedit orang lain', 'warning');
+          elements.sessionEditorLockMeta.textContent = ((error.details && error.details.editorLabel) || 'Editor lain') +
+            ' · aktivitas terakhir ' + formatTimestamp(error.details && error.details.lastActivity);
+          notifyWarning_('edit-access', 'Belum bisa mengedit', 'Session ini masih diedit orang lain. Coba lagi nanti atau buka session lain.');
+        } else {
+          setLeaseStatus('Akses edit belum aktif', 'error');
+          elements.sessionEditorLockMeta.textContent = 'Draft tetap aman di browser.';
+          notifyError_('edit-access', 'Gagal mengaktifkan edit', 'Draft tetap aman. Periksa koneksi lalu coba lagi.');
+        }
+      }).finally(function () {
+        elements.reacquireEditButton.disabled = false;
+        elements.reacquireEditButton.textContent = 'Aktifkan edit lagi';
+      });
+    }
+
+    function setSessionPreviewZoom_(value) {
+      state.previewZoom = Math.max(0.27, Math.min(0.83, Number(value) || 0.43));
+      if (elements.sessionA4Preview) {
+        elements.sessionA4Preview.style.setProperty('--live-preview-zoom', String(state.previewZoom));
+      }
+      if (elements.previewZoomValue) {
+        elements.previewZoomValue.textContent = Math.round(state.previewZoom * 100) + '%';
+      }
+    }
+
+    function closeActiveSession(flushFirst) {
+      var outcome = { saveFailed: false, releaseFailed: false };
+      if (!state.activeSession) {
+        clearStoredEditAccess_();
+        elements.sessionEditorPanel.hidden = true;
+        document.body.classList.remove('editor-focus-mode');
+        return Promise.resolve(outcome);
+      }
+      var lease = state.lease;
+      var release = function () {
+        if (!lease || !state.session) {
+          return Promise.resolve();
+        }
+        return callReleaseSessionLease(
+          state.session.token,
+          lease.token,
+          lease.courseKey,
+          lease.level,
+          lease.session
+        ).then(unwrapEnvelope).catch(function () {
+          // Expiry remains the recovery path if best-effort release fails.
+          outcome.releaseFailed = true;
+        });
+      };
+      var flush = flushFirst ? flushAutosave() : Promise.resolve();
+      return flush.catch(function () {
+        // Draft already persisted by the save failure path.
+        outcome.saveFailed = true;
+      }).then(release).then(function () {
+        return outcome;
+      }).finally(function () {
+        stopHeartbeat();
+        clearStoredEditAccess_();
+        state.activeSession = null;
+        state.lease = null;
+        state.currentRevision = '';
+        state.dirty = false;
+        state.pendingSaveRequest = null;
+        elements.sessionEditorPanel.hidden = true;
+        document.body.classList.remove('editor-focus-mode');
+      });
+    }
+
+    function handleCloseSession_() {
+      if (elements.closeSessionButton.disabled) { return; }
+      var pendingSave = Boolean(state.dirty || state.saveInFlight);
+      elements.closeSessionButton.disabled = true;
+      elements.closeSessionButton.textContent = 'Menutup…';
+      notifyLoading_(
+        'close-session',
+        pendingSave ? 'Menyimpan sebelum menutup' : 'Menutup session',
+        pendingSave ? 'Perubahan sedang diamankan sebelum session ditutup.' : 'Akses edit sedang ditutup di server.'
+      );
+      closeActiveSession(true)
+        .then(function (outcome) {
+          if (state.activeProject) {
+            updateHash_({
+              course: state.activeProject.course.key,
+              level: state.activeProject.level
+            });
+          }
+          if (outcome && outcome.saveFailed) {
+            notifyWarning_('close-session', 'Session ditutup, draft tetap lokal', 'Save ke Spreadsheet belum berhasil. Draft akan ditawarkan saat session dibuka lagi.');
+          } else if (outcome && outcome.releaseFailed) {
+            notifyWarning_('close-session', 'Session ditutup', 'Server belum mengonfirmasi penutupan akses edit; akses akan berakhir otomatis.');
+          } else {
+            notifySuccess_('close-session', 'Session berhasil ditutup', 'Perubahan tersimpan dan akses edit sudah ditutup.');
+          }
+        })
+        .catch(function (error) {
+          notifyError_('close-session', 'Gagal menutup session', (error && error.message) || 'Silakan coba kembali.');
+        })
+        .finally(function () {
+          elements.closeSessionButton.disabled = false;
+          elements.closeSessionButton.textContent = 'Tutup session';
+        });
+    }
+
+    function loadActiveHistory() {
+      if (!state.activeSession || !state.session || !state.activeProject) {
+        renderHistory([]);
+        return Promise.resolve([]);
+      }
+      return callGetSessionHistory(
+        state.session.token,
+        state.activeProject.course.key,
+        state.activeProject.level,
+        state.activeSession.session
+      ).then(unwrapEnvelope).then(function (history) {
+        renderHistory(history);
+        return history;
+      }).catch(function () {
+        renderHistory([]);
+        notifyWarning_('history-load', 'Riwayat belum dapat dimuat', 'Editing dan autosave tetap tersedia; coba buka ulang session untuk memuat history.');
+        return [];
+      });
+    }
+
+    function renderHistory(history) {
+      elements.historyList.replaceChildren();
+      if (!history.length) {
+        var empty = document.createElement('p');
+        empty.className = 'history-empty';
+        empty.textContent = 'Belum ada revision history untuk session ini.';
+        elements.historyList.appendChild(empty);
+        return;
+      }
+      history.forEach(function (entry) {
+        var row = document.createElement('div');
+        row.className = 'history-entry';
+        var copy = document.createElement('div');
+        var title = document.createElement('p');
+        title.textContent = entry.editorLabel + ' · ' + entry.changedFields.join(', ');
+        var meta = document.createElement('small');
+        meta.textContent = formatTimestamp(entry.createdAt);
+        copy.append(title, meta);
+        var restore = document.createElement('button');
+        restore.type = 'button';
+        restore.className = 'secondary-button compact-button';
+        restore.textContent = 'Restore';
+        restore.disabled = !state.lease;
+        restore.addEventListener('click', function () { restoreHistoryEntry(entry.historyId, restore); });
+        row.append(copy, restore);
+        elements.historyList.appendChild(row);
+      });
+    }
+
+    function restoreHistoryEntry(historyId, triggerButton) {
+      if (!state.lease) {
+        return;
+      }
+      if (triggerButton) {
+        triggerButton.disabled = true;
+        triggerButton.textContent = 'Memulihkan…';
+      }
+      setLoading(true, 'Memulihkan revision history…');
+      flushAutosave().then(function () {
+        return callRestoreSessionRevision(state.session.token, state.lease.token, {
+          requestId: createRequestId_(),
+          courseKey: state.lease.courseKey,
+          level: state.lease.level,
+          session: state.lease.session,
+          baseRevision: state.currentRevision,
+          historyId: historyId
+        });
+      }).then(unwrapEnvelope)
+        .then(function (result) {
+          state.currentRevision = result.newRevision;
+          state.dirty = false;
+          localStorage.removeItem(draftStorageKey_());
+          return refreshActiveSessionData();
+        })
+        .then(function (result) {
+          notifySuccess_('history-restore', 'Revision berhasil dipulihkan', 'Editor sudah memuat source hasil restore terbaru.');
+          return result;
+        })
+        .catch(function (error) { showConflict(error.message, true); })
+        .finally(function () {
+          if (triggerButton && triggerButton.isConnected) {
+            triggerButton.disabled = !state.lease;
+            triggerButton.textContent = 'Restore';
+          }
+          setLoading(false);
+        });
+    }
+
+    function refreshActiveSessionData() {
+      var activeSessionNumber = state.activeSession.session;
+      return callLoadLevelProject(
+        state.session.token,
+        state.activeProject.course.key,
+        state.activeProject.level
+      ).then(unwrapEnvelope).then(function (project) {
+        state.activeProject = project;
+        var latest = project.sessions.filter(function (session) {
+          return session.session === activeSessionNumber;
+        })[0];
+        state.activeSession = latest;
+        state.currentRevision = latest.sourceRevision;
+        elements.sessionTopicInput.value = latest.fields['Session-topic'].text;
+        SclVisualEditor.load(latest.fields || {}, latest.tables || [], latest.layouts || []);
+        state.dirty = false;
+        state.pendingSaveRequest = null;
+        setEditorReadOnly(!state.lease);
+        hideConflictBanner();
+        return loadActiveHistory();
+      });
+    }
+
+    function reloadLatestSource() {
+      if (!state.activeSession) {
+        return;
+      }
+      elements.reloadLatestButton.disabled = true;
+      setLoading(true, 'Memuat source terbaru…');
+      refreshActiveSessionData()
+        .then(function () {
+          showRecoveryDraftIfPresent();
+          notifySuccess_('source-reload', 'Source terbaru dimuat', 'Editor sudah disinkronkan dengan revision terbaru.');
+        })
+        .catch(function (error) { showConflict(error.message, true); })
+        .finally(function () {
+          elements.reloadLatestButton.disabled = false;
+          setLoading(false);
+        });
+    }
+
+    function copyLocalChanges() {
+      var fields = SclVisualEditor.serialize();
+      var value = ['Session topic: ' + elements.sessionTopicInput.value].concat(
+        Object.keys(fields).map(function (field) { return field + ':\n' + fields[field].text; })
+      ).join('\n\n');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value)
+          .then(function () { notifySuccess_('copy-changes', 'Perubahan disalin', 'Salinan lokal siap ditempel ke dokumen aman.'); })
+          .catch(function () { notifyError_('copy-changes', 'Gagal menyalin', 'Browser menolak akses clipboard. Salin isi editor secara manual.'); });
+      } else {
+        notifyError_('copy-changes', 'Clipboard tidak tersedia', 'Salin isi editor secara manual sebelum memuat source terbaru.');
+      }
+    }
+
+    function handleSessionExpiry(message) {
+      persistRecoveryDraft();
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      clearStoredEditAccess_();
+      loseLease(message);
+      state.session = null;
+      elements.appView.hidden = true;
+      elements.ssotIframeView.hidden = true;
+      elements.activityView.hidden = true;
+      elements.publishedView.hidden = true;
+      elements.settingsView.hidden = true;
+      elements.loginView.hidden = false;
+      elements.userProfilePill.hidden = true;
+      elements.newModuleButton.hidden = true;
+      elements.logoutButton.hidden = true;
+      showFormMessage(message);
+    }
+
+    function leaseMatchesSession_(session) {
+      return Boolean(state.lease && state.lease.rowKey === session.rowKey);
+    }
+
+    function draftStorageKey_() {
+      return DRAFT_STORAGE_PREFIX + [
+        state.activeProject.course.key,
+        state.activeProject.level,
+        state.activeSession.session
+      ].join('.');
+    }
+
+    function plainRichTextModel_(value) {
+      return {
+        text: value,
+        runs: value ? [{
+          start: 0,
+          end: value.length,
+          bold: false,
+          italic: false,
+          underline: false,
+          strikethrough: false,
+          link: ''
+        }] : []
+      };
+    }
+
+    function createRequestId_() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+    }
+
+    function formatTimestamp(value) {
+      var timestamp = Date.parse(String(value || ''));
+      return Number.isFinite(timestamp)
+        ? new Date(timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+        : 'tidak diketahui';
+    }
+
+    function setEditorReadOnly(readOnly) {
+      elements.sessionTopicInput.readOnly = readOnly;
+      SclVisualEditor.setReadOnly(readOnly);
+    }
+
+    function setLeaseStatus(message, tone) {
+      setStatusBadge(elements.leaseStatus, message, tone);
+    }
+
+    function setSaveStatus(message, tone) {
+      setStatusBadge(elements.saveStatus, message, tone);
+    }
+
+    function setStatusBadge(element, message, tone) {
+      element.textContent = message;
+      element.classList.remove('active', 'warning', 'error');
+      if (tone) {
+        element.classList.add(tone);
+      }
+    }
+
+    function showConflict(message, offerActions) {
+      elements.conflictMessage.textContent = message;
+      elements.conflictBanner.hidden = false;
+      elements.copyChangesButton.hidden = !offerActions;
+      elements.reloadLatestButton.hidden = !offerActions;
+      if (offerActions) {
+        setEditorReadOnly(true);
+      }
+      notifyError_('action-error', offerActions ? 'Tindakan diperlukan' : 'Operasi backend gagal', message);
+    }
+
+    function hideConflictBanner() {
+      elements.conflictBanner.hidden = true;
+      elements.conflictMessage.textContent = '';
+    }
+
+    function loadActivity_() {
+      if (!state.session || elements.refreshActivityButton.disabled) { return Promise.resolve(); }
+      elements.refreshActivityButton.disabled = true;
+      elements.refreshActivityButton.textContent = 'Memuat…';
+      renderRecordLoading_(elements.activityList, 'Memuat aktivitas terbaru…');
+      return callListActivity(state.session.token, { cursor: 0, limit: 50 })
+        .then(unwrapEnvelope)
+        .then(function (page) {
+          state.activityPage = page;
+          renderActivityList_(page.items || []);
+        })
+        .catch(function (error) {
+          renderRecordEmpty_(elements.activityList, error.message || 'Activity Log belum dapat dimuat.');
+          notifyWarning_('activity-load', 'Activity Log belum tersedia', error.message || 'Coba refresh kembali.');
+        })
+        .finally(function () {
+          elements.refreshActivityButton.disabled = false;
+          elements.refreshActivityButton.textContent = 'Refresh Activity';
+        });
+    }
+
+    function renderActivityList_(items) {
+      elements.activityList.replaceChildren();
+      if (!items.length) {
+        renderRecordEmpty_(elements.activityList, 'Belum ada aktivitas yang dapat ditampilkan.');
+        return;
+      }
+      var labels = {
+        login_failed: 'Percobaan masuk gagal',
+        login_success: 'Masuk ke aplikasi', session_resume: 'Melanjutkan sesi', logout: 'Keluar dari aplikasi',
+        project_open: 'Membuka project', compose: 'Compose modul', lock_acquire: 'Mulai mengedit session',
+        lock_stale_acquire: 'Mengaktifkan edit session', lock_release: 'Menutup session', autosave: 'Menyimpan perubahan',
+        restore: 'Memulihkan revision', publish_reserved: 'Menyiapkan publish',
+        publish_completed: 'Publish selesai', publish_failed: 'Publish gagal'
+      };
+      items.forEach(function (item) {
+        var row = document.createElement('article');
+        row.className = 'record-item';
+        var copy = document.createElement('div');
+        copy.className = 'record-item-copy';
+        var title = document.createElement('div');
+        title.className = 'record-item-title';
+        var strong = document.createElement('strong');
+        strong.textContent = item.editorLabel + ' · ' + (labels[item.eventType] || item.eventType);
+        var badge = document.createElement('span');
+        badge.className = 'record-badge ' + (item.status === 'SUCCESS' ? 'success' : 'failed');
+        badge.textContent = item.status || 'UNKNOWN';
+        title.append(strong, badge);
+        var detail = document.createElement('p');
+        var context = [item.courseKey, item.level ? 'Level ' + item.level : '', item.session ? 'Session ' + item.session : '']
+          .filter(Boolean).join(' · ');
+        detail.textContent = formatTimestamp(item.createdAt) + (context ? ' · ' + context : '') +
+          (item.identityType === 'self-declared' ? ' · identitas input mandiri' : '') +
+          (item.eventType === 'login_failed'
+            ? ' · ' + String(item.attemptCount || 1) + ' percobaan dalam jendela agregasi'
+            : '');
+        copy.append(title, detail);
+        row.appendChild(copy);
+        elements.activityList.appendChild(row);
+      });
+    }
+
+    function loadPublishedModules_() {
+      if (!state.session || elements.refreshPublishedButton.disabled) { return Promise.resolve(); }
+      elements.refreshPublishedButton.disabled = true;
+      elements.refreshPublishedButton.textContent = 'Memuat…';
+      renderRecordLoading_(elements.publishedList, 'Memuat published modules…');
+      return callListPublishedModules(state.session.token, { cursor: 0, limit: 50 })
+        .then(unwrapEnvelope)
+        .then(function (page) {
+          state.publishedPage = page;
+          renderPublishedList_(page.items || []);
+        })
+        .catch(function (error) {
+          renderRecordEmpty_(elements.publishedList, error.message || 'Published Modules belum dapat dimuat.');
+          notifyWarning_('published-load', 'Publish history belum tersedia', error.message || 'Coba refresh kembali.');
+        })
+        .finally(function () {
+          elements.refreshPublishedButton.disabled = false;
+          elements.refreshPublishedButton.textContent = 'Refresh History';
+        });
+    }
+
+    function renderPublishedList_(items) {
+      elements.publishedList.replaceChildren();
+      if (!items.length) {
+        renderRecordEmpty_(elements.publishedList, 'Belum ada modul yang dipublikasikan. Compose tidak membuat file; hasil akan muncul setelah Publish ke Drive tersedia pada phase berikutnya.');
+        return;
+      }
+      items.forEach(function (item) {
+        var row = document.createElement('article');
+        row.className = 'record-item';
+        var copy = document.createElement('div');
+        copy.className = 'record-item-copy';
+        var title = document.createElement('div');
+        title.className = 'record-item-title';
+        var strong = document.createElement('strong');
+        strong.textContent = courseLabel_(item.courseKey) + ' · Level ' + item.level + ' · v' + String(item.version).padStart(3, '0');
+        title.appendChild(strong);
+        if (item.isLatest) {
+          var latest = document.createElement('span');
+          latest.className = 'record-badge latest';
+          latest.textContent = 'Latest';
+          title.appendChild(latest);
+        }
+        var status = document.createElement('span');
+        status.className = 'record-badge ' + (item.status === 'PUBLISHED' ? 'success' : (item.status === 'FAILED' ? 'failed' : 'pending'));
+        status.textContent = item.status;
+        title.appendChild(status);
+        var detail = document.createElement('p');
+        detail.textContent = item.publishedBy + ' · ' + formatTimestamp(item.completedAt || item.createdAt) +
+          (item.pageCount ? ' · ' + item.pageCount + ' halaman' : '');
+        copy.append(title, detail);
+        row.appendChild(copy);
+        if (item.openUrl) {
+          var link = document.createElement('a');
+          link.className = 'record-open-link';
+          link.href = item.openUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Buka di Drive ↗';
+          row.appendChild(link);
+        }
+        elements.publishedList.appendChild(row);
+      });
+    }
+
+    function loadDriveCapability_() {
+      if (!state.session) { return Promise.resolve(); }
+      elements.driveCapabilityBadge.textContent = 'Memeriksa Drive…';
+      return callGetDrivePublishingCapability(state.session.token)
+        .then(unwrapEnvelope)
+        .then(function (capability) {
+          state.driveCapability = capability;
+          elements.driveCapabilityBadge.textContent = !capability.configured
+            ? 'Drive belum dikonfigurasi'
+            : (capability.canAddChildren ? 'Drive siap' : 'Izin Drive perlu diperiksa');
+          elements.driveCapabilityBadge.classList.toggle('error', !capability.canAddChildren);
+        })
+        .catch(function () {
+          elements.driveCapabilityBadge.textContent = 'Drive belum tersedia';
+          elements.driveCapabilityBadge.classList.add('error');
+        });
+    }
+
+    function renderRecordLoading_(container, message) {
+      renderRecordEmpty_(container, message);
+    }
+
+    function renderRecordEmpty_(container, message) {
+      container.replaceChildren();
+      var empty = document.createElement('div');
+      empty.className = 'record-empty';
+      empty.textContent = message;
+      container.appendChild(empty);
+    }
+
+    function courseLabel_(courseKey) {
+      var courses = state.catalog && state.catalog.courses || [];
+      var course = courses.filter(function (candidate) { return candidate.key === courseKey; })[0];
+      return course ? course.label : String(courseKey || 'Course');
+    }
+
+    function handleNewModule_() {
+      prepareNavigation().then(function () {
+        state.activeCourse = null;
+        state.activeProject = null;
+        state.publisherResult = null;
+        elements.levelPanel.hidden = true;
+        elements.projectPanel.hidden = true;
+        elements.sessionEditorPanel.hidden = true;
+        elements.publisherPanel.hidden = true;
+        switchNavView('dashboard');
+        elements.courseGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    function handleLogout() {
+      var token = state.session && state.session.token;
+      setLoading(true, 'Keluar dari aplikasi…', true);
+      closeActiveSession(true).finally(function () {
+        state.session = null;
+        state.catalog = null;
+        state.activeCourse = null;
+        state.activeProject = null;
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        clearStoredEditAccess_();
+        sessionStorage.removeItem(ROUTE_STORAGE_KEY);
+        elements.appView.hidden = true;
+        elements.loginView.hidden = false;
+        elements.levelPanel.hidden = true;
+        elements.projectPanel.hidden = true;
+        elements.ssotIframeView.hidden = true;
+        elements.activityView.hidden = true;
+        elements.publishedView.hidden = true;
+        elements.settingsView.hidden = true;
+        elements.userProfilePill.hidden = true;
+        elements.newModuleButton.hidden = true;
+        elements.logoutButton.hidden = true;
+        if (token) {
+          callLogoutEditor(token).catch(function () {});
+        }
+        setLoading(false);
+      });
+    }
+
+    function togglePasscodeVisibility() {
+      var reveal = elements.passcode.type === 'password';
+      elements.passcode.type = reveal ? 'text' : 'password';
+      elements.togglePasscode.textContent = reveal ? 'Sembunyikan' : 'Lihat';
+      elements.togglePasscode.setAttribute('aria-label', reveal ? 'Sembunyikan passcode' : 'Tampilkan passcode');
+    }
+
+    function setConfigurationStatus(ready, overrideMessage) {
+      state.configurationReady = Boolean(ready);
+      elements.cardHeading.classList.toggle('ready', ready);
+      elements.cardHeading.classList.toggle('error', !ready);
+      elements.configurationStatus.textContent = overrideMessage || (ready
+        ? 'Konfigurasi server siap'
+        : 'Setup maintainer diperlukan');
+      updateLoginButtonState_();
+    }
+
+    function updateLoginButtonState_() {
+      elements.loginButton.disabled = !state.configurationReady ||
+        !elements.passcode.value || !elements.editorLabel.value.trim();
+    }
+
+    function showFormMessage(message) {
+      elements.formMessage.textContent = message || 'Terjadi kesalahan. Silakan coba kembali.';
+      elements.formMessage.hidden = false;
+      notifyError_('form-error', 'Belum dapat melanjutkan', elements.formMessage.textContent);
+    }
+
+    function hideFormMessage() {
+      elements.formMessage.textContent = '';
+      elements.formMessage.hidden = true;
+    }
+
+    function showWorkspaceMessage(message) {
+      elements.workspaceMessage.textContent = message || 'Data level tidak dapat dimuat.';
+      elements.workspaceMessage.hidden = false;
+      notifyError_('workspace-error', 'Data belum dapat dimuat', elements.workspaceMessage.textContent);
+    }
+
+    function hideWorkspaceMessage() {
+      elements.workspaceMessage.textContent = '';
+      elements.workspaceMessage.hidden = true;
+    }
+
+    function showNotification_(options) {
+      if (!elements.notificationCenter) { return ''; }
+      var settings = options || {};
+      var id = String(settings.id || ('notice-' + (++notificationSequence_)));
+      var selector = '[data-notification-id="' + id.replace(/"/g, '') + '"]';
+      var notice = elements.notificationCenter.querySelector(selector);
+      if (!notice) {
+        // Prevent notification stacking towers by trimming oldest transient notices
+        var children = elements.notificationCenter.querySelectorAll('[data-notification-id]');
+        if (children.length >= 2) {
+          var removed = false;
+          for (var i = 0; i < children.length; i += 1) {
+            if (!children[i].classList.contains('loading')) {
+              closeNotification_(children[i].dataset.notificationId);
+              removed = true;
+              break;
+            }
+          }
+          if (!removed && children.length >= 2) {
+            closeNotification_(children[0].dataset.notificationId);
+          }
+        }
+
+        notice = document.createElement('section');
+        notice.dataset.notificationId = id;
+        var icon = document.createElement('span');
+        icon.className = 'soft-notification-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        var copy = document.createElement('span');
+        copy.className = 'soft-notification-copy';
+        var title = document.createElement('strong');
+        var message = document.createElement('span');
+        copy.append(title, message);
+        var close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'soft-notification-close';
+        close.setAttribute('aria-label', 'Tutup notifikasi');
+        close.textContent = '×';
+        close.addEventListener('click', function () { closeNotification_(id); });
+        notice.append(icon, copy, close);
+        elements.notificationCenter.appendChild(notice);
+      }
+
+      if (notificationTimers_[id]) {
+        clearTimeout(notificationTimers_[id]);
+        delete notificationTimers_[id];
+      }
+      var tone = settings.tone || 'info';
+      notice.className = 'soft-notification ' + tone;
+      notice.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+      var iconNode = notice.querySelector('.soft-notification-icon');
+      iconNode.replaceChildren();
+      if (tone === 'loading') {
+        var spinner = document.createElement('span');
+        spinner.className = 'mini-spinner';
+        iconNode.appendChild(spinner);
+      } else {
+        iconNode.textContent = tone === 'success' ? '✓' : (tone === 'error' ? '!' : (tone === 'warning' ? '!' : 'i'));
+      }
+      notice.querySelector('.soft-notification-copy strong').textContent = settings.title || 'Status aplikasi';
+      var messageNode = notice.querySelector('.soft-notification-copy span');
+      messageNode.textContent = settings.message || '';
+      messageNode.hidden = !settings.message;
+      notice.querySelector('.soft-notification-close').hidden = settings.closable === false;
+
+      if (settings.autoCloseMs) {
+        notificationTimers_[id] = setTimeout(function () {
+          closeNotification_(id);
+        }, settings.autoCloseMs);
+      }
+      return id;
+    }
+
+    function closeNotification_(id) {
+      if (notificationTimers_[id]) {
+        clearTimeout(notificationTimers_[id]);
+        delete notificationTimers_[id];
+      }
+      if (!elements.notificationCenter) { return; }
+      var notices = elements.notificationCenter.querySelectorAll('[data-notification-id]');
+      Array.prototype.forEach.call(notices, function (notice) {
+        if (notice.dataset.notificationId === String(id)) { notice.remove(); }
+      });
+    }
+
+    function notifyLoading_(id, title, message) {
+      return showNotification_({ id: id, tone: 'loading', title: title, message: message });
+    }
+
+    function notifySuccess_(id, title, message) {
+      return showNotification_({ id: id, tone: 'success', title: title, message: message, autoCloseMs: 4200 });
+    }
+
+    function notifyWarning_(id, title, message) {
+      return showNotification_({ id: id, tone: 'warning', title: title, message: message, autoCloseMs: 9000 });
+    }
+
+    function notifyError_(id, title, message, autoCloseMs) {
+      return showNotification_({
+        id: id,
+        tone: 'error',
+        title: title,
+        message: message,
+        autoCloseMs: typeof autoCloseMs === 'number' ? autoCloseMs : 8000
+      });
+    }
+
+    function setLoading(loading, message, forceBlocking) {
+      var shouldBlock = Boolean(forceBlocking || !state.session || elements.appView.hidden);
+      if (loading && shouldBlock) {
+        elements.loadingOverlayMessage.textContent = message || 'Menyiapkan aplikasi…';
+        elements.loadingOverlay.hidden = false;
+        return;
+      }
+      elements.loadingOverlay.hidden = true;
+      if (loading) {
+        notifyLoading_('background-operation', message || 'Memproses permintaan…', 'Aplikasi tetap terbuka selama server bekerja.');
+      } else {
+        closeNotification_('background-operation');
+      }
+    }
+
+    function unwrapEnvelope(envelope) {
+      if (envelope && envelope.ok) {
+        return envelope.data;
+      }
+      var error = new Error(envelope && envelope.error ? envelope.error.message : 'Server tidak merespons.');
+      error.code = envelope && envelope.error ? envelope.error.code : 'INTERNAL_ERROR';
+      error.details = envelope && envelope.error ? (envelope.error.details || {}) : {};
+      throw error;
+    }
+
+    function callGetAppBootstrap() {
+      return appsScriptCall(function (runner) { runner.getAppBootstrap(); });
+    }
+
+    function callAuthenticateEditor(passcode, editorLabel) {
+      return appsScriptCall(function (runner) { runner.authenticateEditor(passcode, editorLabel); });
+    }
+
+    function callResumeEditorSession(token) {
+      return appsScriptCall(function (runner) { runner.resumeEditorSession(token); });
+    }
+
+    function callLogoutEditor(token) {
+      return appsScriptCall(function (runner) { runner.logoutEditor(token); });
+    }
+
+    function callListCoursesAndLevels(token) {
+      return appsScriptCall(function (runner) { runner.listCoursesAndLevels(token); });
+    }
+
+    function callLoadLevelProject(token, courseKey, level) {
+      return appsScriptCall(function (runner) { runner.loadLevelProject(token, courseKey, level); }, 60000);
+    }
+
+    function callListActivity(token, request) {
+      return appsScriptCall(function (runner) { runner.listActivity(token, request); });
+    }
+
+    function callRecordComposeAttempt(token, courseKey, level, result) {
+      return appsScriptCall(function (runner) { runner.recordComposeAttempt(token, courseKey, level, result); });
+    }
+
+    function callListPublishedModules(token, request) {
+      return appsScriptCall(function (runner) { runner.listPublishedModules(token, request); });
+    }
+
+    function callGetDrivePublishingCapability(token) {
+      return appsScriptCall(function (runner) { runner.getDrivePublishingCapability(token); });
+    }
+
+    function callPreflightImages(token, urls) {
+      return appsScriptCall(function (runner) { runner.preflightImages(token, urls); });
+    }
+
+    function callAcquireSessionLease(token, courseKey, level, session) {
+      return appsScriptCall(function (runner) {
+        runner.acquireSessionLease(token, courseKey, level, session);
+      });
+    }
+
+    function callResumeSessionLease(token, leaseToken, editSessionId, courseKey, level, session) {
+      return appsScriptCall(function (runner) {
+        runner.resumeSessionLease(token, leaseToken, editSessionId, courseKey, level, session);
+      });
+    }
+
+    function callHeartbeatSessionLease(token, leaseToken, courseKey, level, session) {
+      return appsScriptCall(function (runner) {
+        runner.heartbeatSessionLease(token, leaseToken, courseKey, level, session);
+      }, 20000);
+    }
+
+    function callReleaseSessionLease(token, leaseToken, courseKey, level, session) {
+      return appsScriptCall(function (runner) {
+        runner.releaseSessionLease(token, leaseToken, courseKey, level, session);
+      }, 15000);
+    }
+
+    function callSaveSessionPatch(token, leaseToken, request) {
+      return appsScriptCall(function (runner) { runner.saveSessionPatch(token, leaseToken, request); });
+    }
+
+    function callGetSessionHistory(token, courseKey, level, session) {
+      return appsScriptCall(function (runner) {
+        runner.getSessionHistory(token, courseKey, level, session);
+      });
+    }
+
+    function callRestoreSessionRevision(token, leaseToken, request) {
+      return appsScriptCall(function (runner) {
+        runner.restoreSessionRevision(token, leaseToken, request);
+      });
+    }
+
+    function appsScriptCall(invoke, timeoutMs) {
+      return new Promise(function (resolve, reject) {
+        var settled = false;
+        var timeout = setTimeout(function () {
+          if (settled) { return; }
+          settled = true;
+          var error = new Error('Server belum merespons. Draft lokal tetap aman; silakan coba kembali.');
+          error.code = 'CLIENT_TIMEOUT';
+          error.retryable = true;
+          reject(error);
+        }, Math.max(5000, Number(timeoutMs) || RPC_TIMEOUT_MS));
+        var finish = function (callback, value) {
+          if (settled) { return; }
+          settled = true;
+          clearTimeout(timeout);
+          callback(value);
+        };
+        var runner = google.script.run
+          .withSuccessHandler(function (value) { finish(resolve, value); })
+          .withFailureHandler(function () {
+            var error = new Error('Koneksi ke server gagal. Draft lokal tetap aman; silakan coba kembali.');
+            error.code = 'CONNECTION_FAILED';
+            error.retryable = true;
+            finish(reject, error);
+          });
+        try {
+          invoke(runner);
+        } catch (error) {
+          finish(reject, error);
+        }
+      });
+    }
+  })();
+</script>

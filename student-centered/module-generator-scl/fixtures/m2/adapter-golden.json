@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "scl-m2-adapter-golden/v1",
+  "sanitized": true,
+  "courses": [
+    {
+      "key": "roblox",
+      "session": {
+        "session": "1",
+        "topic": "Membangun Dunia Pertama",
+        "liveDraft": true,
+        "fields": {
+          "Session-topic": { "text": "Membangun Dunia Pertama", "runs": [] },
+          "objectives": { "text": "- Mengenali workspace\n- Menguji arena", "runs": [] },
+          "materials": { "text": "Kenali workspace terlebih dahulu.\nkc1*\nTahap 1: Bangun arena\nhttps://fixture.example/roblox.png\n[[SCL_PAGE_BREAK]]", "runs": [] },
+          "kamus_coder": { "text": "kc1: Workspace adalah area kerja utama.", "runs": [] },
+          "for_your_knowledge": { "text": "", "runs": [] },
+          "must_do": { "text": "Buat arena utama.", "runs": [] },
+          "should_do": { "text": "Tambahkan checkpoint.", "runs": [] },
+          "aspire_to_do": { "text": "Rancang tantangan lanjutan.", "runs": [] },
+          "self-check": { "text": "Saya dapat menguji arena.", "runs": [] },
+          "quiz_questions": { "text": "1. Apa fungsi workspace?", "runs": [] },
+          "quiz_options": { "text": "1. A. Area kerja|B. Hasil cetak", "runs": [] }
+        },
+        "tables": [],
+        "serverOnly": { "quiz_answers": "M2_ROBLOX_ANSWER_SENTINEL" }
+      },
+      "expected": {
+        "types": ["objectives", "paragraph", "bubble", "step", "page-break", "task", "task", "task", "task", "quiz"],
+        "fields": ["objectives", "materials", "materials", "materials", "materials", "must_do", "should_do", "aspire_to_do", "self-check", "quiz_questions"],
+        "markers": ["kc1"]
+      }
+    },
+    {
+      "key": "scratch",
+      "session": {
+        "session": "4",
+        "topic": "Membuat Cerita Bergerak",
+        "liveDraft": true,
+        "fields": {
+          "Session-topic": { "text": "Membuat Cerita Bergerak", "runs": [] },
+          "objectives": { "text": "1. Mengatur sprite\n2. Menyusun urutan gerak", "runs": [] },
+          "materials": { "text": "fyk2*\nBagian 1: Gerakkan sprite\nSusun blok motion secara berurutan.", "runs": [] },
+          "kamus_coder": { "text": "", "runs": [] },
+          "for_your_knowledge": { "text": "fyk2: Sprite adalah karakter pada panggung.", "runs": [] },
+          "must_do": { "text": "Buat satu sprite bergerak.", "runs": [] },
+          "should_do": { "text": "Tambahkan pergantian kostum.", "runs": [] },
+          "aspire_to_do": { "text": "Buat dialog interaktif.", "runs": [] },
+          "self-check": { "text": "Saya memahami urutan blok.", "runs": [] },
+          "quiz_questions": { "text": "1. Apa itu sprite?", "runs": [] },
+          "quiz_options": { "text": "1. A. Karakter|B. Suara", "runs": [] }
+        },
+        "tables": [],
+        "serverOnly": { "quiz_answers": "M2_SCRATCH_ANSWER_SENTINEL" }
+      },
+      "expected": {
+        "types": ["objectives", "bubble", "step", "task", "task", "task", "task", "quiz"],
+        "fields": ["objectives", "materials", "materials", "must_do", "should_do", "aspire_to_do", "self-check", "quiz_questions"],
+        "markers": ["fyk2"]
+      }
+    },
+    {
+      "key": "python",
+      "session": {
+        "session": "7",
+        "topic": "Mengenal Function",
+        "liveDraft": true,
+        "fields": {
+          "Session-topic": { "text": "Mengenal Function", "runs": [] },
+          "objectives": { "text": "- Menjelaskan function\n- Memanggil function", "runs": [{ "start": 2, "end": 12, "bold": true, "link": "" }] },
+          "materials": { "text": "Langkah 1: Buat function\nGunakan kata kunci def.\nkc3*\nfyk3*", "runs": [{ "start": 27, "end": 35, "italic": true, "link": "" }] },
+          "kamus_coder": { "text": "kc3: Function adalah blok kode yang dapat dipakai ulang.", "runs": [] },
+          "for_your_knowledge": { "text": "fyk3: Function membantu program lebih terstruktur.", "runs": [] },
+          "must_do": { "text": "Buat satu function.", "runs": [] },
+          "should_do": { "text": "Tambahkan parameter.", "runs": [] },
+          "aspire_to_do": { "text": "Gabungkan dua function.", "runs": [] },
+          "self-check": { "text": "Saya dapat memanggil function.", "runs": [] },
+          "quiz_questions": { "text": "1. Apa kegunaan function?", "runs": [] },
+          "quiz_options": { "text": "1. A. Memakai ulang kode|B. Menghapus program", "runs": [] }
+        },
+        "tables": [
+          {
+            "tableId": "python-function-table",
+            "orderIndex": 3,
+            "table": {
+              "caption": "Bagian Function",
+              "headers": ["Bagian", "Contoh"],
+              "rows": [["Nama", "sapa"], ["Parameter", "nama"], ["Isi", "print"], ["Call", "sapa()"], ["Return", "hasil"], ["Test", "OK"]]
+            }
+          }
+        ],
+        "serverOnly": { "quiz_answers": "M2_PYTHON_ANSWER_SENTINEL" }
+      },
+      "expected": {
+        "types": ["objectives", "step", "bubble", "bubble", "task", "task", "task", "task", "quiz", "table", "table"],
+        "fields": ["objectives", "materials", "materials", "materials", "must_do", "should_do", "aspire_to_do", "self-check", "quiz_questions", "materials", "materials"],
+        "markers": ["kc3", "fyk3"]
+      }
+    }
+  ]
+}

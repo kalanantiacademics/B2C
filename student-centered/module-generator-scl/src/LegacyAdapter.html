@@ -1,0 +1,643 @@
+<script>
+  (function () {
+    'use strict';
+
+    var PAGE_BREAK_SENTINEL = '[[SCL_PAGE_BREAK]]';
+    var DEFAULT_IMAGE_WIDTH_PERCENT = 69;
+    var componentCounter = 0;
+    var TASK_FIELDS = [
+      { key: 'must_do', label: 'MUST DO', treatment: 'activity-card' },
+      { key: 'should_do', label: 'SHOULD DO', treatment: 'challenge-card' },
+      { key: 'aspire_to_do', label: 'ASPIRE TO DO', treatment: 'challenge-card' },
+      { key: 'self-check', label: 'SELF-CHECK', treatment: 'activity-card' }
+    ];
+
+    function adaptSession(session) {
+      session = session || {};
+      componentCounter = 0;
+      var fields = session.fields || {};
+      var components = [];
+      appendObjectives_(components, fields.objectives);
+      appendMaterials_(components, materialModels_(session, fields));
+      TASK_FIELDS.forEach(function (definition) {
+        appendTask_(components, fields[definition.key], definition);
+      });
+      appendQuiz_(components, session, fields);
+      appendTables_(components, session.tables || []);
+      return {
+        schemaVersion: 'scl-legacy-component/v1',
+        session: String(session.session || ''),
+        topic: String(session.topic || fieldText_(fields['Session-topic'])).trim(),
+        components: components
+      };
+    }
+
+    function appendObjectives_(components, model) {
+      var items = lineModels_(model).map(function (line, lineIndex) {
+        if (!nonEmptyLine_(line)) { return null; }
+        var item = stripListPrefix_(line);
+        item.source = sourceRef_('objectives', lineIndex);
+        return item;
+      }).filter(Boolean);
+      if (!items.length) { return; }
+      components.push(component_('objectives', 'objectives', {
+        label: 'Learning Objectives',
+        items: items,
+        sourceIndex: 0
+      }));
+    }
+
+    function appendMaterials_(components, models) {
+      var currentStep = null;
+      var numberedSequence = 0;
+      models.forEach(function (model, index) {
+        var type = String(model.type || 'paragraph');
+        var text = String(model.text || model.definition || '').trim();
+        var textStyle = String(model.textStyle || (type === 'bullet' ? 'bullet' : (type === 'numbered-item' ? 'numbered' : 'normal')));
+        var listOrdinal = 1;
+        if (textStyle === 'numbered') {
+          if (model.explicitOrdinal) {
+            numberedSequence = model.explicitOrdinal;
+          } else {
+            numberedSequence = numberedSequence + 1;
+          }
+          listOrdinal = numberedSequence;
+        } else if (textStyle !== 'bullet') {
+          numberedSequence = 0;
+        }
+        if (type === 'page-break' || text === PAGE_BREAK_SENTINEL) {
+          currentStep = null;
+          components.push(component_('page-break', 'materials', { sourceIndex: index }));
+          return;
+        }
+        if (type === 'tutor-says' || type === 'did-you-know') {
+          if (model.missingDefinition || !text) { return; }
+          currentStep = null;
+          var bubble = component_('bubble', 'materials', {
+            treatment: type,
+            label: type === 'tutor-says' ? 'Tutor Says' : 'Did You Know?',
+            model: richModel_(model.richText, text),
+            lines: model.lines || [],
+            marker: String(model.marker || ''),
+            sourceIndex: index
+          });
+          components.push(bubble);
+          return;
+        }
+        if (type === 'image' || isImageUrl_(text)) {
+          var image = component_('image', 'materials', {
+            url: text,
+            displayWidthPercent: clamp_(model.displayWidthPercent, 25, 100, DEFAULT_IMAGE_WIDTH_PERCENT),
+            preflightWidth: positiveNumber_(model.preflightWidth),
+            preflightHeight: positiveNumber_(model.preflightHeight),
+            alt: String(model.alt || 'Panduan Visual'),
+            sourceIndex: index
+          });
+          appendStepItemOrRoot_(components, currentStep, image);
+          return;
+        }
+        if (type === 'code') {
+          var code = component_('code', 'materials', {
+            language: String(model.language || 'python'),
+            code: String(model.code || ''),
+            sourceIndex: Number.isInteger(model.sourceIndex) ? model.sourceIndex : index,
+            sourceKey: String(model.sourceKey || ('line-' + index))
+          });
+          appendStepItemOrRoot_(components, currentStep, code);
+          return;
+        }
+        var step = text.match(/^\s*(Tahap|Bagian|Langkah)\s*(\d+)\s*:?\s*(.*)$/i);
+        if (step) {
+          currentStep = component_('step', 'materials', {
+            keyword: step[1],
+            number: step[2],
+            title: step[3],
+            items: [],
+            sourceIndex: index
+          });
+          components.push(currentStep);
+          return;
+        }
+        if (!text) { return; }
+        var paragraph = component_('paragraph', 'materials', {
+          model: richModel_(model.richText, text),
+          intro: !currentStep && index === 0,
+          textStyle: textStyle,
+          listOrdinal: listOrdinal,
+          sourceIndex: index
+        });
+        appendStepItemOrRoot_(components, currentStep, paragraph);
+      });
+    }
+
+    function appendStepItemOrRoot_(components, currentStep, component) {
+      if (currentStep) {
+        currentStep.items.push(component);
+      } else {
+        components.push(component);
+      }
+    }
+
+    function appendTask_(components, model, definition) {
+      var lines = lineModels_(model).filter(nonEmptyLine_);
+      if (!lines.length) { return; }
+      var items = [];
+      lines.forEach(function (line, lineIndex) {
+        var text = String(line.text || '').trim();
+        if (isImageUrl_(text)) {
+          items.push({
+            type: 'image',
+            url: text,
+            displayWidthPercent: imageWidth_(line),
+            alt: 'Ilustrasi ' + definition.label,
+            source: sourceRef_(definition.key, lineIndex)
+          });
+          return;
+        }
+        items.push({ type: 'text', model: stripListPrefix_(line), source: sourceRef_(definition.key, lineIndex) });
+      });
+      components.push(component_('task', definition.key, {
+        label: definition.label,
+        treatment: definition.treatment,
+        items: items,
+        sourceIndex: 0
+      }));
+    }
+
+    function appendQuiz_(components, session, fields) {
+      var items = Array.isArray(session.quiz) && !session.liveDraft
+        ? clone_(session.quiz)
+        : parseQuiz_(fieldText_(fields.quiz_questions), fieldText_(fields.quiz_options));
+      if (!items.length) { return; }
+      components.push(component_('quiz', 'quiz_questions', {
+        label: 'MINI QUIZ',
+        items: items.map(function (item) {
+          return Object.assign({}, item, { source: sourceRef_('quiz_questions', Number(item.number) - 1) });
+        }),
+        sourceIndex: 0
+      }));
+    }
+
+    function appendTables_(components, tables) {
+      tables.forEach(function (entry, index) {
+        var table = clone_(entry.table || {});
+        var rows = Array.isArray(table.rows) ? table.rows : [];
+        var chunks = [];
+        for (var rowIndex = 0; rowIndex < rows.length; rowIndex += 5) {
+          chunks.push(rows.slice(rowIndex, rowIndex + 5));
+        }
+        (chunks.length ? chunks : [[]]).forEach(function (chunk, chunkIndex) {
+          components.push(component_('table', 'materials', {
+            tableId: String(entry.tableId || 'table-' + index),
+            orderIndex: Number(entry.orderIndex) || 0,
+            continuation: chunkIndex > 0,
+            table: Object.assign({}, table, { rows: chunk }),
+            sourceIndex: index,
+            sourceKey: String(entry.tableId || 'table-' + index) + ':' + chunkIndex
+          }));
+        });
+      });
+    }
+
+    function materialModels_(session, fields) {
+      var definitions = parseDefinitions_(fields);
+      var textStyles = {};
+      (session.layouts || []).forEach(function (layout) {
+        var match = String(layout.blockKey || '').match(/^materials:line-(\d+)$/);
+        var style = layout.attributes && String(layout.attributes.textStyle || '');
+        if (match && /^(?:normal|heading1|heading2|bullet|numbered)$/.test(style)) {
+          textStyles[Number(match[1])] = style;
+        }
+      });
+      var models;
+      if (!session.liveDraft && Array.isArray(session.materialBlocks)) {
+        models = clone_(session.materialBlocks).map(function (block, lineIndex) {
+          var type = block.type;
+          var style = textStyles[lineIndex] || (type === 'bullet' ? 'bullet' : (type === 'numbered-item' ? 'numbered' : (block.textStyle || 'normal')));
+          var colonMarker = String(block.text || '').trim().match(/^((?:kc|fyk)\d+)\s*:\s*$/i);
+          if (colonMarker) {
+            var colonId = colonMarker[1].toLowerCase();
+            var colonDef = definitions[colonId] || null;
+            return {
+              type: colonId.indexOf('kc') === 0 ? 'tutor-says' : 'did-you-know',
+              marker: colonId,
+              text: colonDef ? colonDef.text : '',
+              richText: colonDef || { text: '', runs: [] },
+              lines: colonDef ? (colonDef.lines || []) : [],
+              missingDefinition: !colonDef,
+              sourceIndex: lineIndex
+            };
+          }
+          if (style === 'bullet') { type = 'bullet'; }
+          else if (style === 'numbered') { type = 'numbered-item'; }
+          if ((block.type === 'tutor-says' || block.type === 'did-you-know') && block.marker) {
+            var def = definitions[block.marker.toLowerCase()] || null;
+            if (def) {
+              return Object.assign({}, block, {
+                text: def.text,
+                richText: def,
+                lines: def.lines || [],
+                textStyle: style,
+                type: type
+              });
+            }
+          }
+          return Object.assign({}, block, {
+            textStyle: style,
+            type: type
+          });
+        });
+        return hasCodeIDE_(session) ? groupCodeFences_(models, session) : models;
+      }
+      models = lineModels_(fields.materials).map(function (line, lineIndex) {
+        var text = String(line.text || '').trim();
+        if (text === PAGE_BREAK_SENTINEL) { return { type: 'page-break', text: text }; }
+        var heading = markdownHeading_(text);
+        if (heading) {
+          return {
+            type: 'paragraph',
+            text: heading.text,
+            richText: markdownRichModel_({ text: heading.text, runs: [] }),
+            textStyle: heading.style,
+            sourceIndex: lineIndex
+          };
+        }
+        var marker = text.match(/^((?:kc|fyk)\d+)(?:\*|:)$/i);
+        if (marker) {
+          var id = marker[1].toLowerCase();
+          var def = definitions[id] || null;
+          return {
+            type: id.indexOf('kc') === 0 ? 'tutor-says' : 'did-you-know',
+            marker: id,
+            text: def ? def.text : '',
+            richText: def ? def : { text: '', runs: [] },
+            lines: def ? (def.lines || []) : [],
+            missingDefinition: !def
+          };
+        }
+        if (isImageUrl_(text)) {
+          return {
+            type: 'image',
+            text: text,
+            richText: line,
+            displayWidthPercent: imageWidth_(line)
+          };
+        }
+        var listPrefix = listPrefixInfo_(text);
+        var autoStyle = listPrefix ? (listPrefix.kind === 'numbered' ? 'numbered' : 'bullet') : 'normal';
+        var style = textStyles[lineIndex] || autoStyle;
+        var cleanLine = line;
+        var cleanText = text;
+        if (style === 'bullet' || style === 'numbered') {
+          cleanLine = stripListPrefix_(line);
+          cleanText = cleanLine.text;
+        }
+        var richText = markdownRichModel_(cleanLine);
+        return {
+          type: style === 'bullet' ? 'bullet' : (style === 'numbered' ? 'numbered-item' : 'paragraph'),
+          text: richText.text || cleanText,
+          richText: richText,
+          textStyle: style,
+          explicitOrdinal: listPrefix && listPrefix.ordinal ? listPrefix.ordinal : null
+        };
+      });
+      return hasCodeIDE_(session) ? groupCodeFences_(models, session) : models;
+    }
+
+    function hasCodeIDE_(session) {
+      var key = String(session && session.courseKey || '').trim().toLowerCase();
+      return key === 'python' || key === 'roblox';
+    }
+
+    function courseLanguage_(session) {
+      var key = String(session && session.courseKey || '').trim().toLowerCase();
+      if (key === 'roblox') { return 'lua'; }
+      if (key === 'python') { return 'python'; }
+      return key || 'code';
+    }
+
+    function groupCodeFences_(models, session) {
+      var defaultLang = courseLanguage_(session);
+      var output = [];
+      var active = null;
+      (models || []).forEach(function (model, index) {
+        var raw = String(model.text || model.definition || '').trim();
+        var sameLine = raw.match(/^(?:[-*•‣◦∙⁃▪●○✦]|\d+[.)])?\s*```([^\n]*?)```$/);
+        if (sameLine) {
+          var lang = defaultLang;
+          var codeText = sameLine[1];
+          var prev = output.length ? output[output.length - 1] : null;
+          if (prev && prev.type === 'code' && prev.language === lang && prev.sourceIndex === index - 1) {
+            prev.code += '\n' + codeText;
+            prev.sourceIndex = index;
+          } else {
+            output.push({
+              type: 'code', language: lang, code: codeText,
+              sourceIndex: index, sourceKey: 'line-' + index
+            });
+          }
+          return;
+        }
+        var opening = raw.match(/^(?:[-*•‣◦∙⁃▪●○✦]|\d+[.)])?\s*```\s*(?:(python|py|lua|luau|roblox|javascript|js)\s*)?$/i);
+        if (!active && opening) {
+          var openLang = (opening[1] || defaultLang).toLowerCase();
+          active = { language: openLang, lines: [], sourceIndex: index, sourceKey: 'line-' + index };
+          return;
+        }
+        if (active && /^```\s*$/.test(raw)) {
+          output.push({
+            type: 'code', language: active.language, code: active.lines.join('\n'),
+            sourceIndex: active.sourceIndex, sourceKey: active.sourceKey
+          });
+          active = null;
+          return;
+        }
+        if (active) {
+          active.lines.push(raw);
+          return;
+        }
+        var heading = markdownHeading_(model.text);
+        if (heading) {
+          output.push(Object.assign({}, model, {
+            text: heading.text,
+            richText: markdownRichModel_({ text: heading.text, runs: [] }),
+            textStyle: heading.style
+          }));
+          return;
+        }
+        output.push(model);
+      });
+      if (active) {
+        output.push(models[active.sourceIndex]);
+        active.lines.forEach(function (line) {
+          output.push({ type: 'paragraph', text: line, richText: { text: line, runs: [] }, textStyle: 'normal' });
+        });
+      }
+      return output;
+    }
+
+    function parseDefinitions_(fields) {
+      var output = {};
+      ['kamus_coder', 'for_your_knowledge'].forEach(function (field) {
+        var current = '';
+        var currentLines = [];
+        lineModels_(fields[field]).forEach(function (lineModel) {
+          var match = String(lineModel.text || '').match(/^\s*((?:kc|fyk)\d+)\s*:\s*(.*)$/i);
+          if (match) {
+            current = match[1].toLowerCase();
+            var defText = match[2];
+            currentLines = [];
+            var contentRuns = [];
+            if (defText.trim()) {
+              var prefixLen = lineModel.text.indexOf(defText);
+              if (prefixLen < 0) { prefixLen = 0; }
+              var contentLine = {
+                text: defText,
+                runs: (lineModel.runs || []).map(function (run) {
+                  return Object.assign({}, run, {
+                    start: Math.max(prefixLen, run.start) - prefixLen,
+                    end: Math.min(lineModel.text.length, run.end) - prefixLen
+                  });
+                }).filter(function (run) { return run.end > run.start; })
+              };
+              currentLines.push(contentLine);
+              contentRuns = clone_(contentLine.runs);
+            }
+            output[current] = {
+              text: defText.trim(),
+              lines: currentLines,
+              runs: contentRuns
+            };
+          } else if (current && lineModel.text.trim()) {
+            if (!output[current]) {
+              output[current] = { text: '', lines: [], runs: [] };
+              currentLines = output[current].lines;
+            }
+            currentLines.push(lineModel);
+            var offset = output[current].text.length ? output[current].text.length + 1 : 0;
+            output[current].text += (output[current].text ? '\n' : '') + lineModel.text;
+            (lineModel.runs || []).forEach(function (run) {
+              output[current].runs.push(Object.assign({}, run, {
+                start: run.start + offset,
+                end: run.end + offset
+              }));
+            });
+          }
+        });
+      });
+      return output;
+    }
+
+    function parseQuiz_(questionsText, optionsText) {
+      var questions = numberedGroups_(questionsText);
+      var options = {};
+      numberedGroups_(optionsText).forEach(function (group) {
+        options[group.number] = String(group.text || '').split(/\s*\|\s*|\n/)
+          .filter(Boolean).map(function (value, index) {
+            var match = value.trim().match(/^([A-Z])[.)]\s*(.*)$/i);
+            return {
+              label: match ? match[1].toUpperCase() : String.fromCharCode(65 + index),
+              text: match ? match[2].trim() : value.trim()
+            };
+          });
+      });
+      return questions.map(function (question) {
+        return {
+          number: question.number,
+          question: question.text,
+          options: options[question.number] || []
+        };
+      });
+    }
+
+    function numberedGroups_(text) {
+      var output = [];
+      var current = null;
+      String(text || '').split('\n').forEach(function (line) {
+        var match = line.match(/^\s*(\d+)[.)]\s*(.*)$/);
+        if (match) {
+          current = { number: match[1], text: match[2].trim() };
+          output.push(current);
+        } else if (current && line.trim()) {
+          current.text += (current.text ? '\n' : '') + line.trim();
+        }
+      });
+      return output;
+    }
+
+    function lineModels_(model) {
+      model = model && typeof model === 'object' ? model : { text: String(model || ''), runs: [] };
+      var text = String(model.text || '');
+      var offset = 0;
+      return text.split('\n').map(function (line) {
+        var start = offset;
+        var end = start + line.length;
+        offset = end + 1;
+        return {
+          text: line,
+          runs: (model.runs || []).map(function (run) {
+            return Object.assign({}, run, {
+              start: Math.max(start, run.start) - start,
+              end: Math.min(end, run.end) - start
+            });
+          }).filter(function (run) { return run.end > run.start; })
+        };
+      });
+    }
+
+    function stripListPrefix_(model) {
+      var text = String(model.text || '');
+      var checkMatch = text.match(/^([\s\u200B-\u200D\u2060\uFEFF]*)(?:[-*•‣◦∙⁃▪●○✦]\s+)?\[(?:\s|x|X)?\]\s*(.*)$/);
+      if (checkMatch) {
+        var visible = checkMatch[2].trim();
+        var start = text.indexOf(visible);
+        if (start < 0) { start = text.length - visible.length; }
+        return richModel_({
+          text: visible,
+          runs: (model.runs || []).map(function (run) {
+            return Object.assign({}, run, {
+              start: Math.max(0, run.start - start),
+              end: Math.max(0, run.end - start)
+            });
+          }).filter(function (run) { return run.end > run.start; })
+        }, visible);
+      }
+      var prefix = listPrefixInfo_(text);
+      if (!prefix) { return richModel_(model, text.trim()); }
+      var visible = prefix.text;
+      var subCheck = visible.match(/^\[(?:\s|x|X)?\]\s*(.*)$/);
+      if (subCheck) {
+        visible = subCheck[1].trim();
+      }
+      var start = text.indexOf(visible);
+      if (start < 0) { start = 0; }
+      return richModel_({
+        text: visible,
+        runs: (model.runs || []).map(function (run) {
+          return Object.assign({}, run, {
+            start: Math.max(0, run.start - start),
+            end: Math.max(0, run.end - start)
+          });
+        }).filter(function (run) { return run.end > run.start; })
+      }, visible);
+    }
+
+    function listPrefixInfo_(text) {
+      var match = String(text || '').match(/^([\s\u200B-\u200D\u2060\uFEFF]*)([-*•‣◦∙⁃▪●○✦]|(?:\d+)[.)])(\s+)(.*)$/);
+      if (!match) { return null; }
+      var marker = String(match[2] || '');
+      var numMatch = marker.match(/^(\d+)/);
+      return {
+        kind: numMatch ? 'numbered' : 'bullet',
+        ordinal: numMatch ? parseInt(numMatch[1], 10) : null,
+        text: String(match[4] || '').trim()
+      };
+    }
+
+    function richModel_(model, fallback) {
+      if (model && typeof model === 'object' && typeof model.text === 'string') {
+        return markdownRichModel_({ text: model.text, runs: clone_(model.runs || []) });
+      }
+      var text = String(fallback || '');
+      return markdownRichModel_({ text: text, runs: [] });
+    }
+
+    function markdownHeading_(value) {
+      var match = String(value || '').trim().match(/^(#{1,3})\s+(.+)$/);
+      if (!match) { return null; }
+      return {
+        text: match[2].trim(),
+        style: match[1].length === 1 ? 'heading1' : 'heading2'
+      };
+    }
+
+    function markdownRichModel_(model) {
+      model = model || { text: '', runs: [] };
+      var source = String(model.text || '');
+      var output = '';
+      var runs = [];
+      var cursor = 0;
+      var pattern = /(?<!\w)(\*\*\*|___)(?=\S)([\s\S]*?\S)\1(?!\w)|(?<!\w)(\*\*|__)(?=\S)([\s\S]*?\S)\3(?!\w)|(?<![\w*])([*_])(?=\S)([\s\S]*?\S)\5(?![\w*])/g;
+      var match;
+      while ((match = pattern.exec(source))) {
+        output += source.slice(cursor, match.index);
+        var value = match[2] || match[4] || match[6] || '';
+        var start = output.length;
+        output += value;
+        runs.push({
+          start: start,
+          end: output.length,
+          bold: Boolean(match[2] || match[4]),
+          italic: Boolean(match[2] || match[6]),
+          underline: false,
+          strikethrough: false,
+          link: ''
+        });
+        cursor = match.index + match[0].length;
+      }
+      output += source.slice(cursor);
+      if (output === source && !runs.length) {
+        return { text: source, runs: clone_(model.runs || []) };
+      }
+      return { text: output, runs: runs };
+    }
+
+    function component_(type, field, data) {
+      data = data || {};
+      var sourceIndex = Number.isInteger(data.sourceIndex) ? data.sourceIndex : componentCounter;
+      var sourceKey = String(data.sourceKey || sourceIndex);
+      var output = Object.assign({
+        id: 'legacy-' + field + '-' + type + '-' + (++componentCounter),
+        type: type,
+        field: field,
+        source: sourceRef_(field, sourceIndex, sourceKey)
+      }, data);
+      delete output.sourceIndex;
+      delete output.sourceKey;
+      return output;
+    }
+
+    function sourceRef_(field, index, key) {
+      return {
+        field: field,
+        blockIndex: Number.isInteger(index) ? index : 0,
+        blockKey: field + ':' + String(key === undefined ? index : key)
+      };
+    }
+
+    function nonEmptyLine_(line) { return Boolean(String(line.text || '').trim()); }
+    function fieldText_(model) { return typeof model === 'string' ? model : String(model && model.text || ''); }
+    function isImageUrl_(value) {
+      return /^https:\/\/\S+?\.(?:png|jpe?g|webp)(?:[?#]\S*)?$/i.test(String(value || '').trim());
+    }
+    function imageWidth_(model) {
+      var width = DEFAULT_IMAGE_WIDTH_PERCENT;
+      (model.runs || []).some(function (run) {
+        var match = String(run.link || '').match(/#scl-width=(\d{1,3})$/i);
+        if (!match) { return false; }
+        width = clamp_(match[1], 25, 100, DEFAULT_IMAGE_WIDTH_PERCENT);
+        return true;
+      });
+      return width;
+    }
+    function positiveNumber_(value) {
+      var number = Number(value);
+      return Number.isFinite(number) && number > 0 ? number : 0;
+    }
+    function clamp_(value, minimum, maximum, fallback) {
+      var number = Number(value);
+      return Number.isFinite(number) && number >= minimum && number <= maximum ? number : fallback;
+    }
+    function clone_(value) { return JSON.parse(JSON.stringify(value)); }
+
+    window.SclLegacyAdapter = {
+      adaptSession: adaptSession,
+      schemaVersion: 'scl-legacy-component/v1',
+      __test: {
+        materialModels: materialModels_,
+        parseQuiz: parseQuiz_,
+        stripListPrefix: stripListPrefix_
+      }
+    };
+  })();
+</script>

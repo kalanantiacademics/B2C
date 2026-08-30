@@ -1,0 +1,1655 @@
+<script>
+  (function () {
+    'use strict';
+
+    var DEFAULT_MAX_ITERATIONS = 5;
+    var TOPIC_SOFT_LIMIT = 80;
+    var TOC_ITEMS_PER_PAGE = 12;
+    var DEFAULT_IMAGE_TIMEOUT_MS = 10000;
+    var DEFAULT_IMAGE_WIDTH_PERCENT = 69;
+    var IMAGE_DECODE_CONCURRENCY = 6;
+    var IMAGE_DECODE_RETRIES = 2;
+    var IMAGE_RENDER_MAX_HEIGHT_PX = 610;
+    var A4_CONTENT_INNER_WIDTH_PX = (18.38 - 0.5) * 96 / 2.54;
+    var INS_URL = 'https://www.kalananti.id/scl-student';
+    var COORDINATE_REGISTRY = Object.freeze({
+      coverTitle: { xCm: 0.72, yCm: 10.31, widthCm: 19.57, heightCm: 2.46 },
+      coverSubtitle: { xCm: 0.72, yCm: 12.77, widthCm: 19.57, heightCm: 1.82 },
+      contentViewport: { xCm: 1.38, yCm: 3.22, widthCm: 18.38, heightCm: 23.86, paddingCm: 0.25 },
+      sessionHeader: { xCm: 1.5, yCm: 1.28, widthCm: 8.2, heightCm: 1.22 },
+      openerCopy: { xCm: 2.12, yCm: 2.05, widthCm: 16.8, heightCm: 24.6 },
+      pageNumberLeft: { xCm: 0.99, yCm: 28, widthCm: 1.19, heightCm: 0.9 },
+      pageNumberRight: { xCm: 18.93, yCm: 28.01, widthCm: 1.17, heightCm: 0.9 }
+    });
+    var lastResult = null;
+    var assetInstance = 0;
+    var imageDimensionCache = Object.create(null);
+    var previewRenderToken = 0;
+    var FIELD_ORDER = [
+      ['objectives', 'Learning Objectives', 'objectives'],
+      ['materials', 'Materials', 'materials'],
+      ['must_do', 'MUST DO', 'must-do'],
+      ['should_do', 'SHOULD DO', 'should-do'],
+      ['aspire_to_do', 'ASPIRE TO DO', 'aspire'],
+      ['self-check', 'SELF-CHECK', 'self-check'],
+      ['kamus_coder', 'Tutor Says', 'tutor-says'],
+      ['for_your_knowledge', 'Did You Know?', 'did-you-know'],
+      ['quiz_questions', 'Quiz', 'quiz'],
+      ['quiz_options', 'Pilihan Jawaban', 'quiz-options']
+    ];
+
+    function render(project, options) {
+      options = options || {};
+      var canvas = options.canvas || document.getElementById('publisherCanvas');
+      var diagnosticsRoot = options.diagnostics || document.getElementById('publisherDiagnostics');
+      var maxIterations = clampInteger_(options.maxIterations, 1, 10, DEFAULT_MAX_ITERATIONS);
+      var diagnostics = [];
+      assetInstance = 0;
+      appendProjectDiagnostics_(project, diagnostics);
+      var previousSignature = '';
+      var stable = false;
+      var result;
+
+      for (var iteration = 1; iteration <= maxIterations; iteration += 1) {
+        result = compose_(project, canvas, diagnostics);
+        var signature = JSON.stringify({ tocPages: result.tocPages, anchors: result.anchors });
+        if (options.forceTocInstability) { signature += ':' + iteration; }
+        if (signature === previousSignature) { stable = true; result.iterations = iteration; break; }
+        previousSignature = signature;
+      }
+      if (!stable) {
+        diagnostics.push(blocking_('TOC_STABILIZATION_LIMIT', 'TOC belum stabil setelah ' + maxIterations + ' iterasi.'));
+        result.iterations = maxIterations;
+      }
+
+      scanOverflow_(canvas, diagnostics);
+      result.diagnostics = dedupeDiagnostics_(diagnostics);
+      result.stable = stable;
+      result.blocking = result.diagnostics.some(function (item) { return item.blocking; });
+      renderDiagnostics_(diagnosticsRoot, result);
+      canvas.dataset.paginationStable = String(stable);
+      canvas.dataset.pageCount = String(result.pageCount);
+      canvas.dataset.iterations = String(result.iterations);
+      canvas.dataset.printReady = 'false';
+      lastResult = result;
+      return result;
+    }
+
+    function compose_(project, canvas, diagnostics) {
+      canvas.replaceChildren();
+      var pages = [];
+      var anchors = {};
+      var readySessions = (project.sessions || []).filter(function (session) {
+        return session.rowKey && (session.status === 'Ready' || session.status === 'Locked');
+      }).sort(function (left, right) { return Number(left.session) - Number(right.session); });
+      if (readySessions.length < 12) {
+        diagnostics.push(warning_('READY_SESSION_COUNT', 'Hanya ' + readySessions.length + ' session Ready yang masuk output.'));
+      }
+
+      pages.push(createPage_('cover', '', '', project, 1));
+      pages.push(createPage_('blank', '', '', project, 2));
+      pages.push(createPage_('copyright', '', '', project, 3));
+      pages.push(createPage_('warning', '', '', project, 4));
+      pages.push(createPage_('guide', '', '', project, 5, { guidePage: 1 }));
+      pages.push(createPage_('guide', '', '', project, 6, { guidePage: 2 }));
+      var tocPlan = buildTocPlan_(readySessions);
+      var estimatedTocPages = tocPlan.length;
+      for (var tocIndex = 0; tocIndex < estimatedTocPages; tocIndex += 1) {
+        pages.push(createPage_('toc', '', '', project, pages.length + 1, { tocPage: tocIndex + 1, tocPages: estimatedTocPages }));
+      }
+
+      readySessions.forEach(function (session) {
+        if (nextSide_(pages.length + 1) === 'right') {
+          var previous = pages.length ? previousSessionHeader_(pages) : '';
+          pages.push(createPage_('filler', previous || 'Kalananti SCL Module', '', project, pages.length + 1));
+          if (!previous) { diagnostics.push(warning_('PRE_SESSION_1_FILLER', 'Filler sebelum Session 1 memerlukan visual QA.')); }
+        }
+        var opener = createPage_('opener', 'Session ' + session.session, fullTopic_(session), project, pages.length + 1);
+        decorateOpener_(opener, session, project);
+        opener.dataset.session = String(session.session);
+        pages.push(opener);
+        canvas.appendChild(opener);
+        fitOpenerTitle_(opener.querySelector('.a4-opener-topic'));
+        anchors[String(session.session)] = pages.length;
+        if (fullTopic_(session).length > TOPIC_SOFT_LIMIT) {
+          diagnostics.push(warning_('SESSION_TOPIC_TOO_LONG', 'Session ' + session.session + ' topic lebih dari 80 karakter; source dipertahankan utuh.'));
+          opener.querySelector('.a4-opener-topic').classList.add('long-topic');
+        }
+        paginateSession_(pages, session, project, diagnostics, canvas, opener);
+      });
+
+      pages.push(createPage_('back-cover', '', '', project, pages.length + 1));
+      pages.forEach(function (page) { canvas.appendChild(page); });
+      numberPages_(pages);
+      pages.filter(function (page) { return page.dataset.role === 'opener'; }).forEach(function (page) {
+        anchors[page.dataset.session] = Number(page.querySelector('.a4-page-number').textContent);
+      });
+      var tocPages = fillToc_(pages, tocPlan, anchors);
+      return { pages: pages, pageCount: pages.length, anchors: anchors, tocPages: tocPages, project: project };
+    }
+
+    function paginateSession_(pages, session, project, diagnostics, canvas, opener) {
+      var blocks = mergeFlowContinuations_(deepFlattenFlow_(buildSessionBlocks_(session, project)));
+      var page = opener || null;
+      blocks.forEach(function (block) {
+        if (!page || block.dataset.manualBreak === 'true') {
+          page = createContentPage_(pages, session, project, canvas);
+          if (block.dataset.manualBreak === 'true') { return; }
+        }
+        var body = page.querySelector('.a4-opener-flow, .a4-page-body');
+        body.appendChild(block);
+        if (bodyOverflows_(body)) {
+          if (block.querySelectorAll && block.querySelectorAll(':scope > p').length > 1) {
+            body.removeChild(block);
+            page = splitParagraphSection_(pages, page, block, session, project, diagnostics, canvas);
+            return;
+          }
+          body.removeChild(block);
+          page = createContentPage_(pages, session, project, canvas);
+          body = page.querySelector('.a4-page-body');
+          block.dataset.continuation = 'true';
+          body.appendChild(block);
+          if (bodyOverflows_(body)) {
+            var splitResult = splitStructuredBlock_(pages, page, block, session, project, diagnostics, canvas);
+            if (splitResult) {
+              page = splitResult;
+            } else {
+              diagnostics.push(blocking_('ATOMIC_BLOCK_OVERSIZE', 'Session ' + session.session + ' memiliki block yang melebihi satu halaman.'));
+              block.classList.add('a4-block-oversize');
+            }
+          }
+        }
+      });
+    }
+
+    function deepFlattenFlow_(blocks) {
+      var output = [];
+      (blocks || []).forEach(function visit(block) {
+        if (!block || block.nodeType !== 1) { return; }
+        if (block.dataset.flowContainer === 'true') {
+          Array.prototype.slice.call(block.children).forEach(visit);
+        } else {
+          output.push(block);
+        }
+      });
+      return output;
+    }
+
+    function mergeFlowContinuations_(blocks) {
+      var output = [];
+      blocks.forEach(function (block) {
+        var previous = output[output.length - 1];
+        var mergeable = previous && block.dataset.mergeContinuation === 'true' &&
+          previous.dataset.componentId && previous.dataset.componentId === block.dataset.componentId;
+        if (!mergeable) { output.push(block); return; }
+        var previousTarget = previous.querySelector('.bubble-content') || previous;
+        var currentTarget = block.querySelector('.bubble-content') || block;
+        Array.prototype.slice.call(currentTarget.children).forEach(function (child) { previousTarget.appendChild(child); });
+      });
+      return output;
+    }
+
+    function structuredBlockDescriptor_(block) {
+      var content;
+      var fixed = [];
+      if (block.classList.contains('knowledge-bubble')) {
+        content = block.querySelector(':scope > .bubble-content');
+        fixed = Array.prototype.slice.call(block.children).filter(function (child) { return child !== content; });
+      } else if (block.classList.contains('activity-card') || block.classList.contains('challenge-card')) {
+        content = block;
+        fixed = Array.prototype.slice.call(block.children).filter(function (child) {
+          return child.classList.contains('activity-label') || child.classList.contains('challenge-label');
+        });
+      } else if (block.classList.contains('quiz-item')) {
+        content = block;
+        fixed = Array.prototype.slice.call(block.children).filter(function (child) { return child.classList.contains('quiz-header'); });
+      } else if (block.classList.contains('step-container')) {
+        content = block;
+        fixed = Array.prototype.slice.call(block.children).filter(function (child) { return child.classList.contains('step-headpack'); });
+      } else {
+        return null;
+      }
+      var units = Array.prototype.slice.call(content.children).filter(function (child) {
+        return fixed.indexOf(child) === -1;
+      });
+      return units.length > 1 ? { content: content, fixed: fixed, units: units } : null;
+    }
+
+    function createStructuredChunk_(source, descriptor, continuation) {
+      var chunk = createSectionShell_(source, continuation, null);
+      var target = chunk;
+      descriptor.fixed.forEach(function (node) {
+        var copy = node.cloneNode(true);
+        if (continuation) {
+          var label = copy.matches('.think-title, .activity-label, .challenge-label') ? copy : copy.querySelector('.step-badge');
+          if (label) { label.textContent = label.textContent.replace(/\s+\(Lanjutan\)$/i, ''); }
+        }
+        chunk.appendChild(copy);
+      });
+      if (descriptor.content !== source) {
+        target = descriptor.content.cloneNode(false);
+        chunk.appendChild(target);
+      }
+      return { root: chunk, content: target };
+    }
+
+    function splitStructuredBlock_(pages, page, block, session, project, diagnostics, canvas) {
+      var descriptor = structuredBlockDescriptor_(block);
+      if (!descriptor) { return null; }
+      var body = page.querySelector('.a4-page-body');
+      body.removeChild(block);
+      var chunkIndex = 0;
+      var chunk = createStructuredChunk_(block, descriptor, false);
+      body.appendChild(chunk.root);
+      descriptor.units.forEach(function (unit) {
+        chunk.content.appendChild(unit);
+        if (!bodyOverflows_(body)) { return; }
+        chunk.content.removeChild(unit);
+        if (!chunk.content.children.length) {
+          chunk.content.appendChild(unit);
+          chunk.root.classList.add('a4-block-oversize');
+          diagnostics.push(blocking_('STRUCTURED_UNIT_OVERSIZE', 'Session ' + session.session + ' memiliki satu unit semantic yang melebihi halaman.'));
+          return;
+        }
+        page = createContentPage_(pages, session, project, canvas);
+        body = page.querySelector('.a4-page-body');
+        chunkIndex += 1;
+        chunk = createStructuredChunk_(block, descriptor, true);
+        chunk.root.dataset.continuationIndex = String(chunkIndex);
+        body.appendChild(chunk.root);
+        chunk.content.appendChild(unit);
+        if (bodyOverflows_(body)) {
+          chunk.root.classList.add('a4-block-oversize');
+          diagnostics.push(blocking_('STRUCTURED_UNIT_OVERSIZE', 'Session ' + session.session + ' memiliki satu unit semantic yang melebihi halaman.'));
+        }
+      });
+      return page;
+    }
+
+    function splitParagraphSection_(pages, page, block, session, project, diagnostics, canvas) {
+      var paragraphs = Array.prototype.slice.call(block.querySelectorAll(':scope > p'));
+      var heading = block.querySelector(':scope > h3');
+      var section = createSectionShell_(block, false, heading);
+      var body = page.querySelector('.a4-page-body');
+      body.appendChild(section);
+      paragraphs.forEach(function (paragraph) {
+        var copy = paragraph.cloneNode(true);
+        section.appendChild(copy);
+        if (!bodyOverflows_(body)) { return; }
+        section.removeChild(copy);
+        if (!section.querySelector(':scope > p')) { body.removeChild(section); }
+        page = createContentPage_(pages, session, project, canvas);
+        body = page.querySelector('.a4-page-body');
+        section = createSectionShell_(block, true, null);
+        body.appendChild(section); section.appendChild(copy);
+        if (bodyOverflows_(body)) {
+          diagnostics.push(blocking_('PARAGRAPH_OVERSIZE', 'Session ' + session.session + ' memiliki paragraf yang melebihi satu halaman.'));
+          section.classList.add('a4-block-oversize');
+        }
+      });
+      return page;
+    }
+
+    function createSectionShell_(source, continuation, heading) {
+      var section = document.createElement(source.tagName.toLowerCase());
+      section.className = source.className;
+      Array.prototype.forEach.call(source.attributes, function (attribute) {
+        if (attribute.name !== 'class') { section.setAttribute(attribute.name, attribute.value); }
+      });
+      if (continuation) { section.dataset.continuation = 'true'; }
+      if (heading) { section.appendChild(heading.cloneNode(true)); }
+      return section;
+    }
+
+    function createContentPage_(pages, session, project, canvas) {
+      var isSessionPreview = !pages.length || (pages[0].dataset.role === 'opener' && !pages.some(function (p) { return p.dataset.role === 'cover'; }));
+      var side = isSessionPreview ? (pages.length % 2 === 1 ? 'right' : 'left') : nextSide_(pages.length + 1);
+      var role = side === 'left' ? 'content-left' : 'content-right';
+      var physicalPage = side === 'left' ? 2 : 1;
+      var page = createPage_(role, 'Session ' + session.session, fullTopic_(session), project, physicalPage);
+      page.dataset.session = String(session.session);
+      pages.push(page);
+      canvas.appendChild(page);
+      return page;
+    }
+
+    function renderSessionPreview(project, session, options) {
+      options = options || {};
+      var renderToken = ++previewRenderToken;
+      var canvas = options.canvas || document.getElementById('sessionA4Preview');
+      var diagnosticsRoot = options.diagnostics || document.getElementById('sessionPreviewDiagnostics');
+      var previousScrollTop = options.restoreScrollTop === undefined ? canvas.scrollTop : options.restoreScrollTop;
+      var diagnostics = [];
+      var pages = [];
+      canvas.replaceChildren();
+      assetInstance = 0;
+      var opener = createPage_('opener', 'Session ' + session.session, fullTopic_(session), project, 2);
+      decorateOpener_(opener, session, project);
+      opener.dataset.session = String(session.session);
+      pages.push(opener);
+      canvas.appendChild(opener);
+      fitOpenerTitle_(opener.querySelector('.a4-opener-topic'));
+      if (fullTopic_(session).length > TOPIC_SOFT_LIMIT) {
+        opener.querySelector('.a4-opener-topic').classList.add('long-topic');
+        diagnostics.push(warning_('SESSION_TOPIC_TOO_LONG', 'Topic lebih dari 80 karakter; source tetap utuh.'));
+      }
+      paginateSession_(pages, session, project, diagnostics, canvas, opener);
+      numberPages_(pages);
+      scanOverflow_(canvas, diagnostics);
+      var result = {
+        pages: pages,
+        pageCount: pages.length,
+        diagnostics: dedupeDiagnostics_(diagnostics),
+        stable: true,
+        iterations: 1,
+        blocking: diagnostics.some(function (item) { return item.blocking; }),
+        project: project
+      };
+      renderDiagnostics_(diagnosticsRoot, result);
+      canvas.dataset.pageCount = String(result.pageCount);
+      canvas.dataset.paginationStable = 'true';
+      canvas.scrollTop = Math.min(previousScrollTop, Math.max(0, canvas.scrollHeight - canvas.clientHeight));
+      var fontsReadyPromise = options.fontsReadyPromise || (document.fonts && document.fonts.ready);
+      if (!options.fontsReady && fontsReadyPromise) {
+        Promise.resolve(fontsReadyPromise).then(function () {
+          if (renderToken !== previewRenderToken) { return; }
+          renderSessionPreview(project, session, Object.assign({}, options, {
+            fontsReady: true,
+            restoreScrollTop: canvas.scrollTop
+          }));
+        });
+      }
+      if (!options.imagesReady) {
+        var pendingImages = Array.prototype.slice.call(canvas.querySelectorAll('.a4-image-block img'));
+        if (pendingImages.length) {
+          Promise.all(pendingImages.map(function (image) {
+            return waitForImage_(image, DEFAULT_IMAGE_TIMEOUT_MS).catch(function () { return false; });
+          })).then(function () {
+            if (renderToken !== previewRenderToken) { return; }
+            renderSessionPreview(project, session, Object.assign({}, options, {
+              imagesReady: true,
+              restoreScrollTop: canvas.scrollTop
+            }));
+          });
+        }
+      }
+      return result;
+    }
+
+    function buildSessionBlocks_(session, project) {
+      if (window.SclLegacyAdapter) {
+        var adaptedSession = Object.assign({}, session, {
+          courseKey: project && project.course ? project.course.key : session.courseKey
+        });
+        return window.SclLegacyAdapter.adaptSession(adaptedSession).components.filter(function (component) {
+          return component.type !== 'objectives';
+        }).map(function (component) {
+          return buildLegacyComponent_(component);
+        }).filter(Boolean);
+      }
+      var fields = session.fields || {};
+      var blocks = [];
+      FIELD_ORDER.forEach(function (definition) {
+        if (definition[0] === 'materials' && (session.liveDraft || Array.isArray(session.materialBlocks))) {
+          appendMaterialBlocks_(blocks, session.liveDraft ? buildLiveMaterialBlocks_(fields) : session.materialBlocks, definition);
+          return;
+        }
+        var value = fields[definition[0]];
+        var text = typeof value === 'string' ? value : (value && value.text || '');
+        if (!text.trim()) { return; }
+        var section = null;
+        text.split('\n').forEach(function (line) {
+          if (line === '[[SCL_PAGE_BREAK]]') {
+            var pageBreak = document.createElement('div'); pageBreak.dataset.manualBreak = 'true'; blocks.push(pageBreak);
+            section = null;
+          } else if (line.trim()) {
+            if (!section) {
+              section = document.createElement('section');
+              section.className = 'a4-content-block a4-' + definition[2];
+              section.dataset.field = definition[0];
+              var heading = document.createElement('h3'); heading.textContent = definition[1]; section.appendChild(heading);
+              blocks.push(section);
+            }
+            renderLineWithImages_(section, line);
+          }
+        });
+      });
+      (session.tables || []).forEach(function (entry) {
+        var rows = entry.table && entry.table.rows || [];
+        var chunks = []; for (var index = 0; index < rows.length; index += 5) { chunks.push(rows.slice(index, index + 5)); }
+        (chunks.length ? chunks : [[]]).forEach(function (chunk, chunkIndex) {
+          var copy = { tableId: entry.tableId, table: Object.assign({}, entry.table, { rows: chunk }) };
+          var table = buildTable_(copy); if (chunkIndex) { table.dataset.continuation = 'true'; } blocks.push(table);
+        });
+      });
+      return blocks;
+    }
+
+    function buildLegacyComponent_(component) {
+      var root;
+      if (component.type === 'page-break') {
+        root = document.createElement('div');
+        root.dataset.manualBreak = 'true';
+        return root;
+      }
+      if (component.type === 'image') {
+        var widthPercent = clampInteger_(component.displayWidthPercent, 25, 100, DEFAULT_IMAGE_WIDTH_PERCENT);
+        root = createImageBlock_({
+          text: component.url,
+          alt: component.alt,
+          displayWidthPercent: widthPercent,
+          preflightWidth: component.preflightWidth,
+          preflightHeight: component.preflightHeight
+        });
+        root.classList.add('shot-card');
+        root.dataset.field = component.field;
+        root.dataset.componentId = component.id;
+        return root;
+      }
+      if (component.type === 'objectives') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block legacy-objectives';
+        var objectives = document.createElement('ul');
+        objectives.className = 'list-objective';
+        component.items.forEach(function (item) {
+          var li = document.createElement('li');
+          renderRichTextContent_(li, item);
+          objectives.appendChild(li);
+        });
+        root.appendChild(objectives);
+      } else if (component.type === 'paragraph') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block lesson-flow';
+        var textStyle = String(component.textStyle || 'normal');
+        var paragraph;
+        var contentRoot;
+        if (textStyle === 'heading1' || textStyle === 'heading2' || textStyle === 'heading3') {
+          var fullText = String(component.model && component.model.text || component.text || '').trim();
+          var colonIndex = fullText.indexOf(':');
+          var badgeText = '';
+          var titleText = fullText;
+          if (colonIndex > 0 && colonIndex < 35) {
+            badgeText = fullText.slice(0, colonIndex).trim();
+            titleText = fullText.slice(colonIndex + 1).trim();
+          } else if (/^(?:Tahap|Bagian|Langkah|Misi|Sesi|Level)\s+[A-Za-z0-9.]+/i.test(fullText)) {
+            var m = fullText.match(/^((?:Tahap|Bagian|Langkah|Misi|Sesi|Level)\s+[A-Za-z0-9.]+)\s*[-—:]?\s*(.*)$/i);
+            if (m && m[2]) {
+              badgeText = m[1].trim();
+              titleText = m[2].trim();
+            }
+          }
+
+          if (badgeText) {
+            var card = document.createElement('div');
+            card.className = 'step-card ' + (textStyle === 'heading1' ? 'step-card-h1' : (textStyle === 'heading2' ? 'step-card-h2' : 'step-card-h3'));
+            var badge = document.createElement('span');
+            badge.className = 'step-badge';
+            badge.textContent = badgeText;
+            var headingEl = document.createElement(textStyle === 'heading1' ? 'h2' : (textStyle === 'heading2' ? 'h3' : 'h4'));
+            headingEl.className = textStyle === 'heading1' ? 'text-heading-1' : (textStyle === 'heading2' ? 'text-heading-2' : 'text-heading-3');
+            var titleOffset = fullText.indexOf(titleText);
+            var titleModel = sliceLineModel_(component.model || { text: fullText, runs: [] }, titleOffset >= 0 ? titleOffset : 0, fullText.length);
+            renderRichTextContent_(headingEl, titleModel);
+            card.append(badge, headingEl);
+            root.appendChild(card);
+            return root;
+          }
+
+          paragraph = document.createElement(textStyle === 'heading1' ? 'h2' : (textStyle === 'heading2' ? 'h3' : 'h4'));
+          paragraph.className = textStyle === 'heading1' ? 'text-heading-1' : (textStyle === 'heading2' ? 'text-heading-2' : 'text-heading-3');
+          contentRoot = paragraph;
+        } else if (textStyle === 'bullet' || textStyle === 'numbered') {
+          paragraph = document.createElement(textStyle === 'bullet' ? 'ul' : 'ol');
+          paragraph.className = 'text-list text-list-' + textStyle;
+          if (textStyle === 'numbered') {
+            paragraph.start = Math.max(1, Number(component.listOrdinal) || 1);
+            paragraph.style.setProperty('--scl-list-offset', String(paragraph.start - 1));
+          }
+          contentRoot = document.createElement('li');
+          paragraph.appendChild(contentRoot);
+        } else {
+          paragraph = document.createElement('p');
+          paragraph.className = 'text-reading';
+          contentRoot = paragraph;
+        }
+        renderRichTextContent_(contentRoot, component.model);
+        root.appendChild(paragraph);
+      } else if (component.type === 'code') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block code-ide keep-together';
+        var ideChrome = document.createElement('div');
+        ideChrome.className = 'code-ide-chrome';
+        var ideDots = document.createElement('span');
+        ideDots.className = 'code-ide-dots';
+        ideDots.setAttribute('aria-hidden', 'true');
+        var ideLabel = document.createElement('span');
+        ideLabel.className = 'code-ide-label';
+        var rawLang = String(component.language || 'code').trim().toLowerCase();
+        if (rawLang === 'lua' || rawLang === 'roblox') {
+          ideLabel.textContent = 'ROBLOX LUA IDE';
+        } else if (rawLang === 'python' || rawLang === 'py') {
+          ideLabel.textContent = 'PYTHON IDE';
+        } else {
+          ideLabel.textContent = rawLang.toUpperCase() + ' IDE';
+        }
+        ideChrome.append(ideDots, ideLabel);
+        var pre = document.createElement('pre');
+        var code = document.createElement('code');
+        code.textContent = String(component.code || '');
+        pre.appendChild(code);
+        root.append(ideChrome, pre);
+      } else if (component.type === 'bubble') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block think-bubble knowledge-bubble' +
+          (component.treatment === 'did-you-know' ? ' warm' : '');
+        var bubbleTitle = document.createElement('span');
+        bubbleTitle.className = 'think-title';
+        bubbleTitle.textContent = component.label;
+        var bubbleContent = document.createElement('div');
+        bubbleContent.className = 'bubble-content';
+        var lines = Array.isArray(component.lines) && component.lines.length
+          ? component.lines
+          : splitRichTextLines_(component.model);
+        var currentList = null;
+        var currentListType = '';
+        var numberedCount = 0;
+        lines.forEach(function (lineModel) {
+          var lineText = String(lineModel && lineModel.text || '').trim();
+          if (!lineText) { return; }
+          if (isImageUrl_(lineText)) {
+            currentList = null;
+            currentListType = '';
+            var widthPercent = imageWidthFromModel_(lineModel);
+            var imgBlock = createImageBlock_({
+              text: lineText,
+              alt: 'Panduan Visual',
+              displayWidthPercent: widthPercent
+            });
+            imgBlock.classList.add('bubble-image-item');
+            bubbleContent.appendChild(imgBlock);
+            return;
+          }
+          var sameLineCode = lineText.match(/^(?:[-*•‣◦∙⁃▪●○✦]|\d+[.)])?\s*```([^\n]*?)```$/);
+          if (sameLineCode) {
+            currentList = null;
+            currentListType = '';
+            var pre = document.createElement('pre');
+            pre.className = 'bubble-code-block';
+            var codeEl = document.createElement('code');
+            codeEl.textContent = sameLineCode[1];
+            pre.appendChild(codeEl);
+            bubbleContent.appendChild(pre);
+            return;
+          }
+          var listPrefix = listPrefixInfo_(lineText);
+          if (listPrefix && listPrefix.kind === 'bullet') {
+            if (!currentList || currentListType !== 'bullet') {
+              currentList = document.createElement('ul');
+              currentList.className = 'text-list text-list-bullet';
+              bubbleContent.appendChild(currentList);
+              currentListType = 'bullet';
+            }
+            var li = document.createElement('li');
+            var strippedBullet = stripListPrefix_(lineModel);
+            renderRichTextContent_(li, strippedBullet);
+            currentList.appendChild(li);
+          } else if (listPrefix && listPrefix.kind === 'numbered') {
+            if (listPrefix.ordinal) {
+              numberedCount = listPrefix.ordinal;
+            } else {
+              numberedCount = (currentListType === 'numbered' ? numberedCount + 1 : 1);
+            }
+            if (!currentList || currentListType !== 'numbered') {
+              currentList = document.createElement('ol');
+              currentList.className = 'text-list text-list-numbered';
+              currentList.start = numberedCount;
+              currentList.style.setProperty('--scl-list-offset', String(numberedCount - 1));
+              bubbleContent.appendChild(currentList);
+              currentListType = 'numbered';
+            }
+            var numLi = document.createElement('li');
+            var strippedNum = stripListPrefix_(lineModel);
+            renderRichTextContent_(numLi, strippedNum);
+            currentList.appendChild(numLi);
+          } else {
+            currentList = null;
+            currentListType = '';
+            var p = document.createElement('p');
+            p.className = 'text-reading';
+            renderRichTextContent_(p, lineModel);
+            bubbleContent.appendChild(p);
+          }
+        });
+        root.append(bubbleTitle, bubbleContent);
+      } else if (component.type === 'step') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block step-container';
+        var head = document.createElement('div');
+        head.className = 'step-headpack';
+        var card = document.createElement('div');
+        card.className = 'step-card';
+        var badge = document.createElement('span');
+        badge.className = 'step-badge';
+        badge.textContent = component.keyword + ' ' + component.number;
+        var title = document.createElement('h4');
+        title.className = 'step-title';
+        title.textContent = component.title || 'Langkah pembelajaran';
+        card.append(badge, title); head.appendChild(card); root.appendChild(head);
+        component.items.forEach(function (item) {
+          var wrapper = document.createElement('div');
+          wrapper.className = 'step-content-item' + (item.type === 'image' ? ' keep-together' : '');
+          var child = buildLegacyComponent_(item);
+          if (child) { wrapper.appendChild(child); root.appendChild(wrapper); }
+        });
+      } else if (component.type === 'task') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block ' + component.treatment;
+        var taskLabel = document.createElement('div');
+        taskLabel.className = component.treatment === 'activity-card' ? 'activity-label' : 'challenge-label';
+        taskLabel.textContent = component.label;
+        root.appendChild(taskLabel);
+        component.items.forEach(function (item) {
+          if (item.type === 'image') {
+            var taskImage = buildLegacyComponent_({
+              id: component.id + '-image', type: 'image', field: component.field,
+              url: item.url, alt: item.alt, displayWidthPercent: item.displayWidthPercent
+            });
+            taskImage.classList.add('todo-group-image-item');
+            root.appendChild(taskImage);
+            return;
+          }
+          var row = document.createElement('div');
+          row.className = 'check-row';
+          var box = document.createElement('span');
+          box.className = 'check-box';
+          box.setAttribute('aria-hidden', 'true');
+          var content = document.createElement('div');
+          content.className = 'check-content';
+          var taskModel = item.model;
+          if (taskModel && typeof taskModel.text === 'string') {
+            var mCheck = taskModel.text.match(/^([\s\u200B-\u200D\u2060\uFEFF]*)(?:[-*•‣◦∙⁃▪●○✦]\s+)?\[(?:\s|x|X)?\]\s*(.*)$/);
+            if (mCheck) {
+              var visText = mCheck[2].trim();
+              var startPos = taskModel.text.indexOf(visText);
+              if (startPos < 0) { startPos = 0; }
+              taskModel = sliceLineModel_(taskModel, startPos, taskModel.text.length);
+            }
+          }
+          renderRichTextContent_(content, taskModel);
+          row.append(box, content); root.appendChild(row);
+        });
+      } else if (component.type === 'quiz') {
+        root = document.createElement('section');
+        root.className = 'a4-content-block quiz-item quiz-stack';
+        var quizHeader = document.createElement('div');
+        quizHeader.className = 'quiz-header';
+        quizHeader.textContent = component.label;
+        root.appendChild(quizHeader);
+        component.items.forEach(function (item) {
+          var questionBlock = document.createElement('div');
+          questionBlock.className = 'quiz-question-block keep-together';
+          var question = document.createElement('p');
+          question.className = 'quiz-question';
+          var number = document.createElement('span');
+          number.className = 'quiz-number'; number.textContent = item.number + '.';
+          var questionText = document.createElement('span');
+          questionText.textContent = item.question;
+          question.append(number, questionText); questionBlock.appendChild(question);
+          var options = document.createElement('div'); options.className = 'quiz-options';
+          (item.options || []).forEach(function (option) {
+            var optionRow = document.createElement('p'); optionRow.className = 'quiz-option';
+            var optionBadge = document.createElement('span'); optionBadge.className = 'quiz-option-badge'; optionBadge.textContent = option.label;
+            var optionText = document.createElement('span'); optionText.textContent = option.text;
+            optionRow.append(optionBadge, optionText); options.appendChild(optionRow);
+          });
+          questionBlock.appendChild(options); root.appendChild(questionBlock);
+        });
+      } else if (component.type === 'table') {
+        root = buildTable_({ tableId: component.tableId, table: component.table });
+        root.classList.add('legacy-table');
+        if (component.continuation) { root.dataset.continuation = 'true'; }
+      }
+      if (!root) { return null; }
+      root.dataset.field = component.field;
+      root.dataset.componentId = component.id;
+      return root;
+    }
+
+    function renderLineWithImages_(container, lineModelOrText) {
+      var text = (lineModelOrText && typeof lineModelOrText === 'object') ? String(lineModelOrText.text || '') : String(lineModelOrText || '');
+      var imagePattern = /(https:\/\/[^\s<>"']+?\.(?:png|jpe?g|webp)(?:[?#][^\s<>"']*)?)/ig;
+      var matches = [];
+      var match;
+      while ((match = imagePattern.exec(text))) {
+        matches.push({ index: match.index, url: match[0] });
+      }
+      if (!matches.length) {
+        var p = document.createElement('p');
+        renderRichTextContent_(p, lineModelOrText);
+        container.appendChild(p);
+        return;
+      }
+      var cursor = 0;
+      matches.forEach(function (entry) {
+        if (entry.index > cursor) {
+          var subText = text.slice(cursor, entry.index);
+          if (subText.trim()) {
+            var pSub = document.createElement('p');
+            pSub.textContent = subText.trim();
+            container.appendChild(pSub);
+          }
+        }
+        var imgBlock = createImageBlock_({ text: entry.url, displayWidthPercent: DEFAULT_IMAGE_WIDTH_PERCENT });
+        container.appendChild(imgBlock);
+        cursor = entry.index + entry.url.length;
+      });
+      if (cursor < text.length) {
+        var remText = text.slice(cursor);
+        if (remText.trim()) {
+          var pRem = document.createElement('p');
+          pRem.textContent = remText.trim();
+          container.appendChild(pRem);
+        }
+      }
+    }
+
+    function appendProjectDiagnostics_(project, diagnostics) {
+      (project.diagnostics || []).forEach(function (item) {
+        var blocking = item.blocking === true || String(item.severity || '').toUpperCase() === 'BLOCKING';
+        diagnostics.push(blocking ? blocking_(String(item.code || 'PROJECT_BLOCKED'), 'Project memiliki blocking diagnostic.') : warning_(String(item.code || 'PROJECT_WARNING'), 'Project memiliki warning.'));
+      });
+      (project.sessions || []).forEach(function (session) {
+        (session.warnings || []).forEach(function (item) {
+          var code = String(item.code || 'SESSION_WARNING');
+          var blocking = item.blocking === true || String(item.severity || '').toUpperCase() === 'BLOCKING' || code === 'TABLE_ANCHOR_STALE';
+          if (blocking) { diagnostics.push(blocking_(code, 'Session ' + session.session + ' harus diperbaiki sebelum print.')); }
+        });
+      });
+    }
+
+    function appendMaterialBlocks_(blocks, materialBlocks, definition) {
+      var currentSection = null;
+      var currentTreatment = '';
+      var headingRendered = false;
+      materialBlocks.forEach(function (model) {
+        if (model.type === 'page-break') {
+          var pageBreak = document.createElement('div'); pageBreak.dataset.manualBreak = 'true'; blocks.push(pageBreak);
+          currentSection = null; currentTreatment = ''; return;
+        }
+        if (model.type === 'image') {
+          blocks.push(createImageBlock_(model)); currentSection = null; currentTreatment = ''; return;
+        }
+        if ((model.type === 'tutor-says' || model.type === 'did-you-know') && model.missingDefinition) { return; }
+        var treatment = model.type === 'tutor-says' ? 'tutor-says' : (model.type === 'did-you-know' ? 'did-you-know' : definition[2]);
+        if (!currentSection || currentTreatment !== treatment || treatment !== definition[2]) {
+          currentSection = document.createElement('section');
+          currentSection.className = 'a4-content-block a4-' + treatment;
+          currentSection.dataset.field = definition[0];
+          if (!headingRendered && treatment === definition[2]) {
+            var heading = document.createElement('h3'); heading.textContent = definition[1]; currentSection.appendChild(heading);
+            headingRendered = true;
+          }
+          blocks.push(currentSection); currentTreatment = treatment;
+        }
+        if (model.type === 'bullet' || model.type === 'numbered-item') {
+          var listClass = model.type === 'bullet' ? 'text-list-bullet' : 'text-list-numbered';
+          var listTag = model.type === 'bullet' ? 'ul' : 'ol';
+          var listEl = currentSection.lastElementChild;
+          if (!listEl || listEl.tagName.toLowerCase() !== listTag || !listEl.classList.contains(listClass)) {
+            listEl = document.createElement(listTag);
+            listEl.className = 'text-list ' + listClass;
+            if (model.type === 'numbered-item' && model.explicitOrdinal) {
+              listEl.start = model.explicitOrdinal;
+              listEl.style.setProperty('--scl-list-offset', String(model.explicitOrdinal - 1));
+            }
+            currentSection.appendChild(listEl);
+          }
+          var li = document.createElement('li');
+          renderRichTextContent_(li, model.richText || model.definition || model.text || '');
+          listEl.appendChild(li);
+        } else {
+          renderLineWithImages_(currentSection, model.richText || model.definition || model.text || '');
+        }
+        if (treatment !== definition[2]) { currentSection = null; currentTreatment = ''; }
+      });
+    }
+
+    function buildLiveMaterialBlocks_(fields) {
+      var material = fields.materials || { text: '', runs: [] };
+      var definitions = {};
+      ['kamus_coder', 'for_your_knowledge'].forEach(function (field) {
+        var currentMarker = '';
+        splitRichTextLines_(fields[field]).forEach(function (lineModel) {
+          var match = lineModel.text.match(/^\s*((?:kc|fyk)\d+)\s*:\s*(.*)$/i);
+          if (match) {
+            currentMarker = match[1].toLowerCase();
+            var prefixLen = lineModel.text.indexOf(match[2]);
+            if (prefixLen < 0) { prefixLen = 0; }
+            definitions[currentMarker] = sliceLineModel_(lineModel, prefixLen, lineModel.text.length);
+          } else if (currentMarker && lineModel.text.trim()) {
+            if (!definitions[currentMarker]) {
+              definitions[currentMarker] = { text: '', runs: [] };
+            }
+            var offset = definitions[currentMarker].text.length + 1;
+            definitions[currentMarker].text += (definitions[currentMarker].text ? '\n' : '') + lineModel.text;
+            (lineModel.runs || []).forEach(function (run) {
+              definitions[currentMarker].runs.push(Object.assign({}, run, {
+                start: run.start + offset,
+                end: run.end + offset
+              }));
+            });
+          }
+        });
+      });
+      return splitRichTextLines_(material).map(function (lineModel) {
+        var text = lineModel.text.trim();
+        if (text === '[[SCL_PAGE_BREAK]]') { return { type: 'page-break', text: text }; }
+        var heading = text.match(/^(#{1,3})\s+(.+)$/);
+        if (heading) {
+          var headingText = heading[2].trim();
+          var headingLevel = heading[1].length;
+          var textStyle = headingLevel === 1 ? 'heading1' : (headingLevel === 2 ? 'heading2' : 'heading3');
+          return {
+            type: 'paragraph',
+            text: headingText,
+            richText: markdownRichModel_({ text: headingText, runs: [] }),
+            textStyle: textStyle
+          };
+        }
+        if (/^https:\/\/\S+$/i.test(text)) {
+          var width = DEFAULT_IMAGE_WIDTH_PERCENT;
+          (lineModel.runs || []).some(function (run) {
+            var match = String(run.link || '').match(/#scl-width=(\d{1,3})$/i);
+            if (match) { width = Math.max(25, Math.min(100, Number(match[1]))); return true; }
+            return false;
+          });
+          return { type: 'image', text: text, richText: lineModel, displayWidthPercent: width };
+        }
+        var marker = text.match(/^((?:kc|fyk)\d+)\*$/i);
+        if (marker) {
+          var markerId = marker[1].toLowerCase();
+          var defModel = definitions[markerId] || null;
+          return {
+            type: markerId.indexOf('kc') === 0 ? 'tutor-says' : 'did-you-know',
+            text: defModel ? defModel.text : '',
+            richText: defModel,
+            missingDefinition: !defModel
+          };
+        }
+        var listPrefix = listPrefixInfo_(text);
+        if (listPrefix && listPrefix.kind === 'bullet') {
+          var strippedBullet = listPrefix.text;
+          var bulletOffset = text.indexOf(strippedBullet);
+          return {
+            type: 'bullet',
+            text: strippedBullet,
+            richText: sliceLineModel_(lineModel, bulletOffset, lineModel.text.length)
+          };
+        }
+        if (listPrefix && listPrefix.kind === 'numbered') {
+          var strippedNum = listPrefix.text;
+          var numOffset = text.indexOf(strippedNum);
+          return {
+            type: 'numbered-item',
+            text: strippedNum,
+            richText: sliceLineModel_(lineModel, numOffset, lineModel.text.length),
+            explicitOrdinal: listPrefix.ordinal || null
+          };
+        }
+        return splitInlineImageModels_(Object.assign({}, lineModel, markdownRichModel_(lineModel)));
+      }).reduce(function (models, model) {
+        return models.concat(Array.isArray(model) ? model : [model]);
+      }, []).filter(function (model) { return model.type === 'page-break' || model.text; });
+    }
+
+    function markdownRichModel_(model) {
+      model = model || { text: '', runs: [] };
+      var source = String(model.text || '');
+      var output = '';
+      var runs = [];
+      var cursor = 0;
+      var pattern = /(?<!\w)(\*\*\*|___)(?=\S)([\s\S]*?\S)\1(?!\w)|(?<!\w)(\*\*|__)(?=\S)([\s\S]*?\S)\3(?!\w)|(?<![\w*])([*_])(?=\S)([\s\S]*?\S)\5(?![\w*])/g;
+      var match;
+      while ((match = pattern.exec(source))) {
+        output += source.slice(cursor, match.index);
+        var value = match[2] || match[4] || match[6] || '';
+        var start = output.length;
+        output += value;
+        runs.push({
+          start: start,
+          end: output.length,
+          bold: Boolean(match[2] || match[4]),
+          italic: Boolean(match[2] || match[6]),
+          underline: false,
+          strikethrough: false,
+          link: ''
+        });
+        cursor = match.index + match[0].length;
+      }
+      output += source.slice(cursor);
+      return output === source && !runs.length ? model : { text: output, runs: runs };
+    }
+
+    function splitInlineImageModels_(lineModel) {
+      var text = String(lineModel.text || '');
+      var pattern = /https:\/\/[^\s<>"']+?\.(?:png|jpe?g|webp)(?:[?#][^\s<>"']*)?/ig;
+      var models = []; var cursor = 0; var match;
+      while ((match = pattern.exec(text))) {
+        appendInlineTextModel_(models, lineModel, cursor, match.index);
+        models.push({ type: 'image', text: match[0], richText: sliceLineModel_(lineModel, match.index, match.index + match[0].length), displayWidthPercent: DEFAULT_IMAGE_WIDTH_PERCENT });
+        cursor = match.index + match[0].length;
+      }
+      appendInlineTextModel_(models, lineModel, cursor, text.length);
+      return models.length ? models : [{ type: 'paragraph', text: text.trim(), richText: lineModel }];
+    }
+
+    function appendInlineTextModel_(models, lineModel, start, end) {
+      var raw = String(lineModel.text || '').slice(start, end); var leading = raw.search(/\S/);
+      if (leading < 0) { return; }
+      var trailing = raw.length - raw.trimEnd().length;
+      var from = start + leading; var to = end - trailing;
+      var model = sliceLineModel_(lineModel, from, to);
+      models.push({ type: 'paragraph', text: model.text, richText: model });
+    }
+
+    function sliceLineModel_(lineModel, start, end) {
+      return {
+        text: String(lineModel.text || '').slice(start, end),
+        runs: (lineModel.runs || []).map(function (run) {
+          return Object.assign({}, run, { start: Math.max(start, run.start) - start, end: Math.min(end, run.end) - start });
+        }).filter(function (run) { return run.end > run.start; })
+      };
+    }
+
+    function splitRichTextLines_(model) {
+      var text = String(model && model.text || '');
+      var offset = 0;
+      return text.split('\n').map(function (line) {
+        var start = offset; var end = start + line.length; offset = end + 1;
+        return {
+          text: line,
+          runs: (model.runs || []).map(function (run) {
+            return Object.assign({}, run, { start: Math.max(start, run.start) - start, end: Math.min(end, run.end) - start });
+          }).filter(function (run) { return run.end > run.start; })
+        };
+      });
+    }
+
+    function listPrefixInfo_(text) {
+      var match = String(text || '').match(/^([\s\u200B-\u200D\u2060\uFEFF]*)([-*•‣◦∙⁃▪●○✦]|(?:\d+)[.)])(\s+)(.*)$/);
+      if (!match) { return null; }
+      var marker = String(match[2] || '');
+      var numMatch = marker.match(/^(\d+)/);
+      return {
+        kind: numMatch ? 'numbered' : 'bullet',
+        ordinal: numMatch ? parseInt(numMatch[1], 10) : null,
+        text: String(match[4] || '').trim()
+      };
+    }
+
+    function stripListPrefix_(model) {
+      model = (model && typeof model === 'object') ? model : { text: String(model || ''), runs: [] };
+      var text = String(model.text || '');
+      var prefix = listPrefixInfo_(text);
+      if (!prefix) { return model; }
+      var visible = prefix.text;
+      var start = text.indexOf(visible);
+      if (start < 0) { start = 0; }
+      return sliceLineModel_(model, start, text.length);
+    }
+
+    function isImageUrl_(value) {
+      return /^https:\/\/\S+?\.(?:png|jpe?g|webp|gif|svg)(?:[?#]\S*)?$/i.test(String(value || '').trim());
+    }
+
+    function imageWidthFromModel_(model) {
+      var width = DEFAULT_IMAGE_WIDTH_PERCENT;
+      (model && model.runs || []).some(function (run) {
+        var match = String(run.link || '').match(/#scl-width=(\d+)/);
+        if (match) {
+          width = Math.max(25, Math.min(100, Number(match[1])));
+          return true;
+        }
+        return false;
+      });
+      return width;
+    }
+
+    function renderRichTextContent_(element, modelOrText) {
+      element.replaceChildren();
+      var model = (modelOrText && typeof modelOrText === 'object') ? modelOrText : null;
+      var text = model ? String(model.text || '') : String(modelOrText || '');
+      var runs = (model && Array.isArray(model.runs)) ? model.runs : [];
+      if (!runs.length) {
+        element.textContent = text;
+        return;
+      }
+      var cursor = 0;
+      runs.forEach(function (run) {
+        if (run.start > cursor) {
+          element.appendChild(document.createTextNode(text.slice(cursor, run.start)));
+        }
+        var node = document.createElement(run.link ? 'a' : 'span');
+        if (run.link) { node.href = run.link; node.target = '_blank'; node.rel = 'noopener noreferrer'; }
+        node.style.fontWeight = run.bold ? '800' : '';
+        node.style.fontStyle = run.italic ? 'italic' : '';
+        var decoration = [];
+        if (run.underline) { decoration.push('underline'); }
+        if (run.strikethrough) { decoration.push('line-through'); }
+        if (decoration.length) { node.style.textDecoration = decoration.join(' '); }
+        node.textContent = text.slice(run.start, run.end);
+        element.appendChild(node);
+        cursor = run.end;
+      });
+      if (cursor < text.length) {
+        element.appendChild(document.createTextNode(text.slice(cursor)));
+      }
+    }
+
+    function createImageBlock_(model) {
+      var section = document.createElement('figure'); section.className = 'a4-content-block a4-image-block';
+      var requestedWidth = clampInteger_(model.displayWidthPercent, 25, 100, DEFAULT_IMAGE_WIDTH_PERCENT);
+      var cacheKey = String(model.text || '');
+      var cachedDimensions = imageDimensionCache[cacheKey] || {};
+      var sourceWidth = Number(model.preflightWidth) || cachedDimensions.width || 0;
+      var sourceHeight = Number(model.preflightHeight) || cachedDimensions.height || 0;
+      var fittedWidth = fitImageWidthPercent_(requestedWidth, sourceWidth, sourceHeight);
+      var image = document.createElement('img'); image.src = model.text; image.alt = model.alt || 'Gambar materi pembelajaran';
+      section.style.width = fittedWidth + '%';
+      section.dataset.requestedWidthPercent = String(requestedWidth);
+      section.dataset.renderWidthPercent = String(fittedWidth);
+      section.dataset.autoFitted = String(fittedWidth < requestedWidth);
+      section.dataset.defaultWidth = String(!Number.isInteger(Number(model.displayWidthPercent)));
+      image.dataset.sourceUrl = cacheKey;
+      image.dataset.sourceIndex = 'pending'; image.style.width = '100%';
+      if (sourceWidth && sourceHeight) { image.style.aspectRatio = sourceWidth + ' / ' + sourceHeight; }
+      function applyNaturalFit_() {
+        if (!image.naturalWidth || !image.naturalHeight) { return; }
+        imageDimensionCache[cacheKey] = { width: image.naturalWidth, height: image.naturalHeight };
+        var naturalFit = fitImageWidthPercent_(requestedWidth, image.naturalWidth, image.naturalHeight);
+        section.style.width = naturalFit + '%';
+        section.dataset.renderWidthPercent = String(naturalFit);
+        section.dataset.autoFitted = String(naturalFit < requestedWidth);
+        image.style.aspectRatio = image.naturalWidth + ' / ' + image.naturalHeight;
+      }
+      image.addEventListener('load', applyNaturalFit_, { once: true });
+      if (image.complete) { applyNaturalFit_(); }
+      var placeholder = document.createElement('figcaption'); placeholder.className = 'a4-image-placeholder'; placeholder.hidden = true;
+      placeholder.textContent = 'Gambar tidak dapat dimuat untuk dicetak.';
+      section.append(image, placeholder); return section;
+    }
+
+    function fitImageWidthPercent_(requestedWidth, sourceWidth, sourceHeight) {
+      requestedWidth = clampInteger_(requestedWidth, 25, 100, DEFAULT_IMAGE_WIDTH_PERCENT);
+      sourceWidth = Number(sourceWidth); sourceHeight = Number(sourceHeight);
+      if (requestedWidth < 100 || !(sourceWidth > 0) || !(sourceHeight > 0)) { return requestedWidth; }
+      var heightLimitedWidth = IMAGE_RENDER_MAX_HEIGHT_PX * sourceWidth / sourceHeight;
+      var fitted = Math.floor(heightLimitedWidth / A4_CONTENT_INNER_WIDTH_PX * 100);
+      return Math.max(25, Math.min(requestedWidth, fitted));
+    }
+
+    function buildTable_(entry) {
+      var wrapper = document.createElement('section'); wrapper.className = 'a4-content-block a4-table-block'; wrapper.dataset.tableId = entry.tableId || '';
+      var table = document.createElement('table'); var model = entry.table || {};
+      if (model.caption) { var caption = document.createElement('caption'); caption.textContent = model.caption; table.appendChild(caption); }
+      var thead = document.createElement('thead'); var headerRow = document.createElement('tr');
+      (model.headers || []).forEach(function (header) { var th = document.createElement('th'); th.textContent = header; headerRow.appendChild(th); });
+      thead.appendChild(headerRow); table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      (model.rows || []).forEach(function (row) { var tr = document.createElement('tr'); row.forEach(function (cell) { var td = document.createElement('td'); td.textContent = cell; tr.appendChild(td); }); tbody.appendChild(tr); });
+      table.appendChild(tbody); wrapper.appendChild(table); return wrapper;
+    }
+
+    function createPage_(role, header, topic, project, physicalPage, options) {
+      options = options || {};
+      var page = document.createElement('article');
+      page.className = 'a4-page a4-role-' + role;
+      page.dataset.role = role;
+      var side = (role === 'opener') ? 'left' : nextSide_(physicalPage || 1);
+      page.dataset.side = side;
+      page.classList.add('page-' + side);
+      var assetRole = {
+        cover: 'cover', copyright: 'beginningRight', warning: 'beginningLeft',
+        opener: 'openerLeft', 'content-left': 'contentLeft', 'content-right': 'contentRight',
+        filler: 'contentRight', 'back-cover': 'backCover'
+      }[role];
+      if (role === 'guide' || role === 'toc') { assetRole = side === 'left' ? 'beginningLeft' : 'beginningRight'; }
+      if (assetRole) {
+        var template = document.getElementById('scl-page-asset-' + assetRole);
+        if (template) {
+          var asset = document.createElement('div'); asset.className = 'a4-page-asset'; asset.dataset.source = template.dataset.source || '';
+          var clone = template.content.cloneNode(true); uniquifyAssetIds_(clone, 'scl-page-' + (++assetInstance) + '-');
+          asset.appendChild(clone); page.appendChild(asset);
+        }
+      }
+      var overlay = document.createElement('div'); overlay.className = 'a4-page-overlay';
+      if (role === 'cover') {
+        overlay.innerHTML = '<div class="a4-cover-copy"><strong></strong><span></span></div>';
+        var coverTitle = overlay.querySelector('strong');
+        var coverSubtitle = overlay.querySelector('span');
+        coverTitle.textContent = project.course.coverLabel || project.course.label;
+        coverSubtitle.textContent = 'LEVEL ' + project.level;
+        applySlotGeometry_(coverTitle, COORDINATE_REGISTRY.coverTitle);
+        applySlotGeometry_(coverSubtitle, COORDINATE_REGISTRY.coverSubtitle);
+        applyTextPolicy_(coverTitle, 'cover-title', [28, 24, 20], 22);
+        applyTextPolicy_(coverSubtitle, 'cover-subtitle', [18, 16, 14], 16);
+      } else if (role === 'blank') {
+        page.setAttribute('aria-label', 'Blank verso');
+      } else if (role === 'copyright') {
+        buildLegalPage_(overlay, 'copyright');
+      } else if (role === 'warning') {
+        buildLegalPage_(overlay, 'warning');
+      } else if (role === 'guide') {
+        buildGuidePage_(overlay, options.guidePage || 1);
+      } else if (role === 'toc') {
+        buildTocPage_(overlay, project, options);
+      } else if (role === 'opener') {
+        overlay.innerHTML = '<div class="a4-opener-copy"><strong></strong><h2 class="a4-opener-topic"></h2></div>';
+        overlay.querySelector('strong').textContent = header + ':';
+        overlay.querySelector('h2').textContent = topic;
+        overlay.querySelector('h2').title = topic;
+        applySlotGeometry_(overlay.querySelector('.a4-opener-copy'), COORDINATE_REGISTRY.openerCopy);
+        applyTextPolicy_(overlay.querySelector('h2'), 'opener-topic', [40, 36, 32, 28], 54);
+      } else if (role.indexOf('content-') === 0 || role === 'filler') {
+        var sessionHeader = document.createElement('header'); sessionHeader.className = 'a4-session-header';
+        sessionHeader.innerHTML = '<strong></strong><span></span>';
+        sessionHeader.querySelector('strong').textContent = header;
+        sessionHeader.querySelector('span').textContent = topic;
+        applySlotGeometry_(sessionHeader, COORDINATE_REGISTRY.sessionHeader);
+        sessionHeader.title = topic ? header + ' · ' + topic : header;
+        applyTextPolicy_(sessionHeader.querySelector('strong'), 'session-header', [16, 15, 14], 18);
+        applyTextPolicy_(sessionHeader.querySelector('span'), 'session-topic', [9, 8, 7], 48);
+        overlay.appendChild(sessionHeader);
+        var body = document.createElement('div'); body.className = 'a4-page-body'; overlay.appendChild(body);
+        applySlotGeometry_(body, COORDINATE_REGISTRY.contentViewport, COORDINATE_REGISTRY.contentViewport.paddingCm);
+      }
+      var number = document.createElement('span'); number.className = 'a4-page-number'; page.append(overlay, number);
+      applySlotGeometry_(number, side === 'left' ? COORDINATE_REGISTRY.pageNumberLeft : COORDINATE_REGISTRY.pageNumberRight);
+      return page;
+    }
+
+    function applySlotGeometry_(element, slot, paddingCm) {
+      element.style.position = 'absolute';
+      element.style.left = slot.xCm + 'cm'; element.style.top = slot.yCm + 'cm';
+      element.style.width = slot.widthCm + 'cm'; element.style.height = slot.heightCm + 'cm';
+      if (paddingCm !== undefined) { element.style.padding = paddingCm + 'cm'; }
+      element.dataset.coordinateSlot = 'true';
+    }
+
+    function applyTextPolicy_(element, policy, steps, threshold) {
+      var length = String(element.textContent || '').length;
+      var index = Math.min(steps.length - 1, Math.floor(length / threshold));
+      element.style.fontSize = steps[index] + 'pt';
+      element.dataset.textPolicy = policy;
+      element.dataset.fontStep = String(index);
+    }
+
+    /**
+     * Opener titles are user-authored and can be considerably longer than the
+     * sample copy used by the template.  Do not truncate them with an
+     * ellipsis: progressively reduce the type size until the complete title
+     * fits in the title slot.  This runs after the page is attached to the
+     * preview canvas so scrollHeight reflects the real A4 width.
+     */
+    function fitOpenerTitle_(element) {
+      if (!element) { return; }
+      var steps = [40, 36, 32, 30, 28, 26, 24, 22];
+      var maxHeightPx = 170; // ~4.5 cm: leaves room for the hook/objectives.
+      element.style.display = 'block';
+      element.style.overflow = 'visible';
+      element.style.textOverflow = 'clip';
+      element.style.webkitLineClamp = 'unset';
+      element.style.maxHeight = 'none';
+      element.style.whiteSpace = 'normal';
+      element.style.overflowWrap = 'break-word';
+      for (var index = 0; index < steps.length; index += 1) {
+        element.style.fontSize = steps[index] + 'pt';
+        // scrollHeight is the un-clamped height even when the element has a
+        // max-height in a downstream template override.
+        if (element.scrollHeight <= maxHeightPx) {
+          element.dataset.fontStep = String(index);
+          break;
+        }
+        element.dataset.fontStep = String(index);
+      }
+      element.dataset.textPolicy = 'opener-topic-fit';
+    }
+
+    function buildLegalPage_(overlay, type) {
+      var safe = document.createElement('section'); safe.className = 'a4-legal-safe';
+      applySlotGeometry_(safe, COORDINATE_REGISTRY.contentViewport, COORDINATE_REGISTRY.contentViewport.paddingCm);
+      var card = document.createElement('article'); card.className = 'a4-legal-card' + (type === 'warning' ? ' warning' : '');
+      if (type === 'copyright') {
+        var heading = document.createElement('h1'); heading.textContent = 'Undang-Undang Republik Indonesia Nomor 28 Tahun 2014 Tentang Hak Cipta';
+        var subheading = document.createElement('strong'); subheading.textContent = 'Pasal 113';
+        var list = document.createElement('ol');
+        [
+          'Setiap orang yang dengan tanpa hak melakukan pelanggaran hak ekonomi sebagaimana diatur dalam Pasal 9 ayat (1) untuk penggunaan komersial dapat dipidana dengan pidana penjara paling lama 1 (satu) tahun dan/atau denda paling banyak Rp100.000.000 (seratus juta rupiah).',
+          'Setiap orang yang dengan tanpa izin pencipta atau pemegang hak cipta melakukan pelanggaran hak ekonomi sebagaimana diatur dalam Pasal 9 ayat (1) huruf c, huruf d, huruf f, dan/atau huruf h untuk penggunaan komersial dapat dipidana dengan pidana penjara paling lama 3 (tiga) tahun dan/atau denda paling banyak Rp500.000.000 (lima ratus juta rupiah).',
+          'Setiap orang yang dengan tanpa hak dan/atau tanpa izin pencipta atau pemegang hak cipta melakukan pelanggaran hak ekonomi sebagaimana dimaksud dalam Pasal 9 ayat (1) huruf a, huruf b, huruf e, dan/atau huruf g untuk penggunaan komersial dapat dipidana dengan pidana penjara paling lama 4 (empat) tahun dan/atau denda paling banyak Rp1.000.000.000 (satu miliar rupiah).',
+          'Setiap orang yang memenuhi unsur sebagaimana dimaksud pada ayat (3) yang dilakukan dalam bentuk pembajakan dapat dipidana dengan pidana penjara paling lama 10 (sepuluh) tahun dan/atau denda paling banyak Rp4.000.000.000 (empat miliar rupiah).'
+        ].forEach(function (copy) { var item = document.createElement('li'); item.textContent = copy; list.appendChild(item); });
+        var close = document.createElement('p'); close.className = 'a4-legal-close'; close.textContent = 'Hak cipta buku ini dilindungi. Sebagian atau seluruh isi buku dilarang digunakan, diperbanyak, disebarluaskan, atau dimodifikasi tanpa izin tertulis dari Kalananti.';
+        card.append(heading, subheading, list, close);
+      } else {
+        var label = document.createElement('span'); label.className = 'a4-warning-label'; label.textContent = 'PERINGATAN PENGGUNAAN';
+        var title = document.createElement('h1'); title.textContent = 'Properti Kalananti';
+        card.append(label, title);
+        [
+          'Buku ini merupakan properti Kalananti dan dipinjamkan hanya untuk kegiatan belajar di cabang Kalananti.',
+          'Buku ini tidak untuk diperjualbelikan, dipindahtangankan, digandakan, atau dibawa keluar dari cabang tanpa izin tertulis.',
+          'Penggunaan di luar ketentuan tersebut harus mendapatkan persetujuan resmi dari Kalananti.'
+        ].forEach(function (copy) { var paragraph = document.createElement('p'); paragraph.textContent = copy; card.appendChild(paragraph); });
+      }
+      safe.appendChild(card);
+      overlay.appendChild(safe);
+    }
+
+    var GUIDE_ENTRIES = [
+      ['Tujuan Belajar', 'Kemampuan yang akan kamu kuasai.', 'objectives'],
+      ['Materi & Langkah', 'Ikuti penjelasan dan urutan kerja.', 'step'],
+      ['Tutor Says', 'Tip aman dan efisien dari tutor.', 'tutor'],
+      ['Did You Know?', 'Wawasan tambahan tentang coding.', 'knowledge'],
+      ['Kamus Coder', 'Arti istilah coding yang penting.', 'dictionary'],
+      ['Gambar & Tabel', 'Contoh visual dan data terstruktur.', 'media'],
+      ['MUST DO', 'Tugas utama yang wajib selesai.', 'must'],
+      ['SHOULD DO', 'Latihan pengayaan setelah target utama.', 'should'],
+      ['ASPIRE TO DO', 'Tantangan lanjutan yang mandiri.', 'aspire'],
+      ['Self-Check', 'Periksa kemampuan yang sudah dipahami.', 'self'],
+      ['Mini Quiz', 'Cek pemahaman sebelum lanjut.', 'quiz'],
+      ['Page Break', 'Tanda untuk memulai halaman baru.', 'break']
+    ];
+
+    function buildGuidePage_(overlay, guidePage) {
+      var safe = document.createElement('section'); safe.className = 'a4-guide-safe a4-page-body';
+      applySlotGeometry_(safe, COORDINATE_REGISTRY.contentViewport, COORDINATE_REGISTRY.contentViewport.paddingCm);
+      var kicker = document.createElement('span'); kicker.className = 'a4-front-kicker'; kicker.textContent = guidePage === 1 ? 'KENALI BUKUMU' : 'KENALI TUGASMU';
+      var heading = document.createElement('h1'); heading.className = 'a4-front-title'; heading.textContent = 'Panduan Penggunaan ' + guidePage + '/2';
+      var lead = document.createElement('p'); lead.className = 'a4-front-lead'; lead.textContent = guidePage === 1 ? 'Kenali tanda yang akan muncul selama belajar.' : 'Mulai dari tugas utama, lalu naikkan tantangannya.';
+      var grid = document.createElement('div'); grid.className = 'a4-guide-grid';
+      GUIDE_ENTRIES.slice((guidePage - 1) * 6, guidePage * 6).forEach(function (entry, index) {
+        var card = document.createElement('article'); card.className = 'a4-guide-card';
+        var number = document.createElement('span'); number.className = 'a4-guide-number'; number.textContent = String((guidePage - 1) * 6 + index + 1).padStart(2, '0');
+        var title = document.createElement('strong'); title.textContent = entry[0];
+        var copy = document.createElement('p'); copy.textContent = entry[1];
+        card.append(number, title, copy, buildGuideMiniature_(entry[2])); grid.appendChild(card);
+      });
+      safe.append(kicker, heading, lead, grid);
+      if (guidePage === 2) {
+        var cta = document.createElement('aside'); cta.className = 'a4-ins-card';
+        var ctaCopy = document.createElement('span'); ctaCopy.textContent = 'Lanjutkan ke Interactive Slide (INS)';
+        var link = document.createElement('a'); link.href = INS_URL; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = INS_URL;
+        cta.append(ctaCopy, link); safe.appendChild(cta);
+      }
+      overlay.appendChild(safe);
+    }
+
+    function buildGuideMiniature_(type) {
+      var miniature = document.createElement('div'); miniature.className = 'a4-guide-miniature miniature-' + type;
+      if (type === 'tutor' || type === 'knowledge' || type === 'dictionary') {
+        miniature.classList.add('think-bubble', 'knowledge-bubble');
+        if (type === 'knowledge') { miniature.classList.add('warm'); }
+        var bubbleLabel = document.createElement('span'); bubbleLabel.className = 'think-title'; bubbleLabel.textContent = type === 'knowledge' ? 'Did You Know?' : (type === 'dictionary' ? 'Kamus Coder' : 'Tutor Says');
+        var bubble = document.createElement('div'); bubble.className = 'bubble-content'; bubble.textContent = 'Contoh'; miniature.append(bubbleLabel, bubble);
+      } else if (type === 'must' || type === 'self' || type === 'should' || type === 'aspire') {
+        miniature.classList.add(type === 'must' || type === 'self' ? 'activity-card' : 'challenge-card');
+        var taskLabel = document.createElement('span'); taskLabel.className = type === 'must' || type === 'self' ? 'activity-label' : 'challenge-label'; taskLabel.textContent = type === 'self' ? 'SELF-CHECK' : type.toUpperCase() + (type === 'must' || type === 'should' || type === 'aspire' ? ' DO' : '');
+        miniature.appendChild(taskLabel);
+      } else if (type === 'step') {
+        miniature.classList.add('step-card'); var badge = document.createElement('span'); badge.className = 'step-badge'; badge.textContent = 'Tahap 1'; miniature.appendChild(badge);
+      } else if (type === 'quiz') {
+        miniature.classList.add('quiz-item'); var quiz = document.createElement('span'); quiz.className = 'quiz-header'; quiz.textContent = 'MINI QUIZ'; miniature.appendChild(quiz);
+      } else if (type === 'media') {
+        miniature.innerHTML = '<span class="a4-mini-image"></span><span class="a4-mini-table"></span>';
+      } else if (type === 'break') {
+        miniature.classList.add('a4-mini-break'); miniature.textContent = 'PAGE BREAK';
+      } else {
+        miniature.innerHTML = '<span class="a4-mini-bullet">✦</span><span class="a4-mini-lines"></span>';
+      }
+      return miniature;
+    }
+
+    function buildTocPage_(overlay, project, options) {
+      var safe = document.createElement('section'); safe.className = 'a4-toc-safe a4-page-body';
+      applySlotGeometry_(safe, COORDINATE_REGISTRY.contentViewport, COORDINATE_REGISTRY.contentViewport.paddingCm);
+      var head = document.createElement('div'); head.className = 'a4-toc-head';
+      var title = document.createElement('h1'); title.className = 'a4-front-title'; title.textContent = 'Daftar Isi';
+      var level = document.createElement('span'); level.className = 'a4-toc-level'; level.textContent = (project.course.coverLabel || project.course.label) + ' · LEVEL ' + project.level;
+      head.append(title, level);
+      var list = document.createElement('ol'); list.className = 'a4-toc-list'; list.dataset.tocPage = String(options.tocPage || 1);
+      safe.append(head, list); overlay.appendChild(safe);
+    }
+
+    function decorateOpener_(page, session, project) {
+      var root = page.querySelector('.a4-opener-copy');
+      if (!root) { return; }
+      var objectiveText = session.fields && session.fields.objectives
+        ? String(session.fields.objectives.text || '')
+        : '';
+      var objectives = objectiveText.split('\n').map(function (line) {
+        return line.replace(/^[-*•]\s*/, '').trim();
+      }).filter(Boolean);
+      root.innerHTML = '';
+      var meta = document.createElement('div'); meta.className = 'a4-opener-meta';
+      var badge = document.createElement('span'); badge.className = 'a4-opener-badge';
+      badge.textContent = 'SESSION ' + String(session.session).padStart(2, '0');
+      var course = document.createElement('span'); course.className = 'a4-opener-course';
+      course.textContent = (project.course.coverLabel || project.course.label) + ' · LEVEL ' + project.level;
+      meta.append(badge, course);
+      var title = document.createElement('h2'); title.className = 'a4-opener-topic';
+      title.textContent = fullTopic_(session); title.title = fullTopic_(session);
+      applyTextPolicy_(title, 'opener-topic', [40, 36, 32, 28], 54);
+      var hook = document.createElement('p'); hook.className = 'a4-opener-hook';
+      hook.textContent = 'Kenali tujuan session ini, ikuti langkahnya, lalu buat proyekmu sendiri.';
+      var objectiveCard = document.createElement('section'); objectiveCard.className = 'a4-opener-objectives';
+      if (objectives.length > 4) { objectiveCard.classList.add('compact'); }
+      var label = document.createElement('strong'); label.textContent = 'DI SESI INI KAMU AKAN';
+      var list = document.createElement('ul');
+      (objectives.length ? objectives : ['Mengenali konsep utama session.', 'Menerapkan konsep melalui sebuah proyek.']).forEach(function (objective) {
+        var item = document.createElement('li'); item.textContent = objective; list.appendChild(item);
+      });
+      objectiveCard.append(label, list);
+      var chips = document.createElement('div'); chips.className = 'a4-opener-chips';
+      ['KENALI', 'BUAT', 'UJI'].forEach(function (value) {
+        var chip = document.createElement('span'); chip.textContent = value; chips.appendChild(chip);
+      });
+      var flow = document.createElement('div'); flow.className = 'a4-opener-flow';
+      root.append(meta, title, hook, objectiveCard, chips, flow);
+    }
+
+    function buildTocPlan_(sessions) {
+      var plan = [[]]; var used = 0;
+      sessions.forEach(function (session) {
+        var copyLength = ('Session ' + session.session + ' · ' + fullTopic_(session)).length;
+        var weight = Math.max(1, Math.ceil(copyLength / 180));
+        if (used && used + weight > TOC_ITEMS_PER_PAGE) { plan.push([]); used = 0; }
+        plan[plan.length - 1].push(session); used += weight;
+      });
+      return plan;
+    }
+
+    function fillToc_(pages, tocPlan, anchors) {
+      var tocPages = pages.filter(function (page) { return page.dataset.role === 'toc'; });
+      tocPlan.forEach(function (sessions, pageIndex) {
+        var target = tocPages[pageIndex]; if (!target) { return; }
+        sessions.forEach(function (session) {
+          var item = document.createElement('li'); item.innerHTML = '<span></span><em></em>';
+          item.querySelector('span').textContent = 'Session ' + session.session + ' · ' + fullTopic_(session);
+          item.querySelector('em').textContent = String(anchors[String(session.session)] || '');
+          target.querySelector('.a4-toc-list').appendChild(item);
+        });
+      });
+      return tocPages.length;
+    }
+
+    function uniquifyAssetIds_(root, prefix) {
+      var replacements = {};
+      root.querySelectorAll('[id]').forEach(function (node) {
+        var previous = node.id; var next = prefix + previous; replacements[previous] = next; node.id = next;
+      });
+      root.querySelectorAll('*').forEach(function (node) {
+        Array.prototype.slice.call(node.attributes || []).forEach(function (attribute) {
+          var value = attribute.value;
+          Object.keys(replacements).forEach(function (previous) {
+            value = value.replace(new RegExp('url\\(#' + escapeRegExp_(previous) + '\\)', 'g'), 'url(#' + replacements[previous] + ')');
+            if (value === '#' + previous) { value = '#' + replacements[previous]; }
+          });
+          if (value !== attribute.value) { node.setAttribute(attribute.name, value); }
+        });
+      });
+    }
+
+    function escapeRegExp_(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    function numberPages_(pages) {
+      var roman = 0; var arabic = 0;
+      pages.forEach(function (page, index) {
+        page.dataset.physicalPage = String(index + 1); page.dataset.side = nextSide_(index + 1);
+        var role = page.dataset.role; var number = page.querySelector('.a4-page-number');
+        if (role === 'copyright' || role === 'warning' || role === 'guide' || role === 'toc') { roman += 1; number.textContent = toRoman_(roman); }
+        else if (role === 'opener' || role.indexOf('content-') === 0) { arabic += 1; number.textContent = String(arabic); }
+        else { number.hidden = true; }
+      });
+    }
+
+    function scanOverflow_(canvas, diagnostics) {
+      canvas.querySelectorAll('.a4-page-overlay, .a4-page-body, .a4-opener-flow').forEach(function (node) {
+        var contentNode = node.classList.contains('a4-page-body') || node.classList.contains('a4-opener-flow');
+        if (node.scrollHeight > node.clientHeight + 1 || node.scrollWidth > node.clientWidth + 1 ||
+            (contentNode && contentBoundsOverflow_(node))) {
+          diagnostics.push(blocking_('PAGE_OVERFLOW', 'Overflow terdeteksi pada physical page ' + node.closest('.a4-page').dataset.physicalPage + '.'));
+        }
+      });
+    }
+
+    function bodyOverflows_(body) {
+      if (body.scrollHeight > body.clientHeight + 1 || body.scrollWidth > body.clientWidth + 1 || contentBoundsOverflow_(body)) { return true; }
+      var bodyStyle = getComputedStyle(body);
+      var bodyRect = body.getBoundingClientRect();
+      var scaleY = body.offsetHeight > 0 ? bodyRect.height / body.offsetHeight : 1;
+      if (!Number.isFinite(scaleY) || scaleY <= 0) { scaleY = 1; }
+      var usedHeight = (parseFloat(bodyStyle.paddingTop) || 0) + (parseFloat(bodyStyle.paddingBottom) || 0);
+      Array.prototype.forEach.call(body.children, function (child) {
+        var childStyle = getComputedStyle(child);
+        usedHeight += child.getBoundingClientRect().height / scaleY;
+        usedHeight += (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
+      });
+      return usedHeight > body.clientHeight + 1;
+    }
+
+    function contentBoundsOverflow_(body) {
+      var bodyRect = body.getBoundingClientRect();
+      var bodyStyle = getComputedStyle(body);
+      var scaleX = body.offsetWidth > 0 ? bodyRect.width / body.offsetWidth : 1;
+      var scaleY = body.offsetHeight > 0 ? bodyRect.height / body.offsetHeight : 1;
+      if (!Number.isFinite(scaleX) || scaleX <= 0) { scaleX = 1; }
+      if (!Number.isFinite(scaleY) || scaleY <= 0) { scaleY = 1; }
+      var bottom = bodyRect.bottom - (parseFloat(bodyStyle.paddingBottom) || 0) * scaleY;
+      var right = bodyRect.right - (parseFloat(bodyStyle.paddingRight) || 0) * scaleX;
+      var overflow = false;
+      body.querySelectorAll('.a4-content-block, .step-content-item, img, table, pre').forEach(function (node) {
+        if (overflow || node.hidden) { return; }
+        var rect = node.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0 && (rect.bottom > bottom + 1 || rect.right > right + 1)) { overflow = true; }
+      });
+      return overflow;
+    }
+
+    function renderDiagnostics_(root, result) {
+      root.replaceChildren();
+      var summary = document.createElement('strong'); summary.textContent = result.blocking ? 'Preflight diblokir' : 'Pagination siap'; root.appendChild(summary);
+      var copy = document.createElement('span'); copy.textContent = result.pageCount + ' halaman · ' + result.iterations + ' iterasi TOC'; root.appendChild(copy);
+      result.diagnostics.forEach(function (diagnostic) { var item = document.createElement('p'); item.className = diagnostic.blocking ? 'blocking' : 'warning'; item.textContent = diagnostic.code + ' — ' + diagnostic.message; root.appendChild(item); });
+    }
+
+    function preparePrint(result, serverImages, options) {
+      options = options || {};
+      result = result || lastResult;
+      if (!result) { return Promise.reject(new Error('Module belum disusun.')); }
+      var canvas = options.canvas || document.getElementById('publisherCanvas');
+      var diagnosticsRoot = options.diagnostics || document.getElementById('publisherDiagnostics');
+      if (!options.fontsReady && document.fonts && document.fonts.ready) {
+        return document.fonts.ready.then(function () {
+          var fontReadyResult = render(result.project, { canvas: canvas, diagnostics: diagnosticsRoot });
+          return preparePrint(fontReadyResult, serverImages, {
+            canvas: canvas,
+            diagnostics: diagnosticsRoot,
+            timeoutMs: options.timeoutMs,
+            fontsReady: true,
+            repaginated: options.repaginated
+          });
+        });
+      }
+      var images = Array.prototype.slice.call(canvas.querySelectorAll('.a4-image-block img'));
+      var timeoutMs = clampInteger_(options.timeoutMs, 1000, 30000, DEFAULT_IMAGE_TIMEOUT_MS);
+      images.forEach(function (image, index) { image.dataset.sourceIndex = String(index); });
+      (serverImages || []).forEach(function (metadata) {
+        if (!metadata.ok) {
+          var preflightCode = metadata.code || 'IMAGE_PREFLIGHT_FAILED';
+          var preflightMessage = 'Image ' + (metadata.index + 1) + ' gagal server preflight.';
+          if (preflightCode === 'IMAGE_FETCH_PERMISSION_REQUIRED') {
+            preflightMessage = 'Izin server untuk mengambil gambar belum aktif. Deployment owner harus mengotorisasi scope external request lalu deploy ulang.';
+          } else if (preflightCode === 'IMAGE_FETCH_QUOTA_EXCEEDED') {
+            preflightMessage = 'Kuota server untuk mengambil gambar sedang habis. Tunggu kuota pulih atau hubungi deployment owner.';
+          }
+          result.diagnostics.push(warning_(preflightCode, preflightMessage));
+          result.requiresAcknowledgement = true;
+        }
+      });
+      return mapWithConcurrency_(images, IMAGE_DECODE_CONCURRENCY, function (image, index) {
+        return waitForImage_(image, timeoutMs).then(function () {
+          var metadata = (serverImages || [])[index];
+          var printedWidth = image.getBoundingClientRect().width;
+          var width = (metadata && metadata.ok && metadata.width) || image.naturalWidth;
+          var effectiveDpi = printedWidth > 0 && width > 0 ? width / (printedWidth / 96) : 0;
+          image.dataset.effectiveDpi = effectiveDpi.toFixed(1);
+          if (effectiveDpi > 0 && effectiveDpi < 120) {
+            result.diagnostics.push(warning_('IMAGE_DPI_VERY_LOW', 'Image ' + (index + 1) + ' hanya ' + Math.round(effectiveDpi) + ' DPI; acknowledgement wajib.'));
+            result.requiresAcknowledgement = true;
+          } else if (effectiveDpi > 0 && effectiveDpi < 200) {
+            result.diagnostics.push(warning_('IMAGE_DPI_LOW', 'Image ' + (index + 1) + ' hanya ' + Math.round(effectiveDpi) + ' DPI.'));
+            result.requiresAcknowledgement = true;
+          }
+          return true;
+        }).catch(function (error) {
+          showImagePlaceholder_(image);
+          result.diagnostics.push(blocking_(error.code || 'IMAGE_RENDER_FAILED', 'Image ' + (index + 1) + ' gagal load/decode di browser.'));
+          return false;
+        });
+      }).then(function (statuses) {
+        if (images.length && !options.repaginated && statuses.some(Boolean)) {
+          annotateProjectImages_(result.project, serverImages);
+          var rerendered = render(result.project, { canvas: canvas, diagnostics: diagnosticsRoot });
+          return preparePrint(rerendered, serverImages, {
+            canvas: canvas,
+            diagnostics: diagnosticsRoot,
+            timeoutMs: timeoutMs,
+            fontsReady: true,
+            repaginated: true
+          });
+        }
+        scanOverflow_(canvas, result.diagnostics);
+        result.diagnostics = dedupeDiagnostics_(result.diagnostics);
+        result.expectedImages = images.length;
+        result.renderedImages = statuses.filter(Boolean).length;
+        if (result.expectedImages !== result.renderedImages) {
+          result.diagnostics.push(blocking_('IMAGE_READINESS_COUNT_MISMATCH',
+            result.renderedImages + ' dari ' + result.expectedImages + ' gambar siap dirender; periksa diagnostic gambar sebelum print.'));
+          result.diagnostics = dedupeDiagnostics_(result.diagnostics);
+        }
+        result.blocking = result.diagnostics.some(function (item) { return item.blocking; });
+        result.printReady = !result.blocking && result.expectedImages === result.renderedImages;
+        canvas.dataset.printReady = String(result.printReady);
+        canvas.dataset.expectedImages = String(result.expectedImages);
+        canvas.dataset.renderedImages = String(result.renderedImages);
+        renderDiagnostics_(diagnosticsRoot, result);
+        return result;
+      });
+    }
+
+    function annotateProjectImages_(project, serverImages) {
+      var index = 0;
+      (project.sessions || []).forEach(function (session) {
+        (session.materialBlocks || []).forEach(function (block) {
+          if (block.type !== 'image') { return; }
+          var metadata = (serverImages || [])[index];
+          if (metadata && metadata.ok) { block.preflightWidth = metadata.width; block.preflightHeight = metadata.height; }
+          index += 1;
+        });
+      });
+    }
+
+    function waitForImage_(image, timeoutMs) {
+      return new Promise(function (resolve, reject) {
+        var settled = false;
+        var timer = setTimeout(function () { finish(false, 'IMAGE_RENDER_TIMEOUT'); }, timeoutMs);
+        function finish(success, code) {
+          if (settled) { return; } settled = true; clearTimeout(timer);
+          image.removeEventListener('load', onLoad); image.removeEventListener('error', onError);
+          if (!success) { var error = new Error(code); error.code = code; reject(error); return; }
+          var sourceUrl = String(image.dataset.sourceUrl || '');
+          if (sourceUrl && image.naturalWidth > 0 && image.naturalHeight > 0) {
+            imageDimensionCache[sourceUrl] = { width: image.naturalWidth, height: image.naturalHeight };
+          }
+          var decoded = decodeLoadedImage_(image, 0);
+          decoded.then(resolve).catch(function () { var error = new Error('IMAGE_DECODE_FAILED'); error.code = 'IMAGE_DECODE_FAILED'; reject(error); });
+        }
+        function onLoad() { finish(image.naturalWidth > 0, 'IMAGE_RENDER_FAILED'); }
+        function onError() { finish(false, 'IMAGE_RENDER_FAILED'); }
+        image.addEventListener('load', onLoad, { once: true }); image.addEventListener('error', onError, { once: true });
+        if (image.complete) { finish(image.naturalWidth > 0, 'IMAGE_RENDER_FAILED'); }
+      });
+    }
+
+    function decodeLoadedImage_(image, attempt) {
+      if (typeof image.decode !== 'function') { return Promise.resolve(); }
+      return image.decode().catch(function (error) {
+        if (attempt >= IMAGE_DECODE_RETRIES || !image.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) {
+          throw error;
+        }
+        return new Promise(function (resolve) { setTimeout(resolve, 40 * (attempt + 1)); })
+          .then(function () { return decodeLoadedImage_(image, attempt + 1); });
+      });
+    }
+
+    function mapWithConcurrency_(items, limit, mapper) {
+      var results = new Array(items.length);
+      var nextIndex = 0;
+      var workerCount = Math.min(Math.max(1, limit), items.length);
+      function runNext() {
+        var index = nextIndex;
+        nextIndex += 1;
+        if (index >= items.length) { return Promise.resolve(); }
+        return Promise.resolve(mapper(items[index], index)).then(function (value) {
+          results[index] = value;
+          return runNext();
+        });
+      }
+      return Promise.all(Array.from({ length: workerCount }, runNext)).then(function () { return results; });
+    }
+
+    function showImagePlaceholder_(image) {
+      image.hidden = true;
+      var placeholder = image.parentElement.querySelector('.a4-image-placeholder');
+      if (placeholder) { placeholder.hidden = false; }
+    }
+
+    function blockPrint(result, code, message, options) {
+      options = options || {};
+      result = result || lastResult;
+      if (!result) { return null; }
+      result.diagnostics = dedupeDiagnostics_((result.diagnostics || []).concat(blocking_(code, message)));
+      result.blocking = true;
+      result.printReady = false;
+      var canvas = options.canvas || document.getElementById('publisherCanvas');
+      var diagnosticsRoot = options.diagnostics || document.getElementById('publisherDiagnostics');
+      if (canvas) { canvas.dataset.printReady = 'false'; }
+      if (diagnosticsRoot) { renderDiagnostics_(diagnosticsRoot, result); }
+      return result;
+    }
+
+    function printModule(result, acknowledged) {
+      result = result || lastResult;
+      if (!result || !result.printReady || (result.requiresAcknowledgement && !acknowledged)) { return false; }
+      window.print(); return true;
+    }
+
+    function fullTopic_(session) { return String(session.topic || (session.fields && session.fields['Session-topic']) || 'Untitled Session'); }
+    function previousSessionHeader_(pages) { for (var index = pages.length - 1; index >= 0; index -= 1) { if (pages[index].dataset.session) { return 'Session ' + pages[index].dataset.session; } } return ''; }
+    function nextSide_(physicalPage) { return Number(physicalPage) % 2 === 0 ? 'left' : 'right'; }
+    function toRoman_(value) { return ['','i','ii','iii','iv','v','vi','vii','viii','ix','x'][value] || String(value); }
+    function clampInteger_(value, minimum, maximum, fallback) { value = Number(value); return Number.isInteger(value) && value >= minimum && value <= maximum ? value : fallback; }
+    function warning_(code, message) { return { code: code, message: message, blocking: false }; }
+    function blocking_(code, message) { return { code: code, message: message, blocking: true }; }
+    function dedupeDiagnostics_(items) { var seen = {}; return items.filter(function (item) { var key = item.code + ':' + item.message; if (seen[key]) { return false; } seen[key] = true; return true; }); }
+
+    window.SclPublisher = {
+      render: render,
+      renderSessionPreview: renderSessionPreview,
+      preparePrint: preparePrint,
+      blockPrint: blockPrint,
+      printModule: printModule,
+      __test: { nextSide: nextSide_, clampInteger: clampInteger_, fitImageWidthPercent: fitImageWidthPercent_, contentBoundsOverflow: contentBoundsOverflow_, renderRichTextContent: renderRichTextContent_, coordinateRegistry: COORDINATE_REGISTRY, buildTocPlan: buildTocPlan_ }
+    };
+  }());
+</script>

@@ -19,6 +19,10 @@
 # Legacy dashboards under student-centered are intentionally ignored.
 !student-centered/
 !student-centered/panduan-scl-cabang.html
+!student-centered/module-generator-scl/
+!student-centered/module-generator-scl/**
+student-centered/module-generator-scl/node_modules/
+student-centered/module-generator-scl/.clasp.json
 
 *.pyc
 *.py[cod]

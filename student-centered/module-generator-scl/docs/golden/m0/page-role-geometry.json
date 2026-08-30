@@ -1,0 +1,169 @@
+{
+  "canonicalScaleCssPxPerInch": 96,
+  "courses": {
+    "roblox": [
+      {
+        "role": "cover",
+        "page": {
+          "x": 0,
+          "y": 32,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": null
+      },
+      {
+        "role": "ordinary-left",
+        "page": {
+          "x": 0,
+          "y": 95.4375,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": "1"
+      },
+      {
+        "role": "semantic-right",
+        "page": {
+          "x": 0,
+          "y": 47.875,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": "2"
+      },
+      {
+        "role": "late-session-left",
+        "page": {
+          "x": 0,
+          "y": 95.3125,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": "24"
+      },
+      {
+        "role": "back-cover",
+        "page": {
+          "x": 0,
+          "y": 47.75,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": null
+      }
+    ],
+    "scratch": [
+      {
+        "role": "cover",
+        "page": {
+          "x": 0,
+          "y": 48.1875,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": null
+      },
+      {
+        "role": "ordinary-left",
+        "page": {
+          "x": 0,
+          "y": 95.625,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": "1"
+      },
+      {
+        "role": "semantic-right",
+        "page": {
+          "x": 0,
+          "y": 48.0625,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": "2"
+      },
+      {
+        "role": "late-session-left",
+        "page": {
+          "x": 0,
+          "y": 95.5,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": "24"
+      },
+      {
+        "role": "back-cover",
+        "page": {
+          "x": 0,
+          "y": 47.9375,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "content": {
+          "x": 0,
+          "y": 0,
+          "width": 738.890625,
+          "height": 904.4375
+        },
+        "pageNumber": null
+      }
+    ]
+  }
+}

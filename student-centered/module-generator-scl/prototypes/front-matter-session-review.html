@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SCL Front Matter & Session Opener Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --navy:#173f73; --blue:#3aa9e8; --orange:#f47741; --yellow:#ffc947; --ink:#18324f; --muted:#58708b; }
+    * { box-sizing: border-box; }
+    body { margin:0; padding:42px; background:#dbe4ef; font-family:Poppins,Arial,sans-serif; color:var(--ink); }
+    .review { display:grid; gap:34px; justify-content:center; }
+    .page { position:relative; width:793.7px; height:1122.52px; overflow:hidden; background:#fff; box-shadow:0 18px 50px rgba(23,63,115,.24); }
+    .page-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+    .safe { position:absolute; z-index:2; left:1.38cm; top:3.22cm; width:18.38cm; height:23.86cm; padding:.25cm; overflow:hidden; }
+    .kicker { display:inline-flex; align-items:center; gap:9px; color:var(--orange); font-size:11pt; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    .kicker::before { content:""; width:28px; height:5px; border-radius:9px; background:var(--yellow); box-shadow:13px 0 0 var(--blue); }
+    h1 { margin:10px 0 4px; color:var(--navy); font-size:30pt; line-height:1.08; letter-spacing:-.035em; }
+    .lead { margin:0; color:var(--muted); font-size:14pt; line-height:1.5; font-weight:500; }
+    .blank-page { background:#fff; }
+    .blank-mark { position:absolute; right:32px; bottom:26px; color:#cad6e3; font-size:8pt; font-weight:600; letter-spacing:.08em; }
+    .legal-page { background:#fff; }
+    .legal-card { position:absolute; z-index:2; top:50%; left:1.38cm; width:18.38cm; padding:24px 28px; border:2px solid #536170; border-radius:20px; background:#fff; transform:translateY(-50%); }
+    .legal-card h1 { margin:0 0 18px; text-align:center; font-size:20pt; line-height:1.2; color:#252f3a; }
+    .legal-card h2 { margin:8px 0 18px; font-size:27pt; color:var(--navy); }
+    .legal-card p, .legal-card li { font-size:10.5pt; line-height:1.5; font-weight:600; }
+    .legal-card ol { margin:8px 0 18px; padding-left:24px; }
+    .legal-card li { margin-bottom:8px; }
+    .legal-card .legal-close { margin:18px 0 0; font-weight:800; }
+    .warning-card { border:3px solid var(--navy); background:#f9fbfe; }
+    .warning-label { display:inline-block; padding:7px 15px; border-radius:99px; color:#fff; background:var(--orange); font-size:10pt; font-weight:800; }
+    .warning-card p { margin:0 0 18px; font-size:14pt; line-height:1.6; }
+    .legal-number { position:absolute; z-index:3; top:28cm; display:grid; width:1.19cm; height:.9cm; place-items:center; color:#fff; font-size:11pt; font-weight:900; line-height:.9cm; }
+    .legal-number.right { left:18.93cm; width:1.17cm; }
+    .legal-number.left { left:.99cm; }
+
+    .guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px; }
+    .guide-card { position:relative; min-height:166px; padding:15px 15px 12px 74px; border:2px solid #d7e5f3; border-radius:18px; background:rgba(255,255,255,.94); box-shadow:0 7px 0 #e8f2fa; }
+    .guide-icon { position:absolute; top:16px; left:16px; display:grid; width:44px; height:44px; place-items:center; border-radius:14px; color:#fff; background:var(--navy); font-size:17pt; font-weight:900; transform:rotate(-3deg); }
+    .guide-card:nth-child(2n) .guide-icon { background:var(--orange); transform:rotate(3deg); }
+    .guide-card:nth-child(3n) .guide-icon { color:var(--navy); background:var(--yellow); }
+    .guide-card strong { display:block; margin-bottom:4px; color:var(--navy); font-size:13pt; line-height:1.2; }
+    .guide-card p { margin:0; color:#506882; font-size:10.5pt; line-height:1.42; font-weight:500; }
+    .real-preview { height:46px; margin:9px 0 0 -58px; overflow:hidden; border:1.5px solid #cfe0ef; border-radius:10px; background:#fff; }
+    .real-preview img { display:block; width:100%; height:100%; object-fit:cover; object-position:center; }
+    .guide-labels { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+    .guide-labels span { padding:3px 8px; border-radius:99px; color:var(--navy); background:#edf7fd; font-size:8pt; font-weight:800; }
+    .guide-note { display:flex; align-items:center; gap:12px; margin-top:14px; padding:13px 16px; border-radius:16px; color:#664700; background:#fff6d8; font-size:10pt; font-weight:600; }
+    .guide-note b { display:grid; width:31px; height:31px; flex:0 0 31px; place-items:center; border-radius:50%; color:#fff; background:var(--orange); }
+    .guide-page-two .guide-grid { margin-top:16px; }
+    .ins-card { display:grid; grid-template-columns:72px 1fr; gap:16px; align-items:center; margin-top:13px; padding:14px 18px; border:3px solid var(--navy); border-radius:20px; color:#fff; background:linear-gradient(135deg,var(--navy),#235f9c); box-shadow:8px 8px 0 var(--yellow); }
+    .ins-device { display:grid; width:66px; height:86px; place-items:center; border:4px solid #fff; border-radius:14px; color:var(--yellow); font-size:27pt; font-weight:900; }
+    .ins-card strong { display:block; font-size:16pt; line-height:1.2; }
+    .ins-card p { margin:5px 0 10px; font-size:10pt; line-height:1.45; }
+    .ins-link { display:inline-block; padding:8px 12px; border-radius:9px; color:var(--navy); background:#fff; font-size:10pt; font-weight:800; text-decoration:none; }
+
+    .toc-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
+    .toc-head h1 { margin-bottom:0; }
+    .toc-level { padding:8px 14px; border:2px solid var(--navy); border-radius:99px; color:var(--navy); background:var(--yellow); font-size:10pt; font-weight:800; box-shadow:3px 3px 0 var(--orange); }
+    .toc-list { display:grid; gap:7px; margin:0; padding:0; list-style:none; }
+    .toc-item { display:grid; grid-template-columns:50px minmax(0,1fr) 42px; align-items:center; min-height:52px; padding:7px 10px 7px 7px; border-radius:14px; background:rgba(255,255,255,.9); }
+    .toc-item:nth-child(odd) { background:#f1f8fd; }
+    .toc-num { display:grid; width:39px; height:39px; place-items:center; border-radius:12px; color:#fff; background:var(--navy); font-size:11pt; font-weight:900; transform:rotate(-2deg); }
+    .toc-item:nth-child(3n) .toc-num { background:var(--orange); transform:rotate(2deg); }
+    .toc-copy strong { display:block; color:var(--navy); font-size:11.5pt; line-height:1.2; }
+    .toc-copy span { display:block; margin-top:2px; color:var(--muted); font-size:9pt; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .toc-page { justify-self:end; color:var(--orange); font-size:13pt; font-weight:900; }
+
+    .opener-safe { display:flex; flex-direction:column; }
+    .session-top { display:flex; align-items:center; justify-content:space-between; }
+    .session-pill { padding:8px 15px; border-radius:99px; color:#fff; background:var(--orange); font-size:10pt; font-weight:800; letter-spacing:.08em; box-shadow:4px 4px 0 var(--yellow); }
+    .course-pill { color:var(--navy); font-size:10pt; font-weight:800; letter-spacing:.08em; }
+    .session-title-wrap { position:relative; margin-top:50px; padding-right:72px; }
+    .session-watermark { position:absolute; z-index:-1; top:-74px; right:0; color:rgba(58,169,232,.12); font-size:126pt; line-height:1; font-weight:900; letter-spacing:-.09em; }
+    .session-title { max-width:610px; margin:0; color:var(--navy); font-size:40pt; line-height:1.07; letter-spacing:-.045em; }
+    .session-hook { max-width:600px; margin:18px 0 0; color:#435e79; font-size:15pt; line-height:1.55; font-weight:500; }
+    .mission { position:relative; margin-top:42px; padding:29px 24px 22px; border:3px solid var(--navy); border-radius:22px; background:rgba(255,255,255,.95); box-shadow:9px 9px 0 var(--blue); }
+    .mission-label { position:absolute; top:-19px; left:22px; padding:7px 16px; border-radius:10px; color:var(--navy); background:var(--yellow); font-size:10pt; font-weight:900; box-shadow:4px 4px 0 var(--orange); transform:rotate(-2deg); }
+    .mission ul { display:grid; gap:14px; margin:4px 0 0; padding:0; list-style:none; }
+    .mission li { position:relative; padding-left:31px; font-size:14pt; line-height:1.45; font-weight:600; }
+    .mission li::before { content:"✦"; position:absolute; left:0; color:var(--orange); font-size:16pt; }
+    .session-tags { display:flex; gap:10px; margin-top:30px; }
+    .session-tags span { padding:9px 16px; border:2px solid #c8dded; border-radius:99px; color:var(--navy); background:rgba(255,255,255,.86); font-size:10pt; font-weight:800; }
+    .start-note { margin-top:auto; align-self:flex-end; color:var(--muted); font-size:9pt; font-weight:700; }
+  </style>
+</head>
+<body>
+  <main class="review">
+    <section class="page blank-page" data-review-page="blank">
+      <span class="blank-mark">HALAMAN INI SENGAJA DIKOSONGKAN</span>
+    </section>
+
+    <section class="page legal-page" data-review-page="copyright">
+      <img class="page-bg" src="../back-module/beginning-kanan-scl.svg" alt="">
+      <article class="legal-card">
+        <h1>Undang-Undang Republik Indonesia<br>Nomor 28 Tahun 2014<br>Tentang Hak Cipta</h1>
+        <strong>Pasal 113</strong>
+        <ol>
+          <li>Setiap orang yang dengan tanpa hak melakukan pelanggaran hak ekonomi sebagaimana diatur dalam Pasal 9 ayat (1) untuk penggunaan komersial dapat dipidana dengan pidana penjara paling lama 1 (satu) tahun dan/atau denda paling banyak Rp100.000.000 (seratus juta rupiah).</li>
+          <li>Setiap orang yang dengan tanpa izin pencipta atau pemegang hak cipta melakukan pelanggaran hak ekonomi sebagaimana diatur dalam Pasal 9 ayat (1) huruf c, huruf d, huruf f, dan/atau huruf h untuk penggunaan komersial dapat dipidana dengan pidana penjara paling lama 3 (tiga) tahun dan/atau denda paling banyak Rp500.000.000 (lima ratus juta rupiah).</li>
+          <li>Setiap orang yang dengan tanpa hak dan/atau tanpa izin pencipta atau pemegang hak cipta melakukan pelanggaran hak ekonomi sebagaimana dimaksud dalam Pasal 9 ayat (1) huruf a, huruf b, huruf e, dan/atau huruf g untuk penggunaan komersial dapat dipidana dengan pidana penjara paling lama 4 (empat) tahun dan/atau denda paling banyak Rp1.000.000.000 (satu miliar rupiah).</li>
+          <li>Setiap orang yang memenuhi unsur sebagaimana dimaksud pada ayat (3) yang dilakukan dalam bentuk pembajakan dapat dipidana dengan pidana penjara paling lama 10 (sepuluh) tahun dan/atau denda paling banyak Rp4.000.000.000 (empat miliar rupiah).</li>
+        </ol>
+        <p class="legal-close">Hak cipta buku ini dilindungi oleh undang-undang yang berlaku. Sebagian atau seluruh isi buku ini dilarang digunakan, diperbanyak, disebarluaskan, atau dimodifikasi dalam bentuk apa pun tanpa izin tertulis dari Kalananti.</p>
+      </article>
+      <span class="legal-number right">i</span>
+    </section>
+
+    <section class="page legal-page" data-review-page="warning">
+      <img class="page-bg" src="../back-module/beginning-kiri-scl.svg" alt="">
+      <article class="legal-card warning-card">
+        <span class="warning-label">PERINGATAN PENGGUNAAN</span>
+        <h2>Properti Kalananti</h2>
+        <p>Buku ini merupakan properti Kalananti dan dipinjamkan hanya untuk digunakan selama kegiatan belajar di cabang Kalananti.</p>
+        <p>Buku ini tidak untuk diperjualbelikan, dipindahtangankan, digandakan, atau dibawa keluar dari cabang tanpa izin tertulis dari Kalananti.</p>
+        <p>Setiap penggunaan di luar ketentuan tersebut harus mendapatkan persetujuan resmi dari Kalananti.</p>
+      </article>
+      <span class="legal-number left">ii</span>
+    </section>
+
+    <section class="page" data-review-page="guide-1">
+      <img class="page-bg" src="../back-module/beginning-kanan-scl.svg" alt="">
+      <div class="safe">
+        <span class="kicker">Kenali bukumu</span>
+        <h1>Panduan Penggunaan <small style="font-size:12pt">1/2</small></h1>
+        <p class="lead">Setiap bagian punya fungsi berbeda. Kenali tandanya sebelum mulai belajar.</p>
+        <div class="guide-grid">
+          <article class="guide-card"><span class="guide-icon">01</span><strong>Tujuan Belajar</strong><p>Memberi tahu kemampuan yang akan kamu kuasai di sesi ini.</p><figure class="real-preview"><img src="assets/guide-reference/objectives.png" alt="Contoh nyata Tujuan Belajar dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">02</span><strong>Materi & Langkah</strong><p>Ikuti penjelasan, urutan kerja, dan gambar panduan dari atas ke bawah.</p><figure class="real-preview"><img src="assets/guide-reference/step.png" alt="Contoh nyata kartu Tahap dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">03</span><strong>Tutor Says</strong><p>Tip dari tutor yang membantu kamu bekerja lebih aman, rapi, atau efisien.</p><figure class="real-preview"><img src="assets/guide-reference/tutor-says.png" alt="Contoh nyata Tutor Says dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">04</span><strong>Did You Know?</strong><p>Wawasan tambahan yang menghubungkan kegiatan dengan konsep coding.</p><figure class="real-preview"><img src="assets/guide-reference/did-you-know.png" alt="Contoh nyata Did You Know dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">05</span><strong>Kamus Coder</strong><p>Arti istilah penting yang muncul selama kegiatan coding.</p><figure class="real-preview"><img src="assets/guide-reference/tutor-says.png" alt="Contoh treatment Kamus Coder dari renderer modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">06</span><strong>Gambar Panduan</strong><p>Screenshot langkah kerja membantu kamu mengikuti tampilan di layar.</p><figure class="real-preview"><img src="assets/guide-reference/image.png" alt="Contoh nyata gambar panduan dari modul"></figure></article>
+        </div>
+        <div class="guide-note"><b>→</b><span>Baca bagian sesuai urutan halaman. Tanda dan warna yang sama akan muncul kembali di setiap session.</span></div>
+      </div>
+    </section>
+
+    <section class="page" data-review-page="guide-2">
+      <img class="page-bg" src="../back-module/beginning-kiri-scl.svg" alt="">
+      <div class="safe guide-page-two">
+        <span class="kicker">Kenali tugasmu</span>
+        <h1>Panduan Penggunaan <small style="font-size:12pt">2/2</small></h1>
+        <p class="lead">Mulai dari tugas utama, lalu naikkan tantangan sesuai kesiapanmu.</p>
+        <div class="guide-grid">
+          <article class="guide-card"><span class="guide-icon">07</span><strong>MUST DO</strong><p>Tugas utama yang wajib diselesaikan oleh setiap murid pada session tersebut.</p><figure class="real-preview"><img src="assets/guide-reference/must-do.png" alt="Contoh nyata MUST DO dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">08</span><strong>SHOULD DO</strong><p>Latihan pengayaan untuk murid yang sudah menyelesaikan target utama.</p><figure class="real-preview"><img src="assets/guide-reference/should-do.png" alt="Contoh nyata SHOULD DO dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">09</span><strong>ASPIRE TO DO</strong><p>Tantangan lanjutan untuk mengeksplorasi ide dengan lebih mandiri.</p><figure class="real-preview"><img src="assets/guide-reference/aspire-to-do.png" alt="Contoh nyata ASPIRE TO DO dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">10</span><strong>Self-Check</strong><p>Daftar periksa untuk melihat kemampuan yang sudah kamu pahami.</p><figure class="real-preview"><img src="assets/guide-reference/self-check.png" alt="Contoh nyata Self-Check dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">11</span><strong>Mini Quiz</strong><p>Pertanyaan singkat untuk mengecek pemahaman sebelum lanjut.</p><figure class="real-preview"><img src="assets/guide-reference/quiz.png" alt="Contoh nyata Mini Quiz dari modul"></figure></article>
+          <article class="guide-card"><span class="guide-icon">12</span><strong>Gambar dalam Tugas</strong><p>Contoh visual dapat muncul di dalam tugas untuk membantu pengerjaan.</p><figure class="real-preview"><img src="assets/guide-reference/image.png" alt="Contoh nyata gambar di dalam modul"></figure></article>
+        </div>
+        <aside class="ins-card"><span class="ins-device">▶</span><div><strong>Lanjutkan ke Interactive Slide (INS)</strong><p>Buka materi interaktif pendamping untuk mengikuti aktivitas digital bersama tutor.</p><a class="ins-link" href="https://www.kalananti.id/scl-student" target="_blank" rel="noopener noreferrer">kalananti.id/scl-student ↗</a></div></aside>
+      </div>
+    </section>
+
+    <section class="page" data-review-page="toc">
+      <img class="page-bg" src="../back-module/beginning-kanan-scl.svg" alt="">
+      <div class="safe">
+        <div class="toc-head"><div><span class="kicker">Jelajahi modul</span><h1>Daftar Isi</h1></div><span class="toc-level">ROBLOX • LEVEL 1</span></div>
+        <ol class="toc-list">
+          <li class="toc-item"><span class="toc-num">01</span><span class="toc-copy"><strong>Membangun Dunia Pertama</strong><span>Mengenal workspace dan membuat arena sederhana</span></span><em class="toc-page">1</em></li>
+          <li class="toc-item"><span class="toc-num">02</span><span class="toc-copy"><strong>Menggerakkan Karakter</strong><span>Membuat permainan terasa hidup dan responsif</span></span><em class="toc-page">5</em></li>
+          <li class="toc-item"><span class="toc-num">03</span><span class="toc-copy"><strong>Membuat Rintangan</strong><span>Merancang tantangan yang seru dan seimbang</span></span><em class="toc-page">9</em></li>
+          <li class="toc-item"><span class="toc-num">04</span><span class="toc-copy"><strong>Checkpoint dan Respawn</strong><span>Menyimpan kemajuan pemain dengan aman</span></span><em class="toc-page">13</em></li>
+          <li class="toc-item"><span class="toc-num">05</span><span class="toc-copy"><strong>Skor dan Koleksi</strong><span>Memberi tujuan yang jelas kepada pemain</span></span><em class="toc-page">17</em></li>
+          <li class="toc-item"><span class="toc-num">06</span><span class="toc-copy"><strong>Antarmuka Permainan</strong><span>Menampilkan informasi penting di layar</span></span><em class="toc-page">21</em></li>
+          <li class="toc-item"><span class="toc-num">07</span><span class="toc-copy"><strong>Efek dan Suara</strong><span>Menguatkan suasana melalui umpan balik</span></span><em class="toc-page">25</em></li>
+          <li class="toc-item"><span class="toc-num">08</span><span class="toc-copy"><strong>Level Berikutnya</strong><span>Mengembangkan tantangan secara bertahap</span></span><em class="toc-page">29</em></li>
+          <li class="toc-item"><span class="toc-num">09</span><span class="toc-copy"><strong>Playtest Pertama</strong><span>Mencari masalah melalui pengujian nyata</span></span><em class="toc-page">33</em></li>
+          <li class="toc-item"><span class="toc-num">10</span><span class="toc-copy"><strong>Memperbaiki Pengalaman</strong><span>Mengolah masukan menjadi perbaikan</span></span><em class="toc-page">37</em></li>
+          <li class="toc-item"><span class="toc-num">11</span><span class="toc-copy"><strong>Polishing Proyek</strong><span>Merapikan detail sebelum presentasi</span></span><em class="toc-page">41</em></li>
+          <li class="toc-item"><span class="toc-num">12</span><span class="toc-copy"><strong>Presentasi Dunia Interaktif</strong><span>Menceritakan proses dan hasil karya</span></span><em class="toc-page">45</em></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="page" data-review-page="opener">
+      <img class="page-bg" src="../back-module/beginning-kiri-scl.svg" alt="">
+      <div class="safe opener-safe">
+        <div class="session-top"><span class="session-pill">SESSION 01</span><span class="course-pill">ROBLOX STUDIO • LEVEL 1</span></div>
+        <div class="session-title-wrap"><span class="session-watermark">01</span><h1 class="session-title">Membangun Dunia Pertama</h1><p class="session-hook">Hari ini kamu akan mulai dari ruang kosong, menyusun sebuah dunia, lalu membuatnya siap dimainkan.</p></div>
+        <section class="mission"><span class="mission-label">DI SESI INI KAMU AKAN</span><ul><li>Mengenal bagian utama workspace Roblox Studio.</li><li>Membuat arena sederhana dan menguji hasilnya.</li></ul></section>
+        <div class="session-tags"><span>KENALI</span><span>BUAT</span><span>UJI</span></div>
+        <p class="start-note">Siapkan rasa ingin tahu—petualanganmu dimulai di sini.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "scl-m0-approved-target/v1",
+  "approvedOn": "2026-08-04",
+  "contentViewport": {
+    "appliesTo": [
+      "beginning-left",
+      "beginning-right",
+      "plain-left",
+      "plain-right"
+    ],
+    "excludes": [
+      "cover"
+    ],
+    "xCm": 1.38,
+    "yCm": 3.22,
+    "widthCm": 18.38,
+    "heightCm": 23.86,
+    "paddingCm": 0.25
+  },
+  "bodyTypography": {
+    "fontFamily": "Poppins",
+    "fontSizePt": 14
+  },
+  "frontMatter": {
+    "guideBackground": "side-aware beginning-kiri/beginning-kanan",
+    "tocBackground": "side-aware beginning-kiri/beginning-kanan"
+  }
+}

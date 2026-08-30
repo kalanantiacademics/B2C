@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "scl-m0-golden-manifest/v1",
+  "generatedAt": "2026-08-04T00:52:02.610167+00:00",
+  "fixture": {
+    "path": "fixtures/m0/legacy-golden.json",
+    "sha256": "6bb91a1e3ef16c3389631867ec0756404234976ca52a451bc9e53d32b4e6ca98",
+    "sanitized": true,
+    "courses": [
+      "roblox",
+      "scratch"
+    ]
+  },
+  "approvedTarget": {
+    "path": "fixtures/m0/approved-target.json",
+    "sha256": "b297d4c79e8daca568332eb92b986a3b0db09363ee06d50f733d4af0e45d2a27",
+    "schemaVersion": "scl-m0-approved-target/v1"
+  },
+  "authority": {
+    "path": "../book-editor-rework/templates/modern.html",
+    "sha256": "f698c7e6c97fe14d260698af630bf3c17d7a962884bbd45140b5664925648222"
+  },
+  "environment": {
+    "engine": "Playwright Chromium",
+    "browserVersion": "145.0.7632.6",
+    "viewport": "1100x1000",
+    "deviceScaleFactor": 1
+  },
+  "coverage": [
+    "cover-title",
+    "ordinary-flow",
+    "steps-images",
+    "semantic-cards",
+    "left-right-page",
+    "page-number",
+    "late-session",
+    "back-cover"
+  ],
+  "artifacts": [
+    {
+      "path": "legacy-reference.html",
+      "sha256": "e3179160f0fac6f0e6c2a655841d303745ababd0954b0224e5eeb26754c30691"
+    },
+    {
+      "path": "computed-styles.json",
+      "sha256": "c3b803dfd9e139942c86346f40863030bf55670ab6bc617ab4ac6700098a8710"
+    },
+    {
+      "path": "page-role-geometry.json",
+      "sha256": "280c646148932d19d49d795a76eb4c774c3e239d694c0c87231b80d93a4c578d"
+    },
+    {
+      "path": "roblox-cover.png",
+      "sha256": "8e3f5a83e8ea75a88f72738c14b51dc7ed21c5acb2c92fafd5e0591e7b8e257d"
+    },
+    {
+      "path": "roblox-ordinary-left.png",
+      "sha256": "3411b82896ac49ab625eb3c7131e4ae95098156fccd4b124b7fd812057f12293"
+    },
+    {
+      "path": "roblox-semantic-right.png",
+      "sha256": "20ea116475ddfab79e86bcab0b1f6dc34883bd2a29b7ed47486700bfa030d97c"
+    },
+    {
+      "path": "roblox-late-session-left.png",
+      "sha256": "316c374aecbf4e517bec7b40a67f11e6931a28ee40e0241d2b604e466959ae8f"
+    },
+    {
+      "path": "roblox-back-cover.png",
+      "sha256": "fcf04105fe707af1c266997c9ecc836decec7edb8e5c6a8bd6c8436cb0f7ccbd"
+    },
+    {
+      "path": "scratch-cover.png",
+      "sha256": "8f3259b2f6723fe503d99a8ed1d3c1c3288ac41045fe9e92bf75e35fbbdbb790"
+    },
+    {
+      "path": "scratch-ordinary-left.png",
+      "sha256": "696388e4896a61541df8856930f3d6eab7675d668791c4dfac1b4d9eecf71947"
+    },
+    {
+      "path": "scratch-semantic-right.png",
+      "sha256": "e095017adf93e6fb7e82ab72cb493499726a809d222446923957724f3dbf591d"
+    },
+    {
+      "path": "scratch-late-session-left.png",
+      "sha256": "1fba5256803b37a7288ad392d65cd12bcf4693df9c6c39cf11fd3530d9a62844"
+    },
+    {
+      "path": "scratch-back-cover.png",
+      "sha256": "771b69496c7580168ad13f784cec8833f8eb31f18599938439647e4805ecf1cf"
+    }
+  ]
+}

@@ -1,0 +1,634 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><style>
+        :root {
+            --font-display: 'Fredoka', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+            --theme-primary: #2A4365;
+            /* Navy */
+            --theme-secondary: #F07D49;
+            /* Orange */
+            --theme-accent: #4CAAE4;
+            /* Light Blue */
+            --theme-yellow: #F9C846;
+        }
+
+        body {
+            background-color: #E2E8F0;
+            font-family: var(--font-body);
+            margin: 0;
+            padding-top: 80px;
+            padding-bottom: 80px;
+        }
+
+        #menu-tools {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999999;
+            background: white;
+            border-bottom: 4px solid var(--theme-secondary);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* GDocs Style: Container kertas-kertas */
+        #editor-canvas {
+            width: 19.55cm;
+            margin: 0 auto;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        /* Satu lembar kertas A4 */
+        .page-sheet {
+            width: 19.55cm;
+            height: 23.93cm;
+            background: white;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
+            border-radius: 4px;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* Area konten dalam kertas */
+        .page-content {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 0.8cm 1cm;
+            outline: none;
+        }
+
+        /* Watermark nomor halaman di pojok kanan bawah */
+        .page-num {
+            position: absolute;
+            bottom: 10px;
+            right: 16px;
+            font-family: var(--font-display);
+            font-size: 9pt;
+            font-weight: 800;
+            color: rgba(42, 67, 101, 0.25);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Gambar dengan resize handle */
+        .shot-card,
+        .inline-image {
+            display: block;
+            width: fit-content;
+            max-width: 100%;
+            max-height: 750px;
+            margin: 16px auto;
+            padding: 10px;
+            background-color: white;
+            border: 3px solid var(--theme-accent);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--theme-secondary);
+            resize: both;
+            overflow: hidden;
+            min-width: 80px;
+            min-height: 60px;
+            cursor: se-resize;
+        }
+
+        .shot-card img,
+        .inline-image img,
+        .todo-group-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .todo-group-image-item {
+            display: block;
+            width: fit-content;
+            margin: 12px auto;
+            padding: 6px;
+            border: 2px solid var(--theme-accent);
+            border-radius: 8px;
+            background: white;
+            max-width: 100%;
+            max-height: 750px;
+            resize: both;
+            overflow: hidden;
+            min-width: 60px;
+            min-height: 50px;
+            cursor: se-resize;
+            position: relative;
+        }
+
+        .todo-group,
+        .todo-group-body,
+        .todo-group-images {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .todo-group.has-images .check-row {
+            margin-bottom: 10px;
+        }
+
+        .todo-group-images {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 12px 0;
+            width: 100%;
+        }
+
+        .todo-group-images .todo-group-image-item,
+        .todo-group-images .shot-card {
+            margin: 0;
+        }
+
+        /* Top-Right Resize Handle */
+        .resize-handle-tr {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 28px;
+            height: 28px;
+            background-color: var(--theme-secondary);
+            border-bottom-left-radius: 12px;
+            cursor: ew-resize;
+            z-index: 20;
+            opacity: 0.2;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resize-handle-tr::after {
+            content: "⤢";
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .shot-card:hover .resize-handle-tr,
+        .inline-image:hover .resize-handle-tr,
+        .todo-group-image-item:hover .resize-handle-tr {
+            opacity: 0.9;
+        }
+
+        /* -------- KOMPONEN DESAIN HYBRID -------- */
+        /* Komponen-komponen ini akan di-screenshot sebagai gambar halaman saat export */
+
+        .think-bubble {
+            background-color: #F8FAFC;
+            border: 3px solid var(--theme-primary);
+            border-radius: 16px;
+            padding: 34px 24px 22px 24px;
+            position: relative;
+            margin: 32px 0 20px 0;
+            z-index: 1;
+            /* Use box-shadow instead of pseudo-elements for screenshot compatibility */
+            box-shadow: 6px 6px 0 var(--theme-accent);
+        }
+
+        .think-title {
+            position: absolute;
+            top: -18px;
+            left: 20px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            background: var(--theme-secondary);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 var(--theme-primary);
+            transform: rotate(-2deg);
+            z-index: 10;
+        }
+
+        .knowledge-bubble.warm {
+            border-color: var(--theme-secondary);
+            box-shadow: 6px 6px 0 var(--theme-yellow);
+        }
+
+        .knowledge-bubble.warm .think-title {
+            background: var(--theme-primary);
+            box-shadow: 4px 4px 0 var(--theme-secondary);
+        }
+
+        .activity-card {
+            background-color: white;
+            padding: 34px 20px 16px 20px;
+            border: 4px solid var(--theme-primary);
+            border-radius: 12px;
+            position: relative;
+            margin: 35px 0 20px 0;
+            z-index: 1;
+            box-shadow: 8px 8px 0 var(--theme-yellow);
+        }
+
+        .activity-label,
+        .challenge-label {
+            position: absolute;
+            top: -20px;
+            left: -5px;
+            background-color: var(--theme-yellow);
+            color: var(--theme-primary);
+            font-family: var(--font-display);
+            font-weight: 800;
+            padding: 6px 20px;
+            border-radius: 8px;
+            border: 3px solid var(--theme-primary);
+            box-shadow: 4px 4px 0 var(--theme-primary);
+            transform: rotate(-3deg);
+            z-index: 10;
+        }
+
+        .challenge-card {
+            background-color: #FFFDF5;
+            border: 4px solid var(--theme-secondary);
+            border-radius: 12px;
+            padding: 34px 20px 16px 20px;
+            position: relative;
+            margin: 35px 0 20px 0;
+            z-index: 1;
+            box-shadow: 8px 8px 0 var(--theme-accent);
+        }
+
+        .challenge-label {
+            background-color: var(--theme-accent);
+            color: white;
+            border-color: var(--theme-secondary);
+            box-shadow: -4px 4px 0 var(--theme-secondary);
+            left: auto;
+            right: -5px;
+            transform: rotate(3deg);
+        }
+
+        .step-card {
+            background-color: #F8FCFF;
+            color: #1E293B;
+            padding: 28px 18px 16px 18px;
+            margin: 30px 0 15px 0;
+            border-radius: 16px;
+            position: relative;
+            /* Solid border keeps screenshot output stable across renderers */
+            border: 4px solid var(--theme-accent);
+            box-shadow: 8px 8px 0 #D9EEF9;
+            z-index: 1;
+        }
+
+        .step-badge {
+            position: absolute;
+            top: -20px;
+            left: 15px;
+            background-color: var(--theme-primary);
+            color: white;
+            font-family: var(--font-display);
+            font-weight: 800;
+            padding: 6px 18px;
+            border-radius: 10px;
+            transform: rotate(2deg);
+            z-index: 10;
+        }
+
+        .step-card h1,
+        .step-card h2,
+        .step-card h3,
+        .step-card h4,
+        .step-card p,
+        .step-card div:not(.step-badge),
+        .step-card span:not(.step-badge) {
+            color: #1E293B;
+        }
+
+        .quiz-stack {
+            margin: 25px 0;
+        }
+
+        .quiz-item {
+            background-color: white;
+            padding: 20px 18px 14px 18px;
+            border: 3px solid var(--theme-primary);
+            border-radius: 12px;
+            position: relative;
+            margin-bottom: 15px;
+            z-index: 1;
+            box-shadow: 6px 6px 0 var(--theme-secondary);
+        }
+
+        .shot-card {
+            background-color: white;
+            padding: 12px;
+            border: 3px solid var(--theme-accent);
+            border-radius: 12px;
+            margin: 20px auto;
+            box-shadow: 5px 5px 0 var(--theme-secondary);
+            width: fit-content;
+            position: relative;
+        }
+
+        .inline-image {
+            display: block;
+            width: fit-content;
+            margin: 15px auto;
+            padding: 12px;
+            background-color: white;
+            border: 3px solid var(--theme-accent);
+            border-radius: 12px;
+            box-shadow: 5px 5px 0 var(--theme-secondary);
+            position: relative;
+        }
+
+        /* Typography & Content Layout */
+        .text-reading {
+            font-size: 11pt;
+            color: #1E293B;
+            line-height: 1.7;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .list-objective {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+
+        .list-objective>li {
+            font-size: 11pt;
+            margin-bottom: 8px;
+            font-weight: 600;
+            padding-left: 20px;
+            position: relative;
+            color: #1E293B;
+        }
+
+        .list-objective>li::before {
+            content: "✦";
+            color: var(--theme-secondary);
+            position: absolute;
+            left: 0;
+            font-weight: 900;
+        }
+
+        /* Checkbox lists */
+        .check-row {
+            width: 100%;
+            margin-bottom: 8px;
+            border-collapse: collapse;
+        }
+
+        .check-cell {
+            width: 24px;
+            vertical-align: top;
+            padding-top: 2px;
+        }
+
+        .check-box {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--theme-primary);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0 var(--theme-accent);
+            background: white;
+        }
+
+        .check-content {
+            vertical-align: top;
+            font-size: 10.5pt;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Quiz elements */
+        .quiz-question {
+            display: flex;
+            font-size: 10pt;
+            font-weight: 800;
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+
+        .quiz-number {
+            color: var(--theme-primary);
+            min-width: 15px;
+        }
+
+        .quiz-options {
+            margin-left: 15px;
+        }
+
+        .quiz-option {
+            display: flex;
+            font-size: 9.5pt;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+
+        .quiz-option-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--theme-accent);
+            color: white;
+            font-size: 8pt;
+            font-weight: 900;
+            margin-right: 8px;
+        }
+
+        /* ===== SESSION HEADER (REDESIGNED) ===== */
+        .session-divider {
+            margin-top: 40px;
+            margin-bottom: 24px;
+        }
+
+        /* Outer frame - navy bg + orange bottom shadow */
+        .scd-hero {
+            background: var(--theme-primary);
+            border-radius: 18px;
+            box-shadow: 0 8px 0 var(--theme-secondary);
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top rainbow stripe (seperti di template Slides) */
+        .scd-stripe {
+            height: 8px;
+            background: linear-gradient(90deg, #F07D49 0%, #F9C846 35%, #4CAAE4 70%, #2A4365 100%);
+        }
+
+        /* Main content area inside hero */
+        .scd-body {
+            padding: 20px 28px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .scd-body-left {
+            flex: 1;
+        }
+
+        /* Badge pill kecil di atas */
+        .scd-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(240, 125, 73, 0.18);
+            border: 2px solid var(--theme-secondary);
+            color: var(--theme-yellow);
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 14px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+
+        .scd-pill-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--theme-secondary);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Judul kelas besar */
+        .scd-course-title {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 22pt;
+            color: white;
+            margin: 0 0 8px;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        /* Baris topik */
+        .scd-topic-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .scd-topic-label {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 9pt;
+            color: var(--theme-accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .scd-topic {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 12pt;
+            color: white;
+        }
+
+        /* Logo area di kanan */
+        .scd-icons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .scd-icon-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+        }
+
+        .scd-icon-img.small {
+            width: 44px;
+            height: 44px;
+        }
+
+        .btn-primary {
+            background: var(--theme-primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #1a2a40;
+        }
+
+        .btn-secondary {
+            background: var(--theme-secondary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: #d06334;
+        }
+    
+body{padding:32px 0}.golden-course{display:flex;flex-direction:column;gap:20px;margin-bottom:60px}</style></head><body><main class="golden-course" data-course="roblox"><section class="page-sheet" data-page-role="cover" ><div class="page-content"><div class="cover-page" style="height:100%;box-sizing:border-box;border:4px solid #E2E8F0;
+      border-radius:18px;padding:42px;background:linear-gradient(180deg,#fffdf3,#fff);display:grid;place-items:center;text-align:center">
+      <div><div style="font:800 12pt var(--font-display);color:#F07D49">SANITIZED LEGACY GOLDEN</div>
+      <h1 style="font:900 32pt/1.05 var(--font-display);color:#2A4365;margin:22px 0 8px">ROBLOX STUDIO</h1>
+      <p style="font:700 16pt var(--font-body);color:#475569">LEVEL 1</p></div></div></div><div class="page-num"></div></section><section class="page-sheet" data-page-role="ordinary-left" ><div class="page-content"><h2 style="font-family:var(--font-display);color:#2A4365">Session 1 · Membangun Dunia Pertama</h2>
+      <ul class="list-objective"><li>Menjelaskan konsep utama dengan kata-kata sendiri.</li><li>Membuat proyek kecil dan memeriksa hasilnya.</li></ul>
+      <p class="text-reading">Ikuti petunjuk secara berurutan. Catat perubahan yang dibuat agar proses dapat dijelaskan kembali.</p>
+      <div class="step-card"><span class="step-badge">Tahap 1</span><h4>Bangun dan periksa proyek</h4></div>
+      <div class="shot-card" style="width:62%;height:190px"><div style="height:100%;display:grid;place-items:center;background:#D9F3FF;color:#2A4365;font-weight:900">SANITIZED IMAGE FIXTURE</div></div>
+      <div class="think-bubble knowledge-bubble"><span class="think-title">Tutor Says</span><p class="text-reading">Gunakan nama yang jelas untuk setiap objek agar proyek mudah diperiksa.</p></div></div><div class="page-num">1</div></section><section class="page-sheet" data-page-role="semantic-right" ><div class="page-content"><h2 style="font-family:var(--font-display);color:#2A4365">Komponen Semantik</h2>
+      <div class="think-bubble knowledge-bubble warm"><span class="think-title">Did You Know?</span><p class="text-reading">Iterasi adalah proses mencoba, memeriksa, lalu memperbaiki berdasarkan bukti.</p></div>
+      <div class="activity-card"><span class="activity-label">MUST DO</span><div class="check-content">Selesaikan fitur utama dan uji sedikitnya dua skenario.</div></div>
+      <div class="challenge-card"><span class="challenge-label">SHOULD DO</span><div class="check-content">Tambahkan satu peningkatan yang membantu pengguna.</div></div>
+      <div class="challenge-card"><span class="challenge-label">ASPIRE TO DO</span><div class="check-content">Rancang tantangan lanjutan dan jelaskan keputusan desainnya.</div></div>
+      <div class="quiz-item quiz-stack"><div class="quiz-header">MINI QUIZ</div><p class="quiz-question"><span class="quiz-number">1.</span><span>Mengapa proyek perlu diuji sebelum dipresentasikan?</span></p><div class="quiz-options"><p class="quiz-option"><span class="quiz-option-badge">A</span><span>Untuk menemukan bagian yang perlu diperbaiki.</span></p></div></div></div><div class="page-num">2</div></section><section class="page-sheet" data-page-role="late-session-left" ><div class="page-content"><h2 style="font-family:var(--font-display);color:#2A4365">Session 12 · Menguji dan Mempresentasikan Pengalaman Interaktif</h2>
+      <p class="text-reading">Ikuti petunjuk secara berurutan. Catat perubahan yang dibuat agar proses dapat dijelaskan kembali.</p><div class="shot-card" style="width:62%;height:190px"><div style="height:100%;display:grid;place-items:center;background:#D9F3FF;color:#2A4365;font-weight:900">SANITIZED IMAGE FIXTURE</div></div>
+      <div class="activity-card"><span class="activity-label">SELF CHECK</span><div class="check-content">Saya dapat menjelaskan proses, hasil, dan perbaikan proyek.</div></div></div><div class="page-num">24</div></section><section class="page-sheet" data-page-role="back-cover" ><div class="page-content"><div style="height:100%;display:grid;place-items:center;background:#2A4365;color:white;border-radius:18px;text-align:center"><div><strong style="font:900 25pt var(--font-display)">KALANANTI</strong><p>Back cover · sanitized fixture</p></div></div></div><div class="page-num"></div></section></main><main class="golden-course" data-course="scratch"><section class="page-sheet" data-page-role="cover" ><div class="page-content"><div class="cover-page" style="height:100%;box-sizing:border-box;border:4px solid #E2E8F0;
+      border-radius:18px;padding:42px;background:linear-gradient(180deg,#fffdf3,#fff);display:grid;place-items:center;text-align:center">
+      <div><div style="font:800 12pt var(--font-display);color:#F07D49">SANITIZED LEGACY GOLDEN</div>
+      <h1 style="font:900 32pt/1.05 var(--font-display);color:#2A4365;margin:22px 0 8px">SCRATCH</h1>
+      <p style="font:700 16pt var(--font-body);color:#475569">LEVEL 2</p></div></div></div><div class="page-num"></div></section><section class="page-sheet" data-page-role="ordinary-left" ><div class="page-content"><h2 style="font-family:var(--font-display);color:#2A4365">Session 1 · Membuat Cerita Bergerak</h2>
+      <ul class="list-objective"><li>Menjelaskan konsep utama dengan kata-kata sendiri.</li><li>Membuat proyek kecil dan memeriksa hasilnya.</li></ul>
+      <p class="text-reading">Ikuti petunjuk secara berurutan. Catat perubahan yang dibuat agar proses dapat dijelaskan kembali.</p>
+      <div class="step-card"><span class="step-badge">Tahap 1</span><h4>Bangun dan periksa proyek</h4></div>
+      <div class="shot-card" style="width:62%;height:190px"><div style="height:100%;display:grid;place-items:center;background:#D9F3FF;color:#2A4365;font-weight:900">SANITIZED IMAGE FIXTURE</div></div>
+      <div class="think-bubble knowledge-bubble"><span class="think-title">Tutor Says</span><p class="text-reading">Gunakan nama yang jelas untuk setiap objek agar proyek mudah diperiksa.</p></div></div><div class="page-num">1</div></section><section class="page-sheet" data-page-role="semantic-right" ><div class="page-content"><h2 style="font-family:var(--font-display);color:#2A4365">Komponen Semantik</h2>
+      <div class="think-bubble knowledge-bubble warm"><span class="think-title">Did You Know?</span><p class="text-reading">Iterasi adalah proses mencoba, memeriksa, lalu memperbaiki berdasarkan bukti.</p></div>
+      <div class="activity-card"><span class="activity-label">MUST DO</span><div class="check-content">Selesaikan fitur utama dan uji sedikitnya dua skenario.</div></div>
+      <div class="challenge-card"><span class="challenge-label">SHOULD DO</span><div class="check-content">Tambahkan satu peningkatan yang membantu pengguna.</div></div>
+      <div class="challenge-card"><span class="challenge-label">ASPIRE TO DO</span><div class="check-content">Rancang tantangan lanjutan dan jelaskan keputusan desainnya.</div></div>
+      <div class="quiz-item quiz-stack"><div class="quiz-header">MINI QUIZ</div><p class="quiz-question"><span class="quiz-number">1.</span><span>Mengapa proyek perlu diuji sebelum dipresentasikan?</span></p><div class="quiz-options"><p class="quiz-option"><span class="quiz-option-badge">A</span><span>Untuk menemukan bagian yang perlu diperbaiki.</span></p></div></div></div><div class="page-num">2</div></section><section class="page-sheet" data-page-role="late-session-left" ><div class="page-content"><h2 style="font-family:var(--font-display);color:#2A4365">Session 12 · Menyempurnakan Gim dengan Umpan Balik</h2>
+      <p class="text-reading">Ikuti petunjuk secara berurutan. Catat perubahan yang dibuat agar proses dapat dijelaskan kembali.</p><div class="shot-card" style="width:62%;height:190px"><div style="height:100%;display:grid;place-items:center;background:#D9F3FF;color:#2A4365;font-weight:900">SANITIZED IMAGE FIXTURE</div></div>
+      <div class="activity-card"><span class="activity-label">SELF CHECK</span><div class="check-content">Saya dapat menjelaskan proses, hasil, dan perbaikan proyek.</div></div></div><div class="page-num">24</div></section><section class="page-sheet" data-page-role="back-cover" ><div class="page-content"><div style="height:100%;display:grid;place-items:center;background:#2A4365;color:white;border-radius:18px;text-align:center"><div><strong style="font:900 25pt var(--font-display)">KALANANTI</strong><p>Back cover · sanitized fixture</p></div></div></div><div class="page-num"></div></section></main></body></html>

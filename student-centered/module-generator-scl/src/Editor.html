@@ -1,0 +1,1071 @@
+<script>
+  (function () {
+    'use strict';
+
+    var PAGE_BREAK_SENTINEL = '[[SCL_PAGE_BREAK]]';
+    var IMAGE_WIDTH_PREFIX = '#scl-width=';
+    var DEFAULT_IMAGE_WIDTH_PERCENT = 69;
+    var FIELD_DEFINITIONS = [
+      { key: 'objectives', label: 'Objectives', icon: '◎' },
+      { key: 'materials', label: 'Materials', icon: '✦' },
+      { key: 'must_do', label: 'MUST DO', icon: '●' },
+      { key: 'should_do', label: 'SHOULD DO', icon: '★' },
+      { key: 'aspire_to_do', label: 'ASPIRE TO DO', icon: '🚀' },
+      { key: 'self-check', label: 'SELF-CHECK', icon: '✓' },
+      { key: 'kamus_coder', label: 'Tutor Says', icon: 'K' },
+      { key: 'for_your_knowledge', label: 'Did You Know', icon: 'i' },
+      { key: 'quiz_questions', label: 'Quiz', icon: '?' },
+      { key: 'quiz_options', label: 'Quiz Options', icon: 'A' }
+    ];
+    var state = {
+      fields: {}, tables: [], activeField: 'materials', readOnly: true, undo: [], redo: [],
+      changeHandler: function () {}, selectionBlock: null, snapshotTimer: null,
+      restoringView: false, rendering: false
+    };
+    var elements = {};
+
+    function initialize(options) {
+      state.changeHandler = options.onChange;
+      elements.tabs = document.getElementById('editorFieldTabs');
+      elements.blocks = document.getElementById('blockEditor');
+      elements.preview = document.getElementById('componentPreview');
+      elements.diagnostics = document.getElementById('editorDiagnostics');
+      elements.fieldLabel = document.getElementById('activeEditorFieldLabel');
+      elements.fieldTitle = document.getElementById('activeEditorFieldTitle');
+      elements.undo = document.getElementById('undoEditorButton');
+      elements.redo = document.getElementById('redoEditorButton');
+      renderTabs_();
+      document.querySelectorAll('[data-editor-command]').forEach(function (button) {
+        button.addEventListener('mousedown', function (event) { event.preventDefault(); });
+        button.addEventListener('click', function () { applyFormat_(button.dataset.editorCommand); });
+      });
+      elements.undo.addEventListener('click', undo_);
+      elements.redo.addEventListener('click', redo_);
+      document.getElementById('addTextBlockButton').addEventListener('click', function () {
+        addBlock_({ type: 'text', model: plainModel_('') });
+      });
+      document.getElementById('addImageBlockButton').addEventListener('click', addImage_);
+      var addTableButton = document.getElementById('addTableButton');
+      if (addTableButton) { addTableButton.addEventListener('click', addTable_); }
+      document.getElementById('addPageBreakButton').addEventListener('click', function () {
+        addBlock_({ type: 'page-break', model: plainModel_(PAGE_BREAK_SENTINEL) });
+      });
+    }
+
+    function load(fields, tables, layouts) {
+      state.fields = {};
+      state.tables = JSON.parse(JSON.stringify(tables || []));
+      FIELD_DEFINITIONS.forEach(function (definition) {
+        state.fields[definition.key] = splitModelIntoBlocks_(fields[definition.key] || plainModel_(''), definition.key);
+      });
+      applyLayouts_(layouts || []);
+      state.undo = [];
+      state.redo = [];
+      state.activeField = 'materials';
+      renderAll_();
+    }
+
+    function serializeTables() {
+      return state.tables.map(function (entry) {
+        return {
+          tableId: entry.tableId,
+          field: 'materials',
+          orderIndex: entry.orderIndex,
+          anchorHash: entry.anchorHash,
+          table: JSON.parse(JSON.stringify(entry.table))
+        };
+      });
+    }
+
+    function splitModelIntoBlocks_(model, field) {
+      var text = String(model.text || '');
+      var blocks = [];
+      var offset = 0;
+      text.split('\n').forEach(function (line, lineIndex) {
+        var start = offset;
+        var end = start + line.length;
+        var runs = (model.runs || []).map(function (run) {
+          return Object.assign({}, run, {
+            start: Math.max(start, run.start) - start,
+            end: Math.min(end, run.end) - start
+          });
+        }).filter(function (run) { return run.end > run.start; });
+        var lineModel = { text: line, runs: runs.length ? runs : (line ? plainModel_(line).runs : []) };
+        var heading = markdownHeadingModel_(lineModel);
+        if (heading) {
+          lineModel = heading.model;
+        }
+        lineModel = markdownRichModel_(lineModel);
+        var imageUrl = standaloneImageUrl_(lineModel.text);
+        var image = Boolean(imageUrl);
+        var imageWidth = image ? imageWidthFromModel_(lineModel) : 100;
+        if (image && imageUrl !== line) {
+          lineModel = {
+            text: imageUrl,
+            runs: [Object.assign(plainRun_(0, imageUrl.length), {
+              link: imageMetadataLink_(imageUrl, imageWidth)
+            })]
+          };
+        }
+        blocks.push({
+          id: field + ':line-' + lineIndex,
+          sourceOrder: lineIndex,
+          type: line === PAGE_BREAK_SENTINEL ? 'page-break' : (image ? 'image' : 'text'),
+          model: lineModel,
+          width: imageWidth,
+          textStyle: heading ? heading.style : 'normal'
+        });
+        offset = end + 1;
+      });
+      return blocks.length ? blocks : [{ id: field + ':line-0', sourceOrder: 0, type: 'text', model: plainModel_(''), textStyle: 'normal' }];
+    }
+
+    function applyLayouts_(layouts) {
+      var byKey = {}; layouts.forEach(function (layout) { byKey[layout.blockKey] = layout; });
+      Object.keys(state.fields).forEach(function (field) {
+        state.fields[field].forEach(function (block, index) {
+          var layout = byKey[block.id]; block.layoutOrder = layout ? layout.orderIndex : index;
+          if (layout && block.type === 'image' && layout.imageWidthPercent !== undefined) { block.width = layout.imageWidthPercent; }
+          block.textStyle = layout && layout.attributes && layout.attributes.textStyle || block.textStyle || 'normal';
+          block.keepTogether = Boolean(layout && layout.attributes && layout.attributes.keepTogether);
+        });
+        state.fields[field].sort(function (left, right) { return left.layoutOrder - right.layoutOrder; });
+      });
+    }
+
+    function serializeLayouts() {
+      var output = [];
+      Object.keys(state.fields).forEach(function (field) {
+        var blocks = state.fields[field];
+        var canonicalKeys = new Map();
+        blocks.slice().sort(function (left, right) { return left.sourceOrder - right.sourceOrder; }).forEach(function (block, sourceIndex) {
+          canonicalKeys.set(block, field + ':line-' + sourceIndex);
+        });
+        blocks.forEach(function (block, index) {
+          var attributes = {};
+          if (block.keepTogether) { attributes.keepTogether = true; }
+          if (block.type === 'text' && block.textStyle && block.textStyle !== 'normal') { attributes.textStyle = block.textStyle; }
+          var layout = { schemaVersion: 'scl-layout/v1', blockKey: canonicalKeys.get(block), orderIndex: index, manualBreak: block.type === 'page-break', attributes: attributes };
+          if (block.type === 'image') { layout.imageWidthPercent = block.width; }
+          output.push(layout);
+        });
+      });
+      return output;
+    }
+
+    function serialize() {
+      var output = {};
+      FIELD_DEFINITIONS.forEach(function (definition) {
+        var text = '';
+        var runs = [];
+        (state.fields[definition.key] || []).slice().sort(function (left, right) {
+          return left.sourceOrder - right.sourceOrder;
+        }).forEach(function (block, index) {
+          var model = block.model;
+          if (index) { text += '\n'; }
+          var offset = text.length;
+          text += model.text;
+          (model.runs || []).forEach(function (run) {
+            var next = Object.assign({}, run, { start: run.start + offset, end: run.end + offset });
+            if (block.type === 'image') {
+              next.link = imageMetadataLink_(model.text, block.width);
+            }
+            runs.push(next);
+          });
+        });
+        output[definition.key] = { text: text, runs: runs };
+      });
+      return output;
+    }
+
+    function renderTabs_() {
+      elements.tabs.replaceChildren();
+      FIELD_DEFINITIONS.forEach(function (definition) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.field = definition.key;
+        button.innerHTML = '<span aria-hidden="true">' + definition.icon + '</span><span>' + definition.label + '</span>';
+        button.addEventListener('click', function () {
+          captureVisibleBlocks_();
+          state.activeField = definition.key;
+          renderAll_();
+        });
+        elements.tabs.appendChild(button);
+      });
+    }
+
+    function renderAll_() {
+      var viewAnchor = captureViewAnchor_();
+      Array.prototype.forEach.call(elements.tabs.children, function (tab) {
+        tab.classList.toggle('active', tab.dataset.field === state.activeField);
+        tab.disabled = false;
+      });
+      var definition = FIELD_DEFINITIONS.filter(function (item) { return item.key === state.activeField; })[0];
+      elements.fieldLabel.textContent = definition.label;
+      elements.fieldTitle.textContent = definition.key === 'materials' ? 'Continuous Document' : 'Continuous Field';
+      state.rendering = true;
+      renderBlocks_();
+      state.rendering = false;
+      renderPreview_();
+      updateControls_();
+      restoreViewAnchor_(viewAnchor);
+    }
+
+    function captureViewAnchor_() {
+      var editable = documentFlow_();
+      var selection = window.getSelection();
+      var selectionNode = selection && selection.rangeCount ? selection.getRangeAt(0).startContainer : null;
+      var active = closestElement_(selectionNode, '[data-block-id]');
+      var editingFlow = Boolean(editable && selectionNode && editable.contains(selectionNode));
+      var scroller = elements.blocks.closest('.paged-authoring-frame');
+      return {
+        blockId: active ? active.dataset.blockId : '',
+        blockTop: active ? active.getBoundingClientRect().top : null,
+        selection: editingFlow ? captureSelectionOffsets_(editable) : null,
+        editingFlow: editingFlow,
+        windowY: window.scrollY,
+        editorY: scroller ? scroller.scrollTop : 0,
+        previewY: document.getElementById('sessionA4Preview')
+          ? document.getElementById('sessionA4Preview').scrollTop
+          : 0
+      };
+    }
+
+    function restoreViewAnchor_(anchor) {
+      if (!anchor) { return; }
+      var preview = document.getElementById('sessionA4Preview');
+      if (preview) { preview.scrollTop = anchor.previewY; }
+      var scroller = elements.blocks.closest('.paged-authoring-frame');
+      if (scroller) { scroller.scrollTop = anchor.editorY; }
+      if (!anchor.editingFlow || state.readOnly) { return; }
+      var editable = documentFlow_();
+      if (!editable) { return; }
+      state.restoringView = true;
+      editable.focus({ preventScroll: true });
+      restoreSelectionOffsets_(editable, anchor.selection);
+      state.restoringView = false;
+      var restoredBlock = anchor.blockId
+        ? elements.blocks.querySelector('[data-block-id="' + anchor.blockId + '"]')
+        : null;
+      if (anchor.blockTop !== null && restoredBlock) {
+        window.scrollBy(0, restoredBlock.getBoundingClientRect().top - anchor.blockTop);
+      } else {
+        window.scrollTo(0, anchor.windowY);
+      }
+    }
+
+    function captureSelectionOffsets_(root) {
+      var selection = window.getSelection();
+      if (!selection.rangeCount) { return null; }
+      var range = selection.getRangeAt(0);
+      if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) { return null; }
+      var start = range.cloneRange();
+      start.selectNodeContents(root); start.setEnd(range.startContainer, range.startOffset);
+      var end = range.cloneRange();
+      end.selectNodeContents(root); end.setEnd(range.endContainer, range.endOffset);
+      return { start: start.toString().length, end: end.toString().length };
+    }
+
+    function textPositionAtOffset_(root, offset) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      var remaining = Math.max(0, Number(offset) || 0);
+      var node = walker.nextNode();
+      while (node) {
+        if (remaining <= node.nodeValue.length) { return { node: node, offset: remaining }; }
+        remaining -= node.nodeValue.length;
+        node = walker.nextNode();
+      }
+      return { node: root, offset: root.childNodes.length };
+    }
+
+    function restoreSelectionOffsets_(root, offsets) {
+      var total = root.textContent.length;
+      offsets = offsets || { start: total, end: total };
+      var start = textPositionAtOffset_(root, Math.min(total, offsets.start));
+      var end = textPositionAtOffset_(root, Math.min(total, offsets.end));
+      var range = document.createRange();
+      range.setStart(start.node, start.offset); range.setEnd(end.node, end.offset);
+      var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    }
+
+    function renderBlocks_() {
+      elements.blocks.replaceChildren();
+      var flow = document.createElement('div');
+      flow.className = 'document-flow-editor';
+      flow.contentEditable = state.readOnly ? 'false' : 'true';
+      flow.spellcheck = true;
+      flow.dataset.placeholder = 'Mulai tulis dokumen…';
+      flow.addEventListener('focus', function () { if (!state.restoringView) { pushSnapshot_(); } });
+      flow.addEventListener('input', scheduleCapture_);
+      flow.addEventListener('keydown', handleDocumentKeydown_);
+      flow.addEventListener('blur', function (event) {
+        if (!state.rendering && (!event.relatedTarget || !flow.contains(event.relatedTarget))) { captureVisibleBlocks_(); }
+      });
+      flow.addEventListener('paste', sanitizeDocumentPaste_);
+      (state.fields[state.activeField] || []).forEach(function (block, index) {
+        if (block.type === 'page-break') {
+          var removeBreak = blockButton_('×', 'Hapus page break', function () { removeBlock_(index); });
+          var divider = document.createElement('div');
+          divider.className = 'document-atom document-page-break';
+          divider.dataset.blockId = block.id;
+          divider.dataset.blockType = 'page-break';
+          divider.contentEditable = 'false';
+          var rule = document.createElement('span'); rule.textContent = 'Manual page break';
+          divider.append(rule, removeBreak);
+          flow.appendChild(divider);
+        } else if (block.type === 'image') {
+          var figure = document.createElement('figure');
+          figure.className = 'document-atom document-image-atom';
+          figure.dataset.blockId = block.id;
+          figure.dataset.blockType = 'image';
+          figure.dataset.imageUrl = block.model.text;
+          figure.contentEditable = 'false';
+          figure.appendChild(renderImageControls_(block));
+          flow.appendChild(figure);
+        } else {
+          var markdownHeading = markdownHeadingModel_(block.model);
+          var textStyle = block.textStyle && block.textStyle !== 'normal'
+            ? block.textStyle
+            : (markdownHeading ? markdownHeading.style : 'normal');
+          var renderModel = markdownHeading ? markdownHeading.model : block.model;
+          var paragraph;
+          var richTextRoot;
+          if (textStyle === 'heading1' || textStyle === 'heading2' || textStyle === 'heading3') {
+            paragraph = document.createElement(textStyle === 'heading1' ? 'h2' : (textStyle === 'heading2' ? 'h3' : 'h4'));
+            paragraph.className = 'document-paragraph document-' + (textStyle === 'heading1' ? 'heading-1' : (textStyle === 'heading2' ? 'heading-2' : 'heading-3'));
+            richTextRoot = paragraph;
+          } else if (textStyle === 'bullet' || textStyle === 'numbered') {
+            paragraph = document.createElement(textStyle === 'bullet' ? 'ul' : 'ol');
+            paragraph.className = 'document-paragraph document-list document-list-' + textStyle;
+            if (textStyle === 'numbered') {
+              paragraph.start = listOrdinal_(state.fields[state.activeField], index, textStyle);
+              paragraph.style.setProperty('--scl-list-offset', String(paragraph.start - 1));
+            }
+            richTextRoot = document.createElement('li');
+            paragraph.appendChild(richTextRoot);
+          } else {
+            paragraph = document.createElement('p');
+            paragraph.className = 'document-paragraph';
+            richTextRoot = paragraph;
+          }
+          paragraph.dataset.blockId = block.id;
+          paragraph.dataset.blockType = 'text';
+          paragraph.dataset.textStyle = textStyle;
+          paragraph.dataset.placeholder = 'Tulis konten…';
+          renderRichText_(richTextRoot, renderModel);
+          flow.appendChild(paragraph);
+        }
+      });
+      elements.blocks.appendChild(flow);
+      if (state.activeField === 'materials') {
+        state.tables.forEach(function (entry) { elements.blocks.appendChild(renderTableEditor_(entry)); });
+      }
+    }
+
+    function renderTableEditor_(entry) {
+      var card = document.createElement('article');
+      card.className = 'content-block table-editor-block' + (entry.anchorStatus === 'STALE' ? ' table-anchor-stale' : '');
+      card.dataset.tableId = entry.tableId;
+      var chrome = document.createElement('div'); chrome.className = 'block-chrome';
+      var label = document.createElement('span');
+      label.textContent = entry.anchorStatus === 'STALE' ? 'Table · anchor stale' : 'Semantic table';
+      var actions = document.createElement('div');
+      actions.append(
+        blockButton_('+ Row', 'Tambah row tabel', function () { mutateTable_(entry, function () { entry.table.rows.push(entry.table.headers.map(function () { return ''; })); }); }),
+        blockButton_('+ Col', 'Tambah kolom tabel', function () { mutateTable_(entry, function () { entry.table.headers.push('Header'); entry.table.alignments.push('left'); entry.table.rows.forEach(function (row) { row.push(''); }); }); }),
+        blockButton_('Re-anchor', 'Tempatkan ulang tabel', function () { reanchorTable_(entry); }),
+        blockButton_('×', 'Hapus tabel', function () { removeTable_(entry.tableId); })
+      );
+      chrome.append(label, actions); card.appendChild(chrome);
+      var caption = document.createElement('input'); caption.type = 'text'; caption.value = entry.table.caption || '';
+      caption.placeholder = 'Caption tabel (opsional)'; caption.disabled = state.readOnly;
+      caption.setAttribute('aria-label', 'Caption tabel');
+      caption.addEventListener('input', function () { entry.table.caption = sanitizeCell_(caption.value); notifyChange_(); renderPreview_(); });
+      card.appendChild(caption);
+      var wrapper = document.createElement('div'); wrapper.className = 'semantic-table-scroll';
+      wrapper.appendChild(buildSemanticTable_(entry, true)); card.appendChild(wrapper);
+      if (entry.anchorStatus === 'STALE') {
+        var warning = document.createElement('p'); warning.className = 'table-warning';
+        warning.textContent = 'TABLE_ANCHOR_STALE — pilih Re-anchor sebelum menyimpan atau mencetak.'; card.appendChild(warning);
+      }
+      return card;
+    }
+
+    function buildSemanticTable_(entry, editable) {
+      var table = document.createElement('table'); table.className = 'semantic-table';
+      if (entry.table.caption) { var caption = document.createElement('caption'); caption.textContent = entry.table.caption; table.appendChild(caption); }
+      var thead = document.createElement('thead'); var headerRow = document.createElement('tr');
+      entry.table.headers.forEach(function (value, columnIndex) {
+        var th = document.createElement('th'); th.style.textAlign = entry.table.alignments[columnIndex] || 'left';
+        if (editable) { th.appendChild(tableCellInput_(entry, value, function (next) { entry.table.headers[columnIndex] = next; })); } else { th.textContent = value; }
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow); table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      entry.table.rows.forEach(function (row, rowIndex) {
+        var tr = document.createElement('tr');
+        row.forEach(function (value, columnIndex) {
+          var td = document.createElement('td'); td.style.textAlign = entry.table.alignments[columnIndex] || 'left';
+          if (editable) { td.appendChild(tableCellInput_(entry, value, function (next) { entry.table.rows[rowIndex][columnIndex] = next; })); } else { td.textContent = value; }
+          tr.appendChild(td);
+        });
+        if (editable) { var remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×'; remove.disabled = state.readOnly; remove.setAttribute('aria-label', 'Hapus row ' + (rowIndex + 1)); remove.addEventListener('click', function () { mutateTable_(entry, function () { entry.table.rows.splice(rowIndex, 1); }); }); tr.lastChild.appendChild(remove); }
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); return table;
+    }
+
+    function tableCellInput_(entry, value, setter) {
+      var input = document.createElement('input'); input.type = 'text'; input.value = value; input.disabled = state.readOnly;
+      input.addEventListener('input', function () { setter(sanitizeCell_(input.value)); notifyChange_(); renderPreview_(); });
+      return input;
+    }
+
+    function renderImageControls_(block) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'image-block-controls';
+      wrapper.tabIndex = 0;
+      wrapper.dataset.imageBlockId = block.id;
+      var image = document.createElement('img');
+      image.src = block.model.text;
+      image.alt = 'Preview gambar URL';
+      image.style.width = block.width + '%';
+      image.addEventListener('error', function () { wrapper.classList.add('image-error'); });
+      var range = document.createElement('input');
+      range.type = 'range'; range.min = '25'; range.max = '100'; range.step = '1'; range.value = String(block.width);
+      range.disabled = state.readOnly;
+      range.setAttribute('aria-label', 'Lebar gambar persen');
+      var value = document.createElement('span');
+      value.textContent = block.width + '%';
+      var decrease = imageActionButton_('−', 'Perkecil gambar', function () {
+        resizeImageBlock_(block, block.width - 5, image, range, value);
+      });
+      decrease.classList.add('image-resize-handle');
+      var increase = imageActionButton_('+', 'Perbesar gambar', function () {
+        resizeImageBlock_(block, block.width + 5, image, range, value);
+      });
+      increase.classList.add('image-resize-handle');
+      var replace = imageActionButton_('Replace', 'Ganti URL gambar', function () { replaceImageBlock_(block); });
+      replace.dataset.imageAction = 'replace';
+      var remove = imageActionButton_('Delete', 'Hapus gambar', function () {
+        var blocks = state.fields[state.activeField] || [];
+        var index = blocks.findIndex(function (item) { return item.id === block.id; });
+        if (index >= 0) { removeBlock_(index); }
+      });
+      remove.dataset.imageAction = 'delete';
+      range.addEventListener('input', function () {
+        resizeImageBlock_(block, Number(range.value), image, range, value);
+      });
+      wrapper.addEventListener('click', function () { wrapper.classList.add('selected'); });
+      wrapper.addEventListener('blur', function () { wrapper.classList.remove('selected'); });
+      var actions = document.createElement('div'); actions.className = 'image-block-actions';
+      actions.append(decrease, range, value, increase, replace, remove);
+      wrapper.append(image, actions);
+      return wrapper;
+    }
+
+    function imageActionButton_(label, ariaLabel, handler) {
+      var button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+      button.setAttribute('aria-label', ariaLabel); button.disabled = state.readOnly;
+      button.addEventListener('click', handler); return button;
+    }
+
+    function resizeImageBlock_(block, width, image, range, value) {
+      block.width = Math.max(25, Math.min(100, Number(width) || 100));
+      image.style.width = block.width + '%'; range.value = String(block.width); value.textContent = block.width + '%';
+      block.model.runs = [Object.assign(plainRun_(0, block.model.text.length), {
+        link: imageMetadataLink_(block.model.text, block.width)
+      })];
+      notifyChange_(); renderPreview_();
+    }
+
+    function replaceImageBlock_(block) {
+      if (state.readOnly) { return; }
+      var url = window.prompt('Ganti URL image HTTPS:', block.model.text);
+      if (url === null) { return; }
+      url = url.trim();
+      if (!isSupportedImageUrl_(url)) {
+        elements.diagnostics.hidden = false;
+        elements.diagnostics.textContent = 'Image ditolak: gunakan URL HTTPS PNG/JPG/JPEG/WebP.';
+        elements.diagnostics.classList.add('error'); return;
+      }
+      pushSnapshot_(); block.model = {
+        text: url,
+        runs: [Object.assign(plainRun_(0, url.length), { link: imageMetadataLink_(url, block.width) })]
+      };
+      renderAll_(); notifyChange_();
+    }
+
+    function renderPreview_() {
+      elements.preview.replaceChildren();
+      var blocks = state.fields[state.activeField] || [];
+      blocks.forEach(function (block) {
+        var component = document.createElement(block.type === 'page-break' ? 'div' : 'article');
+        component.className = previewClass_(state.activeField, block);
+        if (block.type === 'page-break') {
+          component.textContent = 'Page break';
+        } else if (block.type === 'image') {
+          var img = document.createElement('img'); img.src = block.model.text; img.alt = ''; img.style.width = block.width + '%'; component.appendChild(img);
+        } else {
+          renderRichText_(component, block.model);
+        }
+        elements.preview.appendChild(component);
+      });
+      if (state.activeField === 'materials') {
+        state.tables.forEach(function (entry) {
+          paginateTableRows_(entry.table, entry.table.rows.map(function () { return 44; }), 220, 52).pages.forEach(function (rows, pageIndex) {
+            var page = document.createElement('section'); page.className = 'table-preview-page';
+            if (pageIndex) { page.dataset.continuation = 'true'; }
+            var pageEntry = { table: Object.assign({}, entry.table, { rows: rows }) };
+            page.appendChild(buildSemanticTable_(pageEntry, false)); elements.preview.appendChild(page);
+          });
+        });
+      }
+      var diagnostics = validate_();
+      elements.diagnostics.textContent = diagnostics.length ? diagnostics.join(' · ') : '';
+      elements.diagnostics.hidden = diagnostics.length === 0;
+      elements.diagnostics.classList.toggle('error', diagnostics.length > 0);
+    }
+
+    function validate_() {
+      var messages = [];
+      (state.fields[state.activeField] || []).forEach(function (block) {
+        if (block.type === 'image' && !isSupportedImageUrl_(block.model.text)) {
+          messages.push('Image harus URL HTTPS PNG/JPG/JPEG/WebP');
+        }
+      });
+      if (state.tables.some(function (entry) { return entry.anchorStatus === 'STALE'; })) {
+        messages.push('TABLE_ANCHOR_STALE: Re-anchor tabel sebelum save/print');
+      }
+      return messages;
+    }
+
+    function captureVisibleBlocks_() {
+      var flow = documentFlow_();
+      if (!flow || !state.fields[state.activeField]) { return; }
+      var previous = {};
+      state.fields[state.activeField].forEach(function (block) { previous[block.id] = block; });
+      var claimedIds = {};
+      var blocks = [];
+      Array.prototype.forEach.call(flow.childNodes, function (node) {
+        if (node.nodeType === Node.TEXT_NODE && !String(node.nodeValue || '').trim()) { return; }
+        var element = node.nodeType === Node.ELEMENT_NODE ? node : null;
+        var candidateId = element && element.dataset.blockId ? element.dataset.blockId : '';
+        var prior = candidateId && !claimedIds[candidateId] ? previous[candidateId] : null;
+        if (prior) { claimedIds[candidateId] = true; }
+        var type = element && element.dataset.blockType;
+        var block;
+        if (type === 'image') {
+          block = prior || {
+            type: 'image',
+            model: plainModel_(String(element.dataset.imageUrl || '')),
+            width: DEFAULT_IMAGE_WIDTH_PERCENT
+          };
+        } else if (type === 'page-break') {
+          block = prior || { type: 'page-break', model: plainModel_(PAGE_BREAK_SENTINEL), width: 100 };
+        } else {
+          var model = element ? modelFromDom_(element) : plainModel_(String(node.nodeValue || ''));
+          block = prior || { type: 'text', width: 100, textStyle: 'normal' };
+          var heading = markdownHeadingModel_(model);
+          if (heading && (!element || element.dataset.textStyle === 'normal' || !element.dataset.textStyle)) {
+            model = heading.model;
+            block.textStyle = heading.style;
+          }
+          block.type = 'text';
+          block.model = markdownRichModel_(model);
+          block.textStyle = element && element.dataset.textStyle && element.dataset.textStyle !== 'normal'
+            ? element.dataset.textStyle
+            : (block.textStyle || 'normal');
+        }
+        var index = blocks.length;
+        if (!prior) {
+          block.id = state.activeField + ':line-new-' + Date.now().toString(36) + '-' + index;
+          block.sourceOrder = NaN;
+        }
+        block.layoutOrder = index;
+        blocks.push(block);
+        if (element) {
+          element.dataset.blockId = block.id;
+          if (block.type === 'text') {
+            element.dataset.blockType = 'text';
+            element.dataset.textStyle = block.textStyle || 'normal';
+            element.dataset.placeholder = 'Tulis konten…';
+            element.classList.add('document-paragraph');
+          }
+          var imageControl = element.querySelector('[data-image-block-id]');
+          if (imageControl) { imageControl.dataset.imageBlockId = block.id; }
+        }
+      });
+      if (!blocks.length) {
+        blocks.push({ id: state.activeField + ':line-0', sourceOrder: 0, layoutOrder: 0, type: 'text', model: plainModel_(''), width: 100, textStyle: 'normal' });
+      }
+      blocks.forEach(function (block, index) {
+        if (Number.isFinite(block.sourceOrder)) { return; }
+        var previous = index > 0 ? blocks[index - 1] : null;
+        var next = null;
+        for (var nextIndex = index + 1; nextIndex < blocks.length; nextIndex += 1) {
+          if (Number.isFinite(blocks[nextIndex].sourceOrder)) { next = blocks[nextIndex]; break; }
+        }
+        block.sourceOrder = sourceOrderBetween_(previous, next);
+      });
+      state.fields[state.activeField] = blocks;
+      renderPreview_();
+    }
+
+    function scheduleCapture_() {
+      clearTimeout(state.snapshotTimer);
+      state.snapshotTimer = setTimeout(function () { captureVisibleBlocks_(); notifyChange_(); }, 120);
+    }
+
+    function addBlock_(block) {
+      if (state.readOnly) { return; }
+      pushSnapshot_();
+      var sourceOrder = nextSourceOrder_();
+      block.sourceOrder = sourceOrder;
+      block.id = block.id || state.activeField + ':line-' + sourceOrder;
+      state.fields[state.activeField].push(block);
+      renderAll_(); notifyChange_();
+    }
+
+    function addImage_() {
+      if (state.readOnly) { return; }
+      var url = window.prompt('Masukkan URL image HTTPS (PNG, JPG, JPEG, atau WebP):', 'https://');
+      if (url === null) { return; }
+      url = url.trim();
+      if (!isSupportedImageUrl_(url)) {
+        elements.diagnostics.textContent = 'Image ditolak: gunakan URL HTTPS PNG/JPG/JPEG/WebP.';
+        elements.diagnostics.classList.add('error');
+        return;
+      }
+      addBlock_({ type: 'image', model: { text: url, runs: [Object.assign(plainRun_(0, url.length), { link: imageMetadataLink_(url, DEFAULT_IMAGE_WIDTH_PERCENT) })] }, width: DEFAULT_IMAGE_WIDTH_PERCENT });
+    }
+
+    function addTable_() {
+      if (state.readOnly || state.activeField !== 'materials') { return; }
+      captureVisibleBlocks_(); pushSnapshot_();
+      var anchor = nearestAnchor_(state.fields.materials.length - 1);
+      state.tables.push({
+        tableId: createTableId_(), field: 'materials', orderIndex: state.fields.materials.length,
+        anchorHash: anchor ? tableAnchorHash_(anchor.model.text) : 'unresolved',
+        anchorStatus: anchor ? 'RESOLVED' : 'STALE',
+        table: { schemaVersion: 'scl-table/v1', caption: '', headers: ['Header 1', 'Header 2'], rows: [['', '']], alignments: ['left', 'left'] }
+      });
+      renderAll_(); notifyChange_();
+    }
+
+    function mutateTable_(entry, mutation) { if (state.readOnly) { return; } pushSnapshot_(); mutation(); renderAll_(); notifyChange_(); }
+    function removeTable_(tableId) { if (state.readOnly) { return; } pushSnapshot_(); state.tables = state.tables.filter(function (entry) { return entry.tableId !== tableId; }); renderAll_(); notifyChange_(); }
+    function reanchorTable_(entry) { var anchor = nearestAnchor_(entry.orderIndex); if (!anchor) { return; } entry.anchorHash = tableAnchorHash_(anchor.model.text); entry.anchorStatus = 'RESOLVED'; renderAll_(); notifyChange_(); }
+    function nearestAnchor_(orderIndex) { var blocks = state.fields.materials || []; for (var index = Math.min(orderIndex, blocks.length - 1); index >= 0; index -= 1) { if (tableAnchorHash_(blocks[index].model.text)) { return blocks[index]; } } for (var next = 0; next < blocks.length; next += 1) { if (tableAnchorHash_(blocks[next].model.text)) { return blocks[next]; } } return null; }
+
+    function paginateTableRows_(table, rowHeights, availableHeight, headerHeight) {
+      var pages = [[]]; var used = headerHeight; var oversized = [];
+      table.rows.forEach(function (row, index) {
+        var height = Number(rowHeights[index]) || 0;
+        if (height + headerHeight > availableHeight) { oversized.push(index); return; }
+        if (used + height > availableHeight && pages[pages.length - 1].length) { pages.push([]); used = headerHeight; }
+        pages[pages.length - 1].push(row); used += height;
+      });
+      return { pages: pages.filter(function (page) { return page.length || !table.rows.length; }), oversizedRows: oversized };
+    }
+
+    function moveBlock_(index, direction) {
+      var target = index + direction;
+      var blocks = state.fields[state.activeField];
+      if (state.readOnly || target < 0 || target >= blocks.length) { return; }
+      captureVisibleBlocks_(); pushSnapshot_();
+      blocks = state.fields[state.activeField];
+      var moved = blocks.splice(index, 1)[0]; blocks.splice(target, 0, moved);
+      renderAll_(); notifyChange_();
+    }
+
+    function handleDocumentKeydown_(event) {
+      if (state.readOnly || !event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) { return; }
+      var selected = selectedBlockElement_(documentFlow_());
+      var block = selected ? findBlock_(selected.dataset.blockId) : null;
+      var index = block ? (state.fields[state.activeField] || []).indexOf(block) : -1;
+      if (index < 0) { return; }
+      event.preventDefault();
+      moveBlock_(index, event.key === 'ArrowUp' ? -1 : 1);
+    }
+
+    function removeBlock_(index) {
+      if (state.readOnly) { return; }
+      pushSnapshot_(); state.fields[state.activeField].splice(index, 1);
+      if (!state.fields[state.activeField].length) {
+        state.fields[state.activeField].push({ id: state.activeField + ':line-0', sourceOrder: 0, type: 'text', model: plainModel_(''), textStyle: 'normal' });
+      }
+      renderAll_(); notifyChange_();
+    }
+
+    function applyFormat_(command) {
+      if (state.readOnly) { return; }
+      var selection = window.getSelection();
+      if (!selection.rangeCount) { return; }
+      var editable = documentFlow_();
+      if (editable && (!selection.anchorNode || !editable.contains(selection.anchorNode))) { editable = null; }
+      if (!editable) { return; }
+      if (/^(?:normal|heading1|heading2|heading3|bullet|numbered)$/.test(command)) {
+        applyTextStyle_(editable, selection.getRangeAt(0), command);
+        return;
+      }
+      if (selection.isCollapsed) { return; }
+      pushSnapshot_();
+      if (command === 'link') {
+        var link = window.prompt('URL link HTTPS:', 'https://');
+        if (!link || !/^https:\/\//i.test(link)) { return; }
+        document.execCommand('createLink', false, link);
+      } else {
+        document.execCommand(command, false, null);
+      }
+      captureVisibleBlocks_(); notifyChange_();
+    }
+
+    function applyTextStyle_(flow, range, textStyle) {
+      var selectedIds = [];
+      Array.prototype.forEach.call(flow.children, function (element) {
+        if (element.dataset.blockType !== 'text') { return; }
+        try {
+          if (range.collapsed ? element.contains(range.startContainer) : range.intersectsNode(element)) {
+            selectedIds.push(element.dataset.blockId);
+          }
+        } catch (error) {}
+      });
+      if (!selectedIds.length) { return; }
+      pushSnapshot_();
+      selectedIds.forEach(function (id) {
+        var block = findBlock_(id);
+        if (block && block.type === 'text') { block.textStyle = textStyle; }
+      });
+      renderAll_(); notifyChange_();
+    }
+
+    function pushSnapshot_() {
+      captureVisibleBlocks_();
+      var snapshot = JSON.stringify({ fields: state.fields, tables: state.tables });
+      if (state.undo[state.undo.length - 1] !== snapshot) { state.undo.push(snapshot); }
+      if (state.undo.length > 50) { state.undo.shift(); }
+      state.redo = []; updateControls_();
+    }
+
+    function undo_() {
+      if (!state.undo.length || state.readOnly) { return; }
+      captureVisibleBlocks_(); state.redo.push(JSON.stringify({ fields: state.fields, tables: state.tables }));
+      var prior = JSON.parse(state.undo.pop()); state.fields = prior.fields; state.tables = prior.tables || []; renderAll_(); notifyChange_();
+    }
+
+    function redo_() {
+      if (!state.redo.length || state.readOnly) { return; }
+      state.undo.push(JSON.stringify({ fields: state.fields, tables: state.tables })); var next = JSON.parse(state.redo.pop()); state.fields = next.fields; state.tables = next.tables || [];
+      renderAll_(); notifyChange_();
+    }
+
+    function setReadOnly(readOnly) { state.readOnly = readOnly; renderAll_(); }
+    function updateControls_() {
+      elements.undo.disabled = state.readOnly || !state.undo.length;
+      elements.redo.disabled = state.readOnly || !state.redo.length;
+      document.querySelectorAll('.editor-toolbar button').forEach(function (button) {
+        if (button !== elements.undo && button !== elements.redo) { button.disabled = state.readOnly; }
+      });
+    }
+
+    function modelFromDom_(root) {
+      var text = '';
+      var runs = [];
+      function walk(node, style) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          var value = node.nodeValue || '';
+          if (!value) { return; }
+          var start = text.length; text += value;
+          runs.push(Object.assign({}, style, { start: start, end: text.length }));
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) { return; }
+        var tag = node.tagName.toLowerCase();
+        var next = Object.assign({}, style);
+        if (tag === 'b' || tag === 'strong') { next.bold = true; }
+        if (tag === 'i' || tag === 'em') { next.italic = true; }
+        if (tag === 'u') { next.underline = true; }
+        if (tag === 's' || tag === 'strike') { next.strikethrough = true; }
+        if (node.style && (node.style.fontWeight === '800' || Number(node.style.fontWeight) >= 600)) { next.bold = true; }
+        if (node.style && node.style.fontStyle === 'italic') { next.italic = true; }
+        if (node.style && node.style.textDecoration.indexOf('underline') !== -1) { next.underline = true; }
+        if (node.style && node.style.textDecoration.indexOf('line-through') !== -1) { next.strikethrough = true; }
+        if (tag === 'a' && /^https:\/\//i.test(node.href)) { next.link = node.href; }
+        Array.prototype.forEach.call(node.childNodes, function (child) { walk(child, next); });
+      }
+      Array.prototype.forEach.call(root.childNodes, function (node) { walk(node, plainRun_(0, 0)); });
+      return { text: text.replace(/\n/g, ' '), runs: mergeRuns_(runs) };
+    }
+
+    function renderRichText_(root, model) {
+      root.replaceChildren();
+      model = markdownRichModel_(model || { text: '', runs: [] });
+      var text = String(model.text || '');
+      var cursor = 0;
+      (model.runs || []).forEach(function (run) {
+        if (run.start > cursor) { root.appendChild(document.createTextNode(text.slice(cursor, run.start))); }
+        var node = document.createElement(run.link ? 'a' : 'span');
+        if (run.link) { node.href = run.link; node.target = '_blank'; node.rel = 'noopener noreferrer'; }
+        node.style.fontWeight = run.bold ? '800' : '';
+        node.style.fontStyle = run.italic ? 'italic' : '';
+        var decoration = []; if (run.underline) { decoration.push('underline'); } if (run.strikethrough) { decoration.push('line-through'); }
+        node.style.textDecoration = decoration.join(' ');
+        node.textContent = text.slice(run.start, run.end);
+        root.appendChild(node); cursor = run.end;
+      });
+      if (cursor < text.length) { root.appendChild(document.createTextNode(text.slice(cursor))); }
+    }
+
+    function sliceLineModel_(model, start, end) {
+      var text = String(model && model.text || '').slice(start, end);
+      var runs = (model && model.runs || []).map(function (run) {
+        return Object.assign({}, run, {
+          start: Math.max(start, run.start) - start,
+          end: Math.min(end, run.end) - start
+        });
+      }).filter(function (run) { return run.end > run.start; });
+      if (text && !runs.length) { runs.push(plainRun_(0, text.length)); }
+      return { text: text, runs: mergeRuns_(runs) };
+    }
+
+    function markdownHeadingModel_(model) {
+      model = model || { text: '', runs: [] };
+      var source = String(model.text || '');
+      var prefix = source.match(/^\s*(#{1,3})[ \t]+/);
+      if (!prefix) { return null; }
+      var bodyStart = prefix[0].length;
+      var body = source.slice(bodyStart).replace(/[ \t]+#+[ \t]*$/, '').trim();
+      if (!body) { return null; }
+      var bodyStartInSource = bodyStart + source.slice(bodyStart).indexOf(body);
+      return {
+        style: prefix[1].length === 1 ? 'heading1' : (prefix[1].length === 2 ? 'heading2' : 'heading3'),
+        model: sliceLineModel_(
+          model,
+          bodyStartInSource,
+          bodyStartInSource + body.length
+        )
+      };
+    }
+
+    function markdownRichModel_(model) {
+      model = model || { text: '', runs: [] };
+      var source = String(model.text || '');
+      if (!source) { return model; }
+      var nativeRuns = Array.isArray(model.runs) ? model.runs.slice() : [];
+      var output = '';
+      var styles = [];
+      var changed = false;
+      function styleAt_(index) {
+        for (var runIndex = 0; runIndex < nativeRuns.length; runIndex += 1) {
+          var run = nativeRuns[runIndex];
+          if (index >= run.start && index < run.end) { return run; }
+        }
+        return plainRun_(0, 0);
+      }
+      function emit_(start, end, overlay) {
+        for (var index = start; index < end; index += 1) {
+          var base = styleAt_(index);
+          output += source.charAt(index);
+          styles.push({
+            bold: Boolean(base.bold) || Boolean(overlay && overlay.bold),
+            italic: Boolean(base.italic) || Boolean(overlay && overlay.italic),
+            underline: Boolean(base.underline),
+            strikethrough: Boolean(base.strikethrough),
+            link: String(base.link || '')
+          });
+        }
+      }
+      // Process by source offsets so native runs and line breaks retain their
+      // original positions. Fenced code and inline-code spans are literal.
+      output = '';
+      styles = [];
+      var fenceOpen = false;
+      var lineStart = 0;
+      for (var lineEnd = 0; lineEnd <= source.length; lineEnd += 1) {
+        if (lineEnd !== source.length && source.charAt(lineEnd) !== '\n') { continue; }
+        var line = source.slice(lineStart, lineEnd);
+        var trimmed = line.trim();
+        var isFence = /^```/.test(trimmed);
+        if (fenceOpen || isFence) {
+          emit_(lineStart, lineEnd, null);
+          if (isFence && !/^```.*```\s*$/.test(trimmed)) { fenceOpen = !fenceOpen; }
+          else if (fenceOpen && /^```\s*$/.test(trimmed)) { fenceOpen = false; }
+        } else {
+          var cursor = 0;
+          var pattern = /(?<!\w)(\*\*\*|___)(?=\S)([\s\S]*?\S)\1(?!\w)|(?<!\w)(\*\*|__)(?=\S)([\s\S]*?\S)\3(?!\w)|(?<![\w*])([*_])(?=\S)([\s\S]*?\S)\5(?![\w*])/g;
+          var match;
+          while ((match = pattern.exec(line))) {
+            var absolute = lineStart + match.index;
+            var backticks = (line.slice(0, match.index).match(/`/g) || []).length;
+            if (source.charAt(absolute - 1) === '\\' || backticks % 2 === 1) { continue; }
+            emit_(lineStart + cursor, absolute, null);
+            var value = match[2] || match[4] || match[6] || '';
+            var valueStart = absolute + match[0].indexOf(value);
+            emit_(valueStart, valueStart + value.length, {
+              bold: Boolean(match[2] || match[4]),
+              italic: Boolean(match[2] || match[6])
+            });
+            cursor = match.index + match[0].length;
+            changed = true;
+          }
+          emit_(lineStart + cursor, lineEnd, null);
+        }
+        if (lineEnd < source.length) { emit_(lineEnd, lineEnd + 1, null); }
+        lineStart = lineEnd + 1;
+      }
+      if (!changed) { return model; }
+      var runs = [];
+      styles.forEach(function (style, index) {
+        var current = Object.assign({}, style, { start: index, end: index + 1 });
+        var previous = runs[runs.length - 1];
+        if (previous && previous.bold === current.bold &&
+            previous.italic === current.italic &&
+            previous.underline === current.underline &&
+            previous.strikethrough === current.strikethrough &&
+            previous.link === current.link) {
+          previous.end = current.end;
+        } else {
+          runs.push(current);
+        }
+      });
+      return { text: output, runs: runs };
+    }
+
+    function mergeRuns_(runs) {
+      return runs.filter(function (run) { return run.end > run.start; }).map(function (run) {
+        return { start: run.start, end: run.end, bold: Boolean(run.bold), italic: Boolean(run.italic), underline: Boolean(run.underline), strikethrough: Boolean(run.strikethrough), link: String(run.link || '') };
+      });
+    }
+    function plainRun_(start, end) { return { start: start, end: end, bold: false, italic: false, underline: false, strikethrough: false, link: '' }; }
+    function plainModel_(text) { return { text: text, runs: text ? [plainRun_(0, text.length)] : [] }; }
+    function imageMetadataLink_(url, width) { return url.split(IMAGE_WIDTH_PREFIX)[0] + IMAGE_WIDTH_PREFIX + Math.max(25, Math.min(100, Number(width) || DEFAULT_IMAGE_WIDTH_PERCENT)); }
+    function imageWidthFromModel_(model) { var link = model.runs && model.runs[0] && model.runs[0].link || ''; var match = link.match(/#scl-width=(\d+)/); return match ? Math.max(25, Math.min(100, Number(match[1]))) : DEFAULT_IMAGE_WIDTH_PERCENT; }
+    function isSupportedImageUrl_(url) { try { var parsed = new URL(url); return parsed.protocol === 'https:' && /\.(?:png|jpe?g|webp)$/i.test(parsed.pathname); } catch (error) { return false; } }
+    function standaloneImageUrl_(value) {
+      var normalized = String(value || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      return isSupportedImageUrl_(normalized) ? normalized : '';
+    }
+    function listPrefixInfo_(text) {
+      var match = String(text || '').match(/^([\s\u200B-\u200D\u2060\uFEFF]*)([-*•‣◦∙⁃▪●○✦]|(?:\d+)[.)])(\s+)(.*)$/);
+      if (!match) { return null; }
+      var marker = String(match[2] || '');
+      var numMatch = marker.match(/^(\d+)/);
+      return {
+        kind: numMatch ? 'numbered' : 'bullet',
+        ordinal: numMatch ? parseInt(numMatch[1], 10) : null,
+        text: String(match[4] || '').trim()
+      };
+    }
+    function listOrdinal_(blocks, index, textStyle) {
+      var currentBlock = blocks[index];
+      if (currentBlock && currentBlock.model && currentBlock.model.text) {
+        var prefix = listPrefixInfo_(currentBlock.model.text);
+        if (prefix && prefix.ordinal) {
+          return prefix.ordinal;
+        }
+      }
+      var ordinal = 1;
+      for (var cursor = index - 1; cursor >= 0; cursor -= 1) {
+        var prevBlock = blocks[cursor];
+        var style = prevBlock.textStyle || 'normal';
+        if (style === textStyle) {
+          if (prevBlock.model && prevBlock.model.text) {
+            var prevPrefix = listPrefixInfo_(prevBlock.model.text);
+            if (prevPrefix && prevPrefix.ordinal) {
+              return prevPrefix.ordinal + ordinal;
+            }
+          }
+          ordinal += 1;
+        } else if (style !== 'bullet') {
+          break;
+        }
+      }
+      return ordinal;
+    }
+    function sanitizeCell_(value) { return String(value || '').replace(/[\r\n]+/g, ' ').slice(0, 5000); }
+    function tableAnchorHash_(text) { var value = String(text || '').trim(); if (!value || value === PAGE_BREAK_SENTINEL || /^(?:kc|fyk)\d+\*$/i.test(value) || /^https:\/\/\S+$/i.test(value)) { return ''; } var hash = 2166136261; for (var index = 0; index < value.length; index += 1) { hash ^= value.charCodeAt(index); hash = Math.imul(hash, 16777619); } return 'fnv1a32:' + ('00000000' + (hash >>> 0).toString(16)).slice(-8); }
+    function blockLabel_(block) { if (block.type === 'image') { return 'Image URL'; } if (block.type === 'page-break') { return 'Page break'; } if (/^(kc|fyk)\d+\*$/i.test(block.model.text.trim())) { return 'Grammar marker · locked identity'; } return 'Text block'; }
+    function previewClass_(field, block) {
+      if (block.type === 'page-break') { return 'preview-page-break'; }
+      if (field === 'must_do') { return 'task-preview must-do'; }
+      if (field === 'should_do') { return 'task-preview should-do'; }
+      if (field === 'aspire_to_do') { return 'task-preview aspire'; }
+      if (field === 'self-check') { return 'task-preview self-check'; }
+      if (field === 'kamus_coder') { return 'bubble-preview tutor-says'; }
+      if (field === 'for_your_knowledge') { return 'bubble-preview did-you-know'; }
+      var text = (block.model && block.model.text || '').trim();
+      if (/^kc\d+\*$/i.test(text)) { return 'bubble-preview tutor-says'; }
+      if (/^fyk\d+\*$/i.test(text)) { return 'bubble-preview did-you-know'; }
+      if (/^(?:Tahap|Bagian|Langkah)\s+\d+/i.test(text)) { return 'heading-preview'; }
+      return 'text-preview';
+    }
+    function findBlock_(id) { return (state.fields[state.activeField] || []).filter(function (block) { return block.id === id; })[0]; }
+    function blockButton_(copy, label, handler) { var button = document.createElement('button'); button.type = 'button'; button.textContent = copy; button.title = label; button.setAttribute('aria-label', label); button.disabled = state.readOnly; button.addEventListener('click', handler); return button; }
+    function sanitizeDocumentPaste_(event) {
+      event.preventDefault();
+      var raw = (event.clipboardData || window.clipboardData).getData('text/plain');
+      var text = raw.trim();
+      var flow = documentFlow_();
+      var selectedElement = selectedBlockElement_(flow);
+      var block = selectedElement ? findBlock_(selectedElement.dataset.blockId) : null;
+      if (isSupportedImageUrl_(text)) {
+        var selectedBlockId = block ? block.id : '';
+        pushSnapshot_();
+        block = selectedBlockId ? findBlock_(selectedBlockId) : null;
+        var imageBlock = {
+          type: 'image', width: DEFAULT_IMAGE_WIDTH_PERCENT,
+          model: { text: text, runs: [Object.assign(plainRun_(0, text.length), { link: imageMetadataLink_(text, DEFAULT_IMAGE_WIDTH_PERCENT) })] }
+        };
+        if (block && !block.model.text.trim()) {
+          block.type = imageBlock.type; block.width = imageBlock.width; block.model = imageBlock.model;
+        } else {
+          var blocks = state.fields[state.activeField] || [];
+          var selectedIndex = block ? blocks.indexOf(block) : blocks.length - 1;
+          imageBlock.sourceOrder = sourceOrderBetween_(block, blocks[selectedIndex + 1] || null);
+          imageBlock.id = state.activeField + ':line-image-' + Date.now().toString(36);
+          blocks.splice(selectedIndex + 1, 0, imageBlock);
+        }
+        renderAll_(); notifyChange_(); return;
+      }
+      document.execCommand('insertText', false, raw.replace(/\r\n?/g, '\n'));
+    }
+    function documentFlow_() { return elements.blocks ? elements.blocks.querySelector('.document-flow-editor') : null; }
+    function selectedBlockElement_(flow) {
+      var selection = window.getSelection();
+      if (!flow || !selection || !selection.rangeCount) { return null; }
+      var range = selection.getRangeAt(0);
+      var selected = closestElement_(range.startContainer, '[data-block-id]');
+      if (selected && flow.contains(selected)) { return selected; }
+      if (range.startContainer === flow && flow.childNodes.length) {
+        var index = Math.min(range.startOffset, flow.childNodes.length - 1);
+        var candidate = flow.childNodes[index] || flow.childNodes[index - 1];
+        return closestElement_(candidate, '[data-block-id]');
+      }
+      return null;
+    }
+    function closestElement_(node, selector) {
+      var element = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
+      return element && element.closest ? element.closest(selector) : null;
+    }
+    function notifyChange_() { state.changeHandler(); updateControls_(); }
+    function nextSourceOrder_() {
+      return (state.fields[state.activeField] || []).reduce(function (maximum, block) {
+        return Math.max(maximum, Number(block.sourceOrder));
+      }, -1) + 1;
+    }
+
+    function sourceOrderBetween_(previous, next) {
+      var before = previous && Number.isFinite(previous.sourceOrder) ? previous.sourceOrder : null;
+      var after = next && Number.isFinite(next.sourceOrder) ? next.sourceOrder : null;
+      if (before !== null && after !== null && after > before) { return before + ((after - before) / 2); }
+      if (before !== null) { return before + 1; }
+      if (after !== null) { return after - 1; }
+      return 0;
+    }
+
+    function createTableId_() { return 'table-' + (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)); }
+
+    window.SclVisualEditor = { initialize: initialize, load: load, serialize: serialize, serializeTables: serializeTables, serializeLayouts: serializeLayouts, setReadOnly: setReadOnly, hasBlockingDiagnostics: function () { return state.tables.some(function (entry) { return entry.anchorStatus === 'STALE'; }); }, paginateTableRows: paginateTableRows_, pageBreakSentinel: PAGE_BREAK_SENTINEL };
+  })();
+</script>
